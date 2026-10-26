@@ -33,10 +33,11 @@ th,td{border-bottom:1px solid var(--bd);padding:4px 8px;white-space:nowrap;text-
 <span class="row" style="margin-left:auto">Sheet: <select id="sh"></select></span></div></div>
 <div class="card"><b>What should I do?</b> <small style="color:var(--mu)">(items found in your file are pre-ticked)</small><div id="opts"></div></div>
 <div class="card" id="cfg"><b>Settings for selected options</b>
-<p><small>Duplicate check columns (none ticked = whole row)</small></p><div id="dupc" class="chips"></div>
+<p><small>Duplicate check columns (none ticked = all columns except ID)</small></p><div id="dupc" class="chips"></div>
 <p class="row"><span>Split column:</span><select id="spc"></select><small>into first / last name</small></p>
 <p><small>Merge columns (tick 2 or more)</small></p><div id="mgc" class="chips"></div>
-<p class="row">Separator <input type="text" id="mgs" value=", " size="4" aria-label="Separator"> New name <input type="text" id="mgn" value="merged" size="12" aria-label="New column name"></p></div>
+<p class="row">Separator <input type="text" id="mgs" value=", " size="4" aria-label="Separator"> New name <input type="text" id="mgn" value="merged" size="12" aria-label="New column name"></p>
+<p class="row">Allowed payment statuses <input type="text" id="sts" value="Paid, Pending, Refunded, Unpaid, Partially Paid, Overdue, Disputed, Cancelled, Draft" size="45" aria-label="Allowed payment statuses"></p></div>
 <button class="p" id="go">Clean &amp; Download</button>
 <div id="res" class="hid" style="margin-top:14px"></div></div>
 <p class="s">Dates are read as day/month/year (Indian style). Original file is never changed; removed rows are saved in a separate sheet. Flags are suggestions – please review.</p>
@@ -44,7 +45,7 @@ th,td{border-bottom:1px solid var(--bd);padding:4px 8px;white-space:nowrap;text-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const $=s=>document.querySelector(s);
-const O=[[1,'Remove duplicates','Repeated customer / records (first one kept)'],[2,'Trim spaces','" Jaipur " → "Jaipur"'],[3,'Standardize text','jaipur, JAIPUR → Jaipur'],[4,'Find blank cells','Missing email or amount (flagged)'],[5,'Fix data types','"1500" → number 1500'],[6,'Standardize dates','Mixed date formats → yyyy-mm-dd'],[7,'Validate emails','Invalid email format flagged'],[8,'Validate phone numbers','Not a valid 10-digit Indian mobile flagged'],[9,'Clean column names','"Customer Name " → customer_name'],[10,'Split columns','Full name → first / last (choose column below)'],[11,'Merge columns','City + State (choose columns below)'],[12,'Find inconsistent categories','Delhi, delhi, DELHI → one spelling'],[13,'Detect outliers','Unusually high / low numbers flagged'],[14,'Remove empty rows/columns','Unused worksheet areas'],[15,'Find invalid values','Negative quantity/amount, unknown status flagged']];
+const O=[[1,'Detect duplicates','Exact + possible duplicates (flagged, never deleted)'],[2,'Trim spaces','" Jaipur " → "Jaipur"'],[3,'Standardize text','jaipur, JAIPUR → Jaipur'],[4,'Find blank cells','Missing email or amount (flagged)'],[5,'Fix data types','"1500" → number 1500'],[6,'Standardize dates','Mixed date formats → yyyy-mm-dd'],[7,'Validate emails','Invalid email format flagged'],[8,'Validate phone numbers','Not a valid 10-digit Indian mobile flagged'],[9,'Clean column names','"Customer Name " → customer_name'],[10,'Split columns','Full name → first / last (choose column below)'],[11,'Merge columns','City + State (choose columns below)'],[12,'Find inconsistent categories','Delhi, delhi, DELHI → one spelling'],[13,'Detect outliers','Unusually high / low numbers flagged'],[14,'Remove empty rows/columns','Unused worksheet areas'],[15,'Find invalid values','Negative quantity/amount, unknown status flagged']];
 let WB,FN,ROWS,HEADS,SCAN={};
 const blank=v=>v===''||v==null||(typeof v==='string'&&!v.trim());
 const pn=v=>{if(typeof v==='number')return v;const s=String(v).replace(/[₹$,\s]|^rs\.?/gi,'');return /^-?\d+(\.\d+)?$/.test(s)?+s:NaN};
@@ -55,12 +56,21 @@ function pd(v){if(v instanceof Date){if(isNaN(v))return null;const t=new Date(v.
  if(m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})(?:[ T].*)?$/))return iso(+m[1],+m[2],+m[3]);
  if(m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?:[ T].*)?$/)){let d=+m[1],mo=+m[2];if(mo>12&&d<=12)[d,mo]=[mo,d];return iso(+m[3],mo,d)}
  if(/[a-z]{3}/i.test(s)&&/\d/.test(s)){const t=new Date(s+' 12:00');if(!isNaN(t)&&t.getFullYear()>1900)return iso(t.getFullYear(),t.getMonth()+1,t.getDate())}return null}
+const DEFST=['Paid','Pending','Refunded','Unpaid','Partially Paid','Overdue','Disputed','Cancelled','Draft'];
+function osa(a,b){const d=[];for(let i=0;i<=a.length;i++)d[i]=[i];for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++){d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1])d[i][j]=Math.min(d[i][j],d[i-2][j-2]+1)}return d[a.length][b.length]}
+function mkSummary(o,on,n0,n1){const nf=o.flags.length,ns=o.flags.filter(f=>f['Suggested correction']!=='').length,na=Object.values(o.app).reduce((a,b)=>a+b,0);
+ return[['Overview','Count'],['Rows in original file',n0],['Rows in cleaned file',n1],['Rows removed (empty rows only - duplicates are never deleted)',o.removed.length],
+ ['Detected issues (unique, see Flags sheet)',nf],['   of which have a suggested correction (NOT applied)',ns],['   of which are unresolved (manual review needed)',nf-ns],
+ ['Applied changes (cell edits, see Applied Changes sheet)',na],[],['Check','Detected issues','Suggested corrections','Applied changes']]
+ .concat(O.filter(x=>on[x[0]]).map(x=>[x[0]+'. '+x[1],o.det[x[0]]||0,o.sug[x[0]]||0,o.app[x[0]]||0]))}
 const EM=/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
 const ST=['paid','unpaid','pending','partial','partially paid','overdue','active','inactive','open','closed','completed','cancelled','canceled','delivered','draft','approved','rejected','new','disputed','yes','no','shipped','returned','processing','done'];
 function run(rows,heads,on,cfg){
- let H=[...heads],R=rows.map((x,i)=>({r:i+2,d:{...x}})),st={},flags=[],removed=[],map={};
- const inc=(k,n=1)=>st[k]=(st[k]||0)+n;
- const fl=(r,c,t,k)=>{inc(k);if(flags.length<20000)flags.push({Row:r.r,Column:c,Value:r.d[c],Issue:t})};
+ let H=[...heads],R=rows.map((x,i)=>({r:i+2,d:{...x}})),flags=[],removed=[],changes=[],map={},seenF=new Set();
+ const det={},sug={},app={},bump=(o,k,n=1)=>o[k]=(o[k]||0)+n,inc=(k,n=1)=>bump(app,k,n);
+ const chg=(k,r,c,o,n)=>{bump(app,k);changes.push({Row:r?r.r:'Header',Column:c,'Old value':o,'New value':n,Check:k})};
+ const fl=(r,c,t,k,s)=>{const key=r.r+'|'+c+'|'+t;if(seenF.has(key))return;seenF.add(key);bump(det,k);if(s!=null)bump(sug,k);
+  flags.push({Row:r.r,Column:c,Value:r.d[c]??'',Issue:t,'Suggested correction':s??'',Status:s!=null?'Suggestion only - not applied':'Unresolved - needs manual review',Check:k})};
  const vals=c=>R.map(r=>r.d[c]).filter(v=>!blank(v));
  const ratio=(c,f)=>{const v=vals(c);return v.length?v.filter(f).length/v.length:0};
  const numC=c=>!/phone|mobile|contact|whatsapp|pin|zip|gst|pan/i.test(c)&&ratio(c,v=>!isNaN(pn(v)))>=.8&&!vals(c).some(v=>typeof v==='string'&&/^0\d/.test(v));
@@ -68,14 +78,14 @@ function run(rows,heads,on,cfg){
  const emC=c=>/e-?mail/i.test(c),phC=c=>/phone|mobile|contact|whatsapp|mob\b/i.test(c);
  const txtC=c=>!emC(c)&&!phC(c)&&!/gst|pan|(^|_)id$|code|sku|ifsc|url|link|website/i.test(c)&&!numC(c)&&!dateC(c)&&ratio(c,v=>typeof v==='string'&&/[a-z\u0900-\u097f]/i.test(v))>=.6;
  const cell=f=>R.forEach(r=>H.forEach(h=>f(r,h,r.d[h])));
- if(on[9]){const seen={},nh=H.map(h=>{let b=String(h).trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'column',n=b,i=2;while(seen[n])n=b+'_'+i++;seen[n]=1;if(n!==h)inc(9);map[h]=n;return n});
+ if(on[9]){const seen={},nh=H.map(h=>{let b=String(h).trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'column',n=b,i=2;while(seen[n])n=b+'_'+i++;seen[n]=1;if(n!==h)chg(9,null,h,h,n);map[h]=n;return n});
   R.forEach(r=>{const d={};H.forEach((h,i)=>d[nh[i]]=r.d[h]);r.d=d});H=nh}
  const nm=c=>map[c]||c;
- if(on[14]){const n0=R.length;R=R.filter(r=>H.some(h=>!blank(r.d[h])));inc(14,n0-R.length);const k=H.filter(h=>R.some(r=>!blank(r.d[h])));inc(14,H.length-k.length);H=k}
- if(on[2])cell((r,h,v)=>{if(typeof v==='string'){const t=v.replace(/[\u00a0\u200b]/g,' ').replace(/\s+/g,' ').trim();if(t!==v){r.d[h]=t;inc(2)}}});
- if(on[3])H.filter(txtC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'){const p=v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase());if(p!==v){r.d[h]=p;inc(3)}}}));
- if(on[5])H.filter(numC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const n=pn(v);if(!isNaN(n)){r.d[h]=n;inc(5)}}}));
- if(on[6])H.filter(dateC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const d=pd(v);if(d){if(d!==v){r.d[h]=d;inc(6)}}else fl(r,h,'Unreadable date',6)}));
+ if(on[14]){R=R.filter(r=>{if(H.some(h=>!blank(r.d[h])))return true;removed.push({'Removed because':'Empty row','Original row':r.r});inc(14);return false});const k=H.filter(h=>R.some(r=>!blank(r.d[h])));inc(14,H.length-k.length);H=k}
+ if(on[2])cell((r,h,v)=>{if(typeof v==='string'){const t=v.replace(/[\u00a0\u200b]/g,' ').replace(/\s+/g,' ').trim();if(t!==v){chg(2,r,h,v,t);r.d[h]=t}}});
+ if(on[3])H.filter(txtC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'){const p=v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase());if(p!==v){chg(3,r,h,v,p);r.d[h]=p}}}));
+ if(on[5])H.filter(numC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const n=pn(v);if(!isNaN(n)){chg(5,r,h,v,n);r.d[h]=n}}}));
+ if(on[6])H.filter(dateC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const d=pd(v);if(d){if(d!==v){chg(6,r,h,v,d);r.d[h]=d}}else fl(r,h,'Invalid or impossible date (not changed)',6)}));
  if(on[10]&&cfg.split&&H.includes(nm(cfg.split))){const c=nm(cfg.split),a=c+'_first',b=c+'_last';H.splice(H.indexOf(c)+1,0,a,b);
   R.forEach(r=>{const p=String(r.d[c]??'').trim().split(/\s+/);r.d[a]=p[0]||'';r.d[b]=p.slice(1).join(' ');inc(10)})}
  if(on[11]&&cfg.merge&&cfg.merge.length>1){const cs=cfg.merge.map(nm).filter(c=>H.includes(c)),n=cfg.mname||'merged';
@@ -84,18 +94,31 @@ function run(rows,heads,on,cfg){
   const g={};v.forEach(x=>{const k=x.toLowerCase().replace(/[^a-z0-9\u0900-\u097f]/g,'');(g[k]=g[k]||{})[x]=(g[k][x]||0)+1});
   const ks=Object.keys(g);if(ks.length>60||v.reduce((a,x)=>a+x.length,0)/v.length>30)return;
   const best={};ks.forEach(k=>{const e=Object.entries(g[k]);if(e.length>1)best[k]=e.sort((a,b)=>b[1]-a[1])[0][0]});
-  R.forEach(r=>{const x=r.d[h];if(typeof x==='string'){const k=x.toLowerCase().replace(/[^a-z0-9\u0900-\u097f]/g,'');if(best[k]&&best[k]!==x){r.d[h]=best[k];inc(12)}}})});
+  R.forEach(r=>{const x=r.d[h];if(typeof x==='string'){const k=x.toLowerCase().replace(/[^a-z0-9\u0900-\u097f]/g,'');if(best[k]&&best[k]!==x){chg(12,r,h,x,best[k]);r.d[h]=best[k]}}})});
  if(on[4])R.forEach(r=>H.forEach(h=>{if(blank(r.d[h]))fl(r,h,'Blank cell',4)}));
  if(on[7])H.filter(emC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(!blank(v)&&!EM.test(String(v).trim()))fl(r,h,'Invalid email',7)}));
- if(on[8])H.filter(phC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;let d=String(v).replace(/\D/g,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');if(!/^[6-9]\d{9}$/.test(d))fl(r,h,'Invalid phone (need 10-digit Indian mobile)',8)}));
+ if(on[8])H.filter(phC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const raw=String(v),nz=raw.replace(/[\s\-().]/g,'');let d=nz.replace(/^\+/,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');
+  if(!/^[6-9]\d{9}$/.test(d))fl(r,h,'Invalid phone (need 10-digit Indian mobile)',8);else if(nz!==raw)fl(r,h,'Phone contains spaces/hyphens',8,nz)}));
  if(on[13])H.filter(h=>!/(^|_)(id|code|pin|phone|mobile|invoice|sr|sno)/i.test(h)).forEach(h=>{const n=R.map(r=>r.d[h]).filter(v=>typeof v==='number');if(n.length<8||n.length<vals(h).length*.8)return;
   const s=[...n].sort((a,b)=>a-b),q=p=>s[Math.floor((s.length-1)*p)],i=q(.75)-q(.25),lo=q(.25)-3*i,hi=q(.75)+3*i;if(!i)return;
   R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&(v>hi||v<lo))fl(r,h,v>hi?'Unusually high value':'Unusually low value',13)})});
- if(on[15])H.forEach(h=>{if(/qty|quantity|amount|price|sales|rate|total|stock/i.test(h))R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&v<0)fl(r,h,'Negative value',15)});
-  if(/status/i.test(h))R.forEach(r=>{const v=r.d[h];if(!blank(v)&&!ST.includes(String(v).trim().toLowerCase()))fl(r,h,'Unrecognised status',15)})});
- if(on[1]){const ks=(cfg.dup&&cfg.dup.length?cfg.dup.map(nm):H).filter(c=>H.includes(c)),seen=new Map(),keep=[];
-  R.forEach(r=>{const k=JSON.stringify(ks.map(c=>String(r.d[c]??'').trim().toLowerCase()));if(seen.has(k)){removed.push({...r.d,'Removed because':'Duplicate of row '+seen.get(k),'Original row':r.r});inc(1)}else{seen.set(k,r.r);keep.push(r)}});R=keep}
- return{R,H,st,flags,removed}}
+ if(on[15])H.forEach(h=>{const q=/qty|quantity/i.test(h);
+  if(/qty|quantity|amount|price|sales|rate|total|stock/i.test(h))R.forEach(r=>{const v=r.d[h];if(blank(v))return;const n=pn(v);
+   if(isNaN(n))fl(r,h,'Non-numeric value (not changed)',15);else if(n<0)fl(r,h,'Negative value (not changed)',15);else if(q&&n===0)fl(r,h,'Zero quantity',15)});
+  if(/status/i.test(h)){const ok=cfg.statuses&&cfg.statuses.length?cfg.statuses:DEFST,al=ok.map(x=>x.toLowerCase());
+   R.forEach(r=>{const v=r.d[h];if(blank(v))return;const k=String(v).trim().toLowerCase();if(al.includes(k))return;let b=99,c=[];
+    ok.forEach(x=>{const e=osa(k,x.toLowerCase());if(e<b){b=e;c=[x]}else if(e===b)c.push(x)});
+    fl(r,h,'Status not in allowed list',15,c.length===1&&b<=(k.length>5?2:1)?c[0]:undefined)})}});
+ if(on[1]){const sel=cfg.dup&&cfg.dup.length,ks=sel?cfg.dup.map(nm).filter(c=>H.includes(c)):H.filter(h=>!/(^|[_ ])id$|^(sr|sno)/i.test(h.trim()));
+  const em=H.find(emC),ph=H.find(phC),nz=v=>String(v??'').trim().toLowerCase(),dg=v=>{let d=String(v??'').replace(/\D/g,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');return d.length>=10?d:''};
+  const ex=new Map(),ema=new Map(),pha=new Map(),W='(whole row)';
+  R.forEach(r=>{if(!ks.some(c=>!blank(r.d[c])))return;const k=JSON.stringify(ks.map(c=>nz(r.d[c]))),e=em?nz(r.d[em]):'',p=ph?dg(r.d[ph]):'';
+   if(ex.has(k))fl(r,W,`Exact duplicate of row ${ex.get(k)} (${sel?'selected columns':'all columns except ID'})`,1);
+   else if(e&&ema.has(e))fl(r,W,`Possible duplicate: same email as row ${ema.get(e)}`,1);
+   else if(p&&pha.has(p))fl(r,W,`Possible duplicate: same phone as row ${pha.get(p)} - check if same customer`,1);
+   if(!ex.has(k))ex.set(k,r.r);if(e&&!ema.has(e))ema.set(e,r.r);if(p&&!pha.has(p))pha.set(p,r.r)})}
+ const st={};[det,app].forEach(o=>Object.keys(o).forEach(k=>bump(st,k,o[k])));
+ return{R,H,st,det,sug,app,flags,removed,changes}}
 function err(m){const e=$('#err');e.textContent=m;e.classList.toggle('hid',!m)}
 function load(f){err('');if(!f)return;if(f.size>25e6)return err('File is larger than 25 MB. Please split it and try again.');
  if(!/\.(xlsx|xls|csv)$/i.test(f.name))return err('Unsupported file. Please upload .xlsx, .xls or .csv.');
@@ -117,18 +140,18 @@ function sheet(){const a=XLSX.utils.sheet_to_json(WB.Sheets[$('#sh').value],{hea
 function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forEach(c=>{if(c.checked)on[c.dataset.o]=1});
  if(!Object.keys(on).length)return err('Please tick at least one option.');
  const g=n=>[...document.querySelectorAll(`[name=${n}]:checked`)].map(c=>c.value);
- const cfg={dup:g('dup'),split:$('#spc').value,merge:g('mg'),sep:$('#mgs').value,mname:$('#mgn').value.trim()};
+ const cfg={dup:g('dup'),split:$('#spc').value,merge:g('mg'),sep:$('#mgs').value,mname:$('#mgn').value.trim(),statuses:$('#sts').value.split(',').map(x=>x.trim()).filter(Boolean)};
  if(on[10]&&!cfg.split)return err('Option 10 needs a column: choose "Split column" in settings.');
  if(on[11]&&cfg.merge.length<2)return err('Option 11 needs at least 2 columns ticked under "Merge columns".');
  const o=run(ROWS,HEADS,on,cfg),clean=o.R.map(r=>{const d={};o.H.forEach(h=>d[h]=r.d[h]);return d});
- const sum=O.filter(x=>on[x[0]]).map(x=>({Option:x[0]+'. '+x[1],'Changes / issues':o.st[x[0]]||0}));
- sum.unshift({Option:'Rows in original',' Changes / issues':ROWS.length},{Option:'Rows in cleaned file','Changes / issues':clean.length});
+ o.flags.sort((x,y)=>x.Row-y.Row);
  const w=XLSX.utils.book_new(),add=(n,d,h)=>XLSX.utils.book_append_sheet(w,XLSX.utils.json_to_sheet(d,h?{header:h}:{}),n);
- add('Cleaned',clean,o.H);add('Removed Rows',o.removed.length?o.removed:[{Info:'No rows removed'}]);add('Flags',o.flags.length?o.flags:[{Info:'No issues flagged'}]);add('Summary',sum);
+ add('Cleaned',clean,o.H);add('Removed Rows',o.removed.length?o.removed:[{Info:'No rows removed'}]);add('Flags',o.flags.length?o.flags:[{Info:'No issues flagged'}]);
+ add('Applied Changes',o.changes.length?o.changes:[{Info:'No cell changes applied'}]);XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(mkSummary(o,on,ROWS.length,clean.length)),'Summary');
  XLSX.writeFile(w,FN.replace(/\.\w+$/,'')+'_cleaned.xlsx',{cellDates:false});
  const fm=new Set(o.flags.map(f=>f.Row+'|'+f.Column)),rr=o.R.slice(0,100);
  $('#res').innerHTML=`<div class="stat"><div><b>${ROWS.length}</b>rows before</div><div><b>${clean.length}</b>rows after</div><div><b>${o.removed.length}</b>rows removed</div><div><b>${o.flags.length}</b>cells flagged</div></div>
- <p><b>Downloaded:</b> ${esc(FN.replace(/\.\w+$/,''))}_cleaned.xlsx (sheets: Cleaned, Removed Rows, Flags, Summary)</p>
+ <p><b>Downloaded:</b> ${esc(FN.replace(/\.\w+$/,''))}_cleaned.xlsx (sheets: Cleaned, Removed Rows, Flags, Applied Changes, Summary)</p>
  <p><small>Preview of first ${rr.length} rows – yellow cells are flagged for your review.</small></p><div class="tw"><table><thead><tr>${o.H.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rr.map(r=>`<tr>${o.H.map(h=>`<td class="${fm.has(r.r+'|'+h)?'f':''}">${esc(r.d[h])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
  $('#res').classList.remove('hid');$('#res').scrollIntoView({behavior:'smooth'})}
  catch(x){err('Processing failed, so no file was created. Your original file is untouched. ('+x.message+')')}}
