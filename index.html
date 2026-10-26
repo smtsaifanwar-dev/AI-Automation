@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Excel Cleaner – One Click Data Cleaning</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b2430;--mu:#5d6877;--bd:#dfe3e8;--pr:#1c6b4a;--prt:#fff;--wa:#fff3cd;--er:#fde2e1}
+@media(prefers-color-scheme:dark){:root{--bg:#12161b;--card:#1a2027;--tx:#e8ecf1;--mu:#9aa5b4;--bd:#2d3641;--pr:#3aa776;--prt:#08130e;--wa:#4a3f12;--er:#4b2220}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,Segoe UI,Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}h1{font-size:22px;margin:8px 0 2px}p.s{color:var(--mu);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px}
+#drop{border:2px dashed var(--bd);text-align:center;padding:28px 12px;cursor:pointer}#drop.on{border-color:var(--pr)}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-bottom:1px solid var(--bd)}.opt:last-child{border:0}
+.opt input{margin-top:4px;width:18px;height:18px}.opt b{display:block}.opt small{color:var(--mu)}
+.bg{margin-left:auto;font-size:12px;border-radius:99px;padding:2px 9px;background:var(--wa);white-space:nowrap}
+button.p{background:var(--pr);color:var(--prt);border:0;border-radius:8px;padding:12px 22px;font-size:16px;font-weight:600;cursor:pointer;width:100%}
+button.p:disabled{opacity:.5;cursor:not-allowed}button.g{background:none;border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:5px 10px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--pr);outline-offset:2px}
+.chips label{display:inline-block;border:1px solid var(--bd);border-radius:6px;padding:3px 8px;margin:3px;font-size:13px}
+select,input[type=text]{padding:6px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx)}
+.tw{overflow:auto;max-height:380px;border:1px solid var(--bd);border-radius:8px}table{border-collapse:collapse;font-size:13px;width:100%}
+th,td{border-bottom:1px solid var(--bd);padding:4px 8px;white-space:nowrap;text-align:left}th{position:sticky;top:0;background:var(--card)}td.f{background:var(--wa)}
+.msg{padding:10px;border-radius:8px;background:var(--er);margin-bottom:10px}.hid{display:none}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.stat div{border:1px solid var(--bd);border-radius:8px;padding:8px}.stat b{font-size:20px;display:block}
+</style></head><body><main>
+<h1>Excel Cleaner</h1>
+<p class="s">Upload → tick what to clean → one click. Your file is processed inside your browser and never uploaded anywhere.</p>
+<div id="err" class="msg hid" role="alert"></div>
+<div class="card" id="drop" tabindex="0" role="button" aria-label="Upload Excel or CSV file">
+<b>Drop an Excel / CSV file here, or click to choose</b><br><small>.xlsx · .xls · .csv</small>
+<input id="fi" type="file" accept=".xlsx,.xls,.csv" class="hid"></div>
+<div id="work" class="hid">
+<div class="card"><div class="row"><b id="fn"></b><span id="info" class="s" style="margin:0"></span>
+<span class="row" style="margin-left:auto">Sheet: <select id="sh"></select></span></div></div>
+<div class="card"><b>What should I do?</b> <small style="color:var(--mu)">(items found in your file are pre-ticked)</small><div id="opts"></div></div>
+<div class="card" id="cfg"><b>Settings for selected options</b>
+<p><small>Duplicate check columns (none ticked = whole row)</small></p><div id="dupc" class="chips"></div>
+<p class="row"><span>Split column:</span><select id="spc"></select><small>into first / last name</small></p>
+<p><small>Merge columns (tick 2 or more)</small></p><div id="mgc" class="chips"></div>
+<p class="row">Separator <input type="text" id="mgs" value=", " size="4" aria-label="Separator"> New name <input type="text" id="mgn" value="merged" size="12" aria-label="New column name"></p></div>
+<button class="p" id="go">Clean &amp; Download</button>
+<div id="res" class="hid" style="margin-top:14px"></div></div>
+<p class="s">Dates are read as day/month/year (Indian style). Original file is never changed; removed rows are saved in a separate sheet. Flags are suggestions – please review.</p>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const O=[[1,'Remove duplicates','Repeated customer / records (first one kept)'],[2,'Trim spaces','" Jaipur " → "Jaipur"'],[3,'Standardize text','jaipur, JAIPUR → Jaipur'],[4,'Find blank cells','Missing email or amount (flagged)'],[5,'Fix data types','"1500" → number 1500'],[6,'Standardize dates','Mixed date formats → yyyy-mm-dd'],[7,'Validate emails','Invalid email format flagged'],[8,'Validate phone numbers','Not a valid 10-digit Indian mobile flagged'],[9,'Clean column names','"Customer Name " → customer_name'],[10,'Split columns','Full name → first / last (choose column below)'],[11,'Merge columns','City + State (choose columns below)'],[12,'Find inconsistent categories','Delhi, delhi, DELHI → one spelling'],[13,'Detect outliers','Unusually high / low numbers flagged'],[14,'Remove empty rows/columns','Unused worksheet areas'],[15,'Find invalid values','Negative quantity/amount, unknown status flagged']];
+let WB,FN,ROWS,HEADS,SCAN={};
+const blank=v=>v===''||v==null||(typeof v==='string'&&!v.trim());
+const pn=v=>{if(typeof v==='number')return v;const s=String(v).replace(/[₹$,\s]|^rs\.?/gi,'');return /^-?\d+(\.\d+)?$/.test(s)?+s:NaN};
+const pad=n=>String(n).padStart(2,'0');
+const iso=(y,m,d)=>{if(y<100)y+=2000;const t=new Date(y,m-1,d);return t.getFullYear()===y&&t.getMonth()===m-1&&t.getDate()===d?`${y}-${pad(m)}-${pad(d)}`:null};
+function pd(v){if(v instanceof Date){if(isNaN(v))return null;const t=new Date(v.getTime()+60000);return iso(t.getFullYear(),t.getMonth()+1,t.getDate())}
+ if(typeof v!=='string')return null;const s=v.trim();let m;
+ if(m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})(?:[ T].*)?$/))return iso(+m[1],+m[2],+m[3]);
+ if(m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?:[ T].*)?$/)){let d=+m[1],mo=+m[2];if(mo>12&&d<=12)[d,mo]=[mo,d];return iso(+m[3],mo,d)}
+ if(/[a-z]{3}/i.test(s)&&/\d/.test(s)){const t=new Date(s+' 12:00');if(!isNaN(t)&&t.getFullYear()>1900)return iso(t.getFullYear(),t.getMonth()+1,t.getDate())}return null}
+const EM=/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+const ST=['paid','unpaid','pending','partial','partially paid','overdue','active','inactive','open','closed','completed','cancelled','canceled','delivered','draft','approved','rejected','new','disputed','yes','no','shipped','returned','processing','done'];
+function run(rows,heads,on,cfg){
+ let H=[...heads],R=rows.map((x,i)=>({r:i+2,d:{...x}})),st={},flags=[],removed=[],map={};
+ const inc=(k,n=1)=>st[k]=(st[k]||0)+n;
+ const fl=(r,c,t,k)=>{inc(k);if(flags.length<20000)flags.push({Row:r.r,Column:c,Value:r.d[c],Issue:t})};
+ const vals=c=>R.map(r=>r.d[c]).filter(v=>!blank(v));
+ const ratio=(c,f)=>{const v=vals(c);return v.length?v.filter(f).length/v.length:0};
+ const numC=c=>!/phone|mobile|contact|whatsapp|pin|zip|gst|pan/i.test(c)&&ratio(c,v=>!isNaN(pn(v)))>=.8&&!vals(c).some(v=>typeof v==='string'&&/^0\d/.test(v));
+ const dateC=c=>ratio(c,v=>pd(v)!==null)>=.8&&!numC(c);
+ const emC=c=>/e-?mail/i.test(c),phC=c=>/phone|mobile|contact|whatsapp|mob\b/i.test(c);
+ const txtC=c=>!emC(c)&&!phC(c)&&!/gst|pan|(^|_)id$|code|sku|ifsc|url|link|website/i.test(c)&&!numC(c)&&!dateC(c)&&ratio(c,v=>typeof v==='string'&&/[a-z\u0900-\u097f]/i.test(v))>=.6;
+ const cell=f=>R.forEach(r=>H.forEach(h=>f(r,h,r.d[h])));
+ if(on[9]){const seen={},nh=H.map(h=>{let b=String(h).trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'column',n=b,i=2;while(seen[n])n=b+'_'+i++;seen[n]=1;if(n!==h)inc(9);map[h]=n;return n});
+  R.forEach(r=>{const d={};H.forEach((h,i)=>d[nh[i]]=r.d[h]);r.d=d});H=nh}
+ const nm=c=>map[c]||c;
+ if(on[14]){const n0=R.length;R=R.filter(r=>H.some(h=>!blank(r.d[h])));inc(14,n0-R.length);const k=H.filter(h=>R.some(r=>!blank(r.d[h])));inc(14,H.length-k.length);H=k}
+ if(on[2])cell((r,h,v)=>{if(typeof v==='string'){const t=v.replace(/[\u00a0\u200b]/g,' ').replace(/\s+/g,' ').trim();if(t!==v){r.d[h]=t;inc(2)}}});
+ if(on[3])H.filter(txtC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'){const p=v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase());if(p!==v){r.d[h]=p;inc(3)}}}));
+ if(on[5])H.filter(numC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const n=pn(v);if(!isNaN(n)){r.d[h]=n;inc(5)}}}));
+ if(on[6])H.filter(dateC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const d=pd(v);if(d){if(d!==v){r.d[h]=d;inc(6)}}else fl(r,h,'Unreadable date',6)}));
+ if(on[10]&&cfg.split&&H.includes(nm(cfg.split))){const c=nm(cfg.split),a=c+'_first',b=c+'_last';H.splice(H.indexOf(c)+1,0,a,b);
+  R.forEach(r=>{const p=String(r.d[c]??'').trim().split(/\s+/);r.d[a]=p[0]||'';r.d[b]=p.slice(1).join(' ');inc(10)})}
+ if(on[11]&&cfg.merge&&cfg.merge.length>1){const cs=cfg.merge.map(nm).filter(c=>H.includes(c)),n=cfg.mname||'merged';
+  if(cs.length>1){H.push(n);R.forEach(r=>{r.d[n]=cs.map(c=>r.d[c]).filter(v=>!blank(v)).join(cfg.sep??', ');inc(11)})}}
+ if(on[12])H.filter(h=>!emC(h)&&!phC(h)&&!numC(h)&&!dateC(h)).forEach(h=>{const v=vals(h).filter(x=>typeof x==='string');if(!v.length||v.length<vals(h).length*.9)return;
+  const g={};v.forEach(x=>{const k=x.toLowerCase().replace(/[^a-z0-9\u0900-\u097f]/g,'');(g[k]=g[k]||{})[x]=(g[k][x]||0)+1});
+  const ks=Object.keys(g);if(ks.length>60||v.reduce((a,x)=>a+x.length,0)/v.length>30)return;
+  const best={};ks.forEach(k=>{const e=Object.entries(g[k]);if(e.length>1)best[k]=e.sort((a,b)=>b[1]-a[1])[0][0]});
+  R.forEach(r=>{const x=r.d[h];if(typeof x==='string'){const k=x.toLowerCase().replace(/[^a-z0-9\u0900-\u097f]/g,'');if(best[k]&&best[k]!==x){r.d[h]=best[k];inc(12)}}})});
+ if(on[4])R.forEach(r=>H.forEach(h=>{if(blank(r.d[h]))fl(r,h,'Blank cell',4)}));
+ if(on[7])H.filter(emC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(!blank(v)&&!EM.test(String(v).trim()))fl(r,h,'Invalid email',7)}));
+ if(on[8])H.filter(phC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;let d=String(v).replace(/\D/g,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');if(!/^[6-9]\d{9}$/.test(d))fl(r,h,'Invalid phone (need 10-digit Indian mobile)',8)}));
+ if(on[13])H.filter(h=>!/(^|_)(id|code|pin|phone|mobile|invoice|sr|sno)/i.test(h)).forEach(h=>{const n=R.map(r=>r.d[h]).filter(v=>typeof v==='number');if(n.length<8||n.length<vals(h).length*.8)return;
+  const s=[...n].sort((a,b)=>a-b),q=p=>s[Math.floor((s.length-1)*p)],i=q(.75)-q(.25),lo=q(.25)-3*i,hi=q(.75)+3*i;if(!i)return;
+  R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&(v>hi||v<lo))fl(r,h,v>hi?'Unusually high value':'Unusually low value',13)})});
+ if(on[15])H.forEach(h=>{if(/qty|quantity|amount|price|sales|rate|total|stock/i.test(h))R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&v<0)fl(r,h,'Negative value',15)});
+  if(/status/i.test(h))R.forEach(r=>{const v=r.d[h];if(!blank(v)&&!ST.includes(String(v).trim().toLowerCase()))fl(r,h,'Unrecognised status',15)})});
+ if(on[1]){const ks=(cfg.dup&&cfg.dup.length?cfg.dup.map(nm):H).filter(c=>H.includes(c)),seen=new Map(),keep=[];
+  R.forEach(r=>{const k=JSON.stringify(ks.map(c=>String(r.d[c]??'').trim().toLowerCase()));if(seen.has(k)){removed.push({...r.d,'Removed because':'Duplicate of row '+seen.get(k),'Original row':r.r});inc(1)}else{seen.set(k,r.r);keep.push(r)}});R=keep}
+ return{R,H,st,flags,removed}}
+function err(m){const e=$('#err');e.textContent=m;e.classList.toggle('hid',!m)}
+function load(f){err('');if(!f)return;if(f.size>25e6)return err('File is larger than 25 MB. Please split it and try again.');
+ if(!/\.(xlsx|xls|csv)$/i.test(f.name))return err('Unsupported file. Please upload .xlsx, .xls or .csv.');
+ if(typeof XLSX==='undefined')return err('Excel library could not load. Check your internet connection and refresh.');
+ const rd=new FileReader();rd.onerror=()=>err('Could not read the file.');
+ rd.onload=e=>{try{WB=XLSX.read(e.target.result,{type:'array',cellDates:true});FN=f.name;$('#fn').textContent=f.name;
+  $('#sh').innerHTML=WB.SheetNames.map(n=>`<option>${esc(n)}</option>`).join('');$('#work').classList.remove('hid');$('#res').classList.add('hid');sheet()}
+  catch(x){err('This file looks corrupted or is not a valid spreadsheet. Nothing was changed.')}};rd.readAsArrayBuffer(f)}
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function sheet(){const a=XLSX.utils.sheet_to_json(WB.Sheets[$('#sh').value],{header:1,defval:'',raw:true});
+ if(a.length<2){ROWS=[];HEADS=[];$('#info').textContent='Sheet has no data rows.';$('#opts').innerHTML='';return}
+ const seen={};HEADS=a[0].map((h,i)=>{let b=String(h).trim()||'Column '+(i+1),n=b,k=2;while(seen[n])n=b+'_'+k++;seen[n]=1;return n});
+ ROWS=a.slice(1).map(r=>{const d={};HEADS.forEach((h,i)=>d[h]=r[i]??'');return d});
+ $('#info').textContent=`${ROWS.length} rows · ${HEADS.length} columns`;
+ const all={};O.forEach(o=>all[o[0]]=1);SCAN=run(ROWS,HEADS,all,{}).st;
+ $('#opts').innerHTML=O.map(o=>{const n=SCAN[o[0]]||0,ck=n>0&&o[0]!==10&&o[0]!==11;return`<label class="opt"><input type="checkbox" data-o="${o[0]}" ${ck?'checked':''}><span><b>${o[0]}. ${o[1]}</b><small>${o[2]}</small></span>${[10,11].includes(o[0])?'':`<span class="bg">${n} found</span>`}</label>`}).join('');
+ const ch=n=>HEADS.map(h=>`<label><input type="checkbox" name="${n}" value="${esc(h)}"> ${esc(h)}</label>`).join('');
+ $('#dupc').innerHTML=ch('dup');$('#mgc').innerHTML=ch('mg');$('#spc').innerHTML='<option value="">— none —</option>'+HEADS.map(h=>`<option>${esc(h)}</option>`).join('')}
+function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forEach(c=>{if(c.checked)on[c.dataset.o]=1});
+ if(!Object.keys(on).length)return err('Please tick at least one option.');
+ const g=n=>[...document.querySelectorAll(`[name=${n}]:checked`)].map(c=>c.value);
+ const cfg={dup:g('dup'),split:$('#spc').value,merge:g('mg'),sep:$('#mgs').value,mname:$('#mgn').value.trim()};
+ if(on[10]&&!cfg.split)return err('Option 10 needs a column: choose "Split column" in settings.');
+ if(on[11]&&cfg.merge.length<2)return err('Option 11 needs at least 2 columns ticked under "Merge columns".');
+ const o=run(ROWS,HEADS,on,cfg),clean=o.R.map(r=>{const d={};o.H.forEach(h=>d[h]=r.d[h]);return d});
+ const sum=O.filter(x=>on[x[0]]).map(x=>({Option:x[0]+'. '+x[1],'Changes / issues':o.st[x[0]]||0}));
+ sum.unshift({Option:'Rows in original',' Changes / issues':ROWS.length},{Option:'Rows in cleaned file','Changes / issues':clean.length});
+ const w=XLSX.utils.book_new(),add=(n,d,h)=>XLSX.utils.book_append_sheet(w,XLSX.utils.json_to_sheet(d,h?{header:h}:{}),n);
+ add('Cleaned',clean,o.H);add('Removed Rows',o.removed.length?o.removed:[{Info:'No rows removed'}]);add('Flags',o.flags.length?o.flags:[{Info:'No issues flagged'}]);add('Summary',sum);
+ XLSX.writeFile(w,FN.replace(/\.\w+$/,'')+'_cleaned.xlsx',{cellDates:false});
+ const fm=new Set(o.flags.map(f=>f.Row+'|'+f.Column)),rr=o.R.slice(0,100);
+ $('#res').innerHTML=`<div class="stat"><div><b>${ROWS.length}</b>rows before</div><div><b>${clean.length}</b>rows after</div><div><b>${o.removed.length}</b>rows removed</div><div><b>${o.flags.length}</b>cells flagged</div></div>
+ <p><b>Downloaded:</b> ${esc(FN.replace(/\.\w+$/,''))}_cleaned.xlsx (sheets: Cleaned, Removed Rows, Flags, Summary)</p>
+ <p><small>Preview of first ${rr.length} rows – yellow cells are flagged for your review.</small></p><div class="tw"><table><thead><tr>${o.H.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rr.map(r=>`<tr>${o.H.map(h=>`<td class="${fm.has(r.r+'|'+h)?'f':''}">${esc(r.d[h])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+ $('#res').classList.remove('hid');$('#res').scrollIntoView({behavior:'smooth'})}
+ catch(x){err('Processing failed, so no file was created. Your original file is untouched. ('+x.message+')')}}
+const dz=$('#drop'),fi=$('#fi');dz.onclick=()=>fi.click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
+fi.onchange=()=>load(fi.files[0]);dz.ondragover=e=>{e.preventDefault();dz.classList.add('on')};dz.ondragleave=()=>dz.classList.remove('on');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('on');load(e.dataTransfer.files[0])};$('#sh').onchange=sheet;$('#go').onclick=go;
+</script></body></html>
