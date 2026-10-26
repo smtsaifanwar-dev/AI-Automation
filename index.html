@@ -62,16 +62,16 @@ function osa(a,b){const d=[];for(let i=0;i<=a.length;i++)d[i]=[i];for(let j=1;j<
 function mkSummary(o,on,n0,n1){const nf=o.flags.length,ns=o.flags.filter(f=>f['Suggested correction']!=='').length,na=Object.values(o.app).reduce((a,b)=>a+b,0);
  return[['Overview','Count'],['Rows in original file',n0],['Rows in cleaned file',n1],['Rows removed (empty rows only - duplicates are never deleted)',o.removed.length],
  ['Detected issues (unique, see Flags sheet)',nf],['   of which have a suggested correction (NOT applied)',ns],['   of which are unresolved (manual review needed)',nf-ns],
- ['Applied changes (cell edits, see Applied Changes sheet)',na],[],['Check','Detected issues','Suggested corrections','Applied changes']]
- .concat(O.filter(x=>on[x[0]]).map(x=>[x[0]+'. '+x[1],o.det[x[0]]||0,o.sug[x[0]]||0,o.app[x[0]]||0]))}
+ ['Applied changes (cell edits, see Applied Changes sheet)',na],[],['Check','Detected issues','Suggested corrections (not applied)','Unresolved','Applied changes']]
+ .concat(O.filter(x=>on[x[0]]).map(x=>[x[0]+'. '+x[1],o.det[x[0]]||0,o.sug[x[0]]||0,(o.det[x[0]]||0)-(o.sug[x[0]]||0),o.app[x[0]]||0]))}
 const EM=/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
 const ST=['paid','unpaid','pending','partial','partially paid','overdue','active','inactive','open','closed','completed','cancelled','canceled','delivered','draft','approved','rejected','new','disputed','yes','no','shipped','returned','processing','done'];
 function run(rows,heads,on,cfg){
  let H=[...heads],R=rows.map((x,i)=>({r:i+2,d:{...x}})),flags=[],removed=[],changes=[],map={},seenF=new Set();
- const det={},sug={},app={},bump=(o,k,n=1)=>o[k]=(o[k]||0)+n,inc=(k,n=1)=>bump(app,k,n);
- const chg=(k,r,c,o,n)=>{bump(app,k);changes.push({Row:r?r.r:'Header',Column:c,'Old value':o,'New value':n,Check:k})};
+ const lab=k=>{const x=O.find(o=>o[0]==k);return x?k+'. '+x[1]:k},nf5=new Set(),det={},sug={},app={},bump=(o,k,n=1)=>o[k]=(o[k]||0)+n,inc=(k,n=1)=>bump(app,k,n);
+ const chg=(k,r,c,o,n)=>{bump(app,k);changes.push({Row:r?r.r:'Header',Column:c,'Old value':o,'New value':n,Check:lab(k)})};
  const fl=(r,c,t,k,s)=>{const key=r.r+'|'+c+'|'+t;if(seenF.has(key))return;seenF.add(key);bump(det,k);if(s!=null)bump(sug,k);
-  flags.push({Row:r.r,Column:c,Value:r.d[c]??'',Issue:t,'Suggested correction':s??'',Status:s!=null?'Suggestion only - not applied':'Unresolved - needs manual review',Check:k})};
+  flags.push({Row:r.r,Column:c,Value:r.d[c]??'',Issue:t,'Suggested correction':s??'',Status:s!=null?'Suggestion only - not applied':'Unresolved - needs manual review',Check:lab(k)})};
  const vals=c=>R.map(r=>r.d[c]).filter(v=>!blank(v));
  const ratio=(c,f)=>{const v=vals(c);return v.length?v.filter(f).length/v.length:0};
  const numC=c=>!/phone|mobile|contact|whatsapp|pin|zip|gst|pan/i.test(c)&&ratio(c,v=>!isNaN(pn(v)))>=.8&&!vals(c).some(v=>typeof v==='string'&&/^0\d/.test(v));
@@ -85,7 +85,7 @@ function run(rows,heads,on,cfg){
  if(on[14]){R=R.filter(r=>{if(H.some(h=>!blank(r.d[h])))return true;removed.push({'Removed because':'Empty row','Original row':r.r});inc(14);return false});const k=H.filter(h=>R.some(r=>!blank(r.d[h])));inc(14,H.length-k.length);H=k}
  if(on[2])cell((r,h,v)=>{if(typeof v==='string'){const t=v.replace(/[\u00a0\u200b]/g,' ').replace(/\s+/g,' ').trim();if(t!==v){chg(2,r,h,v,t);r.d[h]=t}}});
  if(on[3])H.filter(txtC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'){const p=v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase()).replace(/[A-Za-z]+/g,w=>ACR.has(w.toUpperCase())?w.toUpperCase():w);if(p!==v){chg(3,r,h,v,p);r.d[h]=p}}}));
- if(on[5])H.filter(numC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const n=pn(v);if(!isNaN(n)){chg(5,r,h,v,n);r.d[h]=n}}}));
+ if(on[5])H.filter(numC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const n=pn(v);if(!isNaN(n)){chg(5,r,h,v,n);r.d[h]=n}else{nf5.add(r.r+'|'+h);fl(r,h,'Cannot convert to number (not changed)',5)}}}));
  if(on[6])H.filter(dateC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const d=pd(v);if(d){if(d!==v){chg(6,r,h,v,d);r.d[h]=d}}else fl(r,h,'Invalid or impossible date (not changed)',6)}));
  if(on[10]&&cfg.split&&H.includes(nm(cfg.split))){const c=nm(cfg.split),a=c+'_first',b=c+'_last';H.splice(H.indexOf(c)+1,0,a,b);
   R.forEach(r=>{const p=String(r.d[c]??'').trim().split(/\s+/);r.d[a]=p[0]||'';r.d[b]=p.slice(1).join(' ');inc(10)})}
@@ -105,7 +105,7 @@ function run(rows,heads,on,cfg){
   R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&(v>hi||v<lo))fl(r,h,v>hi?'Unusually high value':'Unusually low value',13)})});
  if(on[15])H.forEach(h=>{const q=/qty|quantity/i.test(h);
   if(/qty|quantity|amount|price|sales|rate|total|stock/i.test(h))R.forEach(r=>{const v=r.d[h];if(blank(v))return;const n=pn(v);
-   if(isNaN(n))fl(r,h,'Non-numeric value (not changed)',15);else if(n<0)fl(r,h,'Negative value (not changed)',15);else if(n===0&&q)fl(r,h,'Zero quantity',15);else if(n===0&&/cost/i.test(h))fl(r,h,'Zero cost price - please verify',15)});
+   if(isNaN(n)){if(!nf5.has(r.r+'|'+h))fl(r,h,'Non-numeric value (not changed)',15)}else if(n<0)fl(r,h,'Negative value (not changed)',15);else if(n===0&&q)fl(r,h,'Zero quantity',15);else if(n===0&&/cost/i.test(h))fl(r,h,'Zero cost price - please verify',15)});
   if(/cost/i.test(h)&&/price|rate|amount|^cost/i.test(h)){const sc=H.find(x=>x!==h&&/unit|selling|sale|mrp/i.test(x)&&/price|rate/i.test(x));
    if(sc)R.forEach(r=>{const c=pn(r.d[h]),u=pn(r.d[sc]);if(blank(r.d[h])||blank(r.d[sc])||isNaN(c)||isNaN(u))return;if(c>u)fl(r,h,`Cost price is higher than selling price (${u}) - possible loss, please verify`,15)})}
   if(/status/i.test(h)){const ok=cfg.statuses&&cfg.statuses.length?cfg.statuses:DEFST,al=ok.map(x=>x.toLowerCase());
