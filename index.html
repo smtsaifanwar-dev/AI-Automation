@@ -21,6 +21,7 @@ select,input[type=text]{padding:6px;border:1px solid var(--bd);border-radius:6px
 th,td{border-bottom:1px solid var(--bd);padding:4px 8px;white-space:nowrap;text-align:left}th{position:sticky;top:0;background:var(--card)}td.f{background:var(--wa)}
 .ow{border-bottom:1px solid var(--bd)}.ow:last-child{border:0}.or{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ow .opt{border:0;flex:1;min-width:230px}.dtb{white-space:nowrap;font-size:13px}.dp{margin:0 0 10px 34px}.dp td,.dp th{font-size:12px}.dp td{white-space:pre}.dh{font-weight:600;font-size:13px;margin:8px 0 4px}.msg{padding:10px;border-radius:8px;background:var(--er);margin-bottom:10px}.hid{display:none}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.stat div{border:1px solid var(--bd);border-radius:8px;padding:8px}.stat b{font-size:20px;display:block}
+.roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:8px}.roles label{display:flex;flex-direction:column;font-size:13px;gap:2px}.roles span{overflow-wrap:anywhere}summary{cursor:pointer}
 </style></head><body><main>
 <h1>Excel Cleaner</h1>
 <p class="s">Upload → tick what to clean → one click. Your file is processed inside your browser and never uploaded anywhere.</p>
@@ -31,32 +32,46 @@ th,td{border-bottom:1px solid var(--bd);padding:4px 8px;white-space:nowrap;text-
 <div id="work" class="hid">
 <div class="card"><div class="row"><b id="fn"></b><span id="info" class="s" style="margin:0"></span>
 <span class="row" style="margin-left:auto">Sheet: <select id="sh"></select></span></div></div>
+<div class="card"><details><summary><b>Column check</b> <small style="color:var(--mu)">(I guessed each column's type - change only if I got one wrong)</small></summary><div id="roles" class="roles"></div></details></div>
 <div class="card"><b>What should I do?</b> <small style="color:var(--mu)">(items found in your file are pre-ticked)</small><div id="opts"></div></div>
 <div class="card" id="cfg"><b>Settings for selected options</b>
 <p><small>Duplicate check columns (none ticked = all columns except ID)</small></p><div id="dupc" class="chips"></div>
+<p class="row"><span>Duplicate mode:</span><select id="dpm"><option value="auto">Auto-detect</option><option value="list">Customer list (same email/phone = possible duplicate)</option><option value="tx">Sales / transactions (exact duplicate rows only)</option></select></p>
 <p class="row"><span>Split column:</span><select id="spc"></select><small>into first / last name</small></p>
 <p><small>Merge columns (tick 2 or more)</small></p><div id="mgc" class="chips"></div>
 <p class="row">Separator <input type="text" id="mgs" value=", " size="4" aria-label="Separator"> New name <input type="text" id="mgn" value="merged" size="12" aria-label="New column name"></p>
-<p class="row">Allowed payment statuses <input type="text" id="sts" value="Paid, Pending, Refunded, Unpaid, Partially Paid, Overdue, Disputed, Cancelled, Draft" size="45" aria-label="Allowed payment statuses"></p></div>
+<p class="row">Allowed status values <small>(only checked in "status" columns that mostly use these)</small> <input type="text" id="sts" value="Paid, Pending, Refunded, Unpaid, Partially Paid, Overdue, Disputed, Cancelled, Draft" size="45" aria-label="Allowed payment statuses"></p></div>
 <button class="p" id="go">Clean &amp; Download</button>
 <div id="res" class="hid" style="margin-top:14px"></div></div>
-<p class="s">Dates are read as day/month/year (Indian style). Original file is never changed; removed rows are saved in a separate sheet. Flags are suggestions – please review.</p>
+<p class="s">Dates are read as day/month/year (Indian style) unless a column clearly uses month/day. Original file is never changed; removed rows are saved in a separate sheet. Flags are suggestions – please review.</p>
 </main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script>window.XLSX||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>')</script>
 <script>
 const $=s=>document.querySelector(s);
 const O=[[1,'Detect duplicates','Exact + possible duplicates (flagged, never deleted)'],[2,'Trim spaces','" Jaipur " → "Jaipur"'],[3,'Standardize text','jaipur, JAIPUR → Jaipur'],[4,'Find blank cells','Missing email or amount (flagged)'],[5,'Fix data types','"1500" → number 1500'],[6,'Standardize dates','Mixed date formats → yyyy-mm-dd'],[7,'Validate emails','Invalid email format flagged'],[8,'Validate phone numbers','Not a valid 10-digit Indian mobile flagged'],[9,'Clean column names','"Customer Name " → customer_name'],[10,'Split columns','Full name → first / last (choose column below)'],[11,'Merge columns','City + State (choose columns below)'],[12,'Find inconsistent categories','Delhi, delhi, DELHI → one spelling'],[13,'Detect outliers','Unusually high / low numbers flagged'],[14,'Remove empty rows/columns','Unused worksheet areas'],[15,'Find invalid values','Negative quantity/amount, unknown status flagged']];
 let WB,FN,ROWS,HEADS,SCAN={},SCANR=null;
-const blank=v=>v===''||v==null||(typeof v==='string'&&!v.trim());
-const pn=v=>{if(typeof v==='number')return v;const s=String(v).replace(/[₹$,\s]|^rs\.?/gi,'');return /^-?\d+(\.\d+)?$/.test(s)?+s:NaN};
+const PH=/^(n\/?a|nan|nil|null|none|missing|not available|tbd|#n\/a|-+|\?+|\.+)$/i;
+const blank=v=>v===''||v==null||(typeof v==='string'&&(!v.trim()||PH.test(v.trim())));
+const pn=v=>{if(typeof v==='number')return v;let s=String(v).trim(),g=1;if(/^\(.*\)$/.test(s)){g=-1;s=s.slice(1,-1)}s=s.replace(/^(rs\.?|inr)\s*/i,'').replace(/\/-$/,'').replace(/[₹$€£,\s]/g,'');return /^-?\d+(\.\d+)?$/.test(s)?g*+s:NaN};
 const pad=n=>String(n).padStart(2,'0');
 const iso=(y,m,d)=>{if(y<100)y+=2000;const t=new Date(y,m-1,d);return t.getFullYear()===y&&t.getMonth()===m-1&&t.getDate()===d?`${y}-${pad(m)}-${pad(d)}`:null};
-function pd(v){if(v instanceof Date){if(isNaN(v))return null;const t=new Date(v.getTime()+60000);return iso(t.getFullYear(),t.getMonth()+1,t.getDate())}
- if(typeof v!=='string')return null;const s=v.trim();let m;
- if(m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})(?:[ T].*)?$/))return iso(+m[1],+m[2],+m[3]);
- if(m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?:[ T].*)?$/)){let d=+m[1],mo=+m[2];if(mo>12&&d<=12)[d,mo]=[mo,d];return iso(+m[3],mo,d)}
- if(/[a-z]{3}/i.test(s)&&/\d/.test(s)){const t=new Date(s+' 12:00');if(!isNaN(t)&&t.getFullYear()>1900)return iso(t.getFullYear(),t.getMonth()+1,t.getDate())}return null}
-const ACR=new Set(['USB','LED','LCD','HDMI','SSD','HDD','RAM','CPU','GPU','UPS','PVC','GST','PAN','CCTV','WIFI','LAN','ATM','UPI','OTP','PDF','SMS','AC','TV','PC','UK','USA','UAE','HP','LG','IT']);
+const MON='janfebmaraprmayjunjulaugsepoctnovdec',mn=w=>{const i=MON.indexOf(w.slice(0,3).toLowerCase());return i>=0&&i%3===0?i/3+1:0};
+const fy=y=>y<100?(y<=new Date().getFullYear()%100+5?2000+y:1900+y):y;
+const hm=(h,m)=>h||m?' '+pad(h)+':'+pad(m):'';
+function pd(v,us){if(v instanceof Date){if(isNaN(v))return null;const t=new Date(v.getTime()+60000),d=iso(t.getFullYear(),t.getMonth()+1,t.getDate());return d&&d+hm(t.getHours(),t.getMinutes())}
+ if(typeof v!=='string')return null;let s=v.trim(),tm='',m,d=null;
+ if(m=s.match(/[ T](\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?\s*([ap]m)?z?$/i)){let h=+m[1];if(m[3]){const pm=m[3].toLowerCase()==='pm';if(pm&&h<12)h+=12;if(!pm&&h===12)h=0}tm=hm(h,+m[2]);s=s.slice(0,m.index).trim()}
+ if(m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/))d=iso(+m[1],+m[2],+m[3]);
+ else if(m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})$/)){let a=+m[1],b=+m[2];if(us)[a,b]=[b,a];else if(b>12&&a<=12)[a,b]=[b,a];d=iso(fy(+m[3]),b,a)}
+ else if((m=s.match(/^(\d{1,2})(?:st|nd|rd|th)?[\s\-\/.,]+([a-z]{3,9})\.?[\s\-\/.,]+(\d{2}|\d{4})$/i))&&mn(m[2]))d=iso(fy(+m[3]),mn(m[2]),+m[1]);
+ else if((m=s.match(/^([a-z]{3,9})\.?\s*(\d{1,2})(?:st|nd|rd|th)?[\s,\-\/.]+(\d{2}|\d{4})$/i))&&mn(m[1]))d=iso(fy(+m[3]),mn(m[1]),+m[2]);
+ return d?d+tm:null}
+const ACR=new Set(['USB','LED','LCD','HDMI','SSD','HDD','RAM','CPU','GPU','UPS','PVC','GST','PAN','CCTV','WIFI','LAN','ATM','UPI','OTP','PDF','SMS','AC','TV','PC','UK','USA','UAE','HP','LG','IT','SBI','HDFC','ICICI','PNB','BOB','LLP','OPC','NCR']);
+const STC=new Set(['UP','MP','AP','HP','TN','WB','DL','JK','MH','GJ','RJ','KA','HR','PB','NCR']);
+const tcase=v=>STC.has(v.toUpperCase())?v.toUpperCase():v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b(\d+)([a-z])\b/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b([odl])'([a-z])/gi,(m,a,b)=>a.toUpperCase()+"'"+b.toUpperCase()).replace(/\bMc([a-z])/g,(m,a)=>'Mc'+a.toUpperCase()).replace(/[A-Za-z]+/g,w=>ACR.has(w.toUpperCase())?w.toUpperCase():w);
+const nk=x=>x.toLowerCase().replace(/(\w)-(\w)/g,'$1 $2').replace(/[.,]/g,'').replace(/\s+/g,' ').trim();
+
 const RS={2:'Extra spaces removed',3:'Text case standardized',5:'Text converted to number',6:'Date converted to yyyy-mm-dd',9:'Column name cleaned',12:'Spelling/case unified to most common variant'};
 const vis=v=>v===''||v==null?'(blank)':typeof v==='string'?'"'+v+'"':String(v);
 const DEFST=['Paid','Pending','Refunded','Unpaid','Partially Paid','Overdue','Disputed','Cancelled','Draft'];
@@ -76,54 +91,66 @@ function run(rows,heads,on,cfg){
   flags.push({Row:r.r,Column:c,Value:r.d[c]??'',Issue:t,'Suggested correction':s??'',Status:s!=null?'Suggestion only - not applied':'Unresolved - needs manual review',Check:lab(k)})};
  const vals=c=>R.map(r=>r.d[c]).filter(v=>!blank(v));
  const ratio=(c,f)=>{const v=vals(c);return v.length?v.filter(f).length/v.length:0};
- const numC=c=>!/phone|mobile|contact|whatsapp|pin|zip|gst|pan/i.test(c)&&ratio(c,v=>!isNaN(pn(v)))>=.8&&!vals(c).some(v=>typeof v==='string'&&/^0\d/.test(v));
- const dateC=c=>ratio(c,v=>pd(v)!==null)>=.8&&!numC(c);
- const emC=c=>/e-?mail/i.test(c),phC=c=>/phone|mobile|contact|whatsapp|mob\b/i.test(c);
- const txtC=c=>!emC(c)&&!phC(c)&&!/gst|pan|(^|_)id$|code|sku|ifsc|url|link|website/i.test(c)&&!numC(c)&&!dateC(c)&&ratio(c,v=>typeof v==='string'&&/[a-z\u0900-\u097f]/i.test(v))>=.6;
+ const tk=c=>String(c).toLowerCase().split(/[^a-z0-9\u0900-\u097f]+/).filter(Boolean),hw=(c,re)=>tk(c).some(t=>re.test(t));
+ const RM={text:'text',email:'email',phone:'phone',date:'date',amount:'num',id:'id',ignore:'ignore'},RL={},TY={},DC=new Set();
+ const detect=c=>{if(RL[c])return RM[RL[c]]||'text';const t=tk(c),last=t[t.length-1]||'',dgt=v=>String(v).replace(/\D/g,'').length,at=v=>String(v).includes('@');
+  if(hw(c,/^(email|emails|mail|emailid)$/)&&!hw(c,/^(verified|status|sent|count|date|subject)$/)&&ratio(c,at)>=.3||ratio(c,at)>=.6)return'email';
+  if(hw(c,/^(phone|mobile|mob|contact|whatsapp|cell|tel|telephone|ph)$/)&&!hw(c,/^(person|name|date|by|mode|address|time)$/)&&ratio(c,v=>dgt(v)>=7)>=.5||ratio(c,v=>/^(\+?91|0)?[\s-]?[6-9]\d{4}[\s-]?\d{5}$/.test(String(v).trim()))>=.6)return'phone';
+  if(hw(c,/^(url|link|website|web)$/))return'other';
+  if(/^(id|ids|no|nos|number|num|code|sku|ref|reference|uid)$/.test(last)||hw(c,/^(gst|gstin|pan|ifsc|pin|pincode|zip|aadhaar|aadhar|barcode|hsn|sno|sr)$/))return'id';
+  if(ratio(c,v=>pd(v)!==null)>=.8&&ratio(c,v=>!isNaN(pn(v)))<.8)return'date';
+  if(ratio(c,v=>/^\d{12,}$/.test(String(v).trim()))>=.5||vals(c).some(v=>/^0\d+$/.test(String(v).trim())))return'id';
+  if(ratio(c,v=>!isNaN(pn(v)))>=.8)return'num';
+  return ratio(c,v=>typeof v==='string'&&/[a-z\u0900-\u097f]/i.test(v))>=.6?'text':'other'};
+ const ty=c=>TY[c]||(TY[c]=detect(c)),numC=c=>ty(c)==='num',dateC=c=>ty(c)==='date',emC=c=>ty(c)==='email',phC=c=>ty(c)==='phone',txtC=c=>ty(c)==='text';
+ const colUS=c=>{let a=0,b=0;vals(c).forEach(v=>{const m=typeof v==='string'&&v.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.]\d{2,4}/);if(m){if(+m[1]>12)a=1;if(+m[2]>12)b=1}});return b&&!a};
+ const uq=h=>{const v=vals(h);return v.length>0&&new Set(v.map(String)).size>=v.length*.95};
  const cell=f=>R.forEach(r=>H.forEach(h=>f(r,h,r.d[h])));
- if(on[9]){const seen={},nh=H.map(h=>{let b=String(h).trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'')||'column',n=b,i=2;while(seen[n])n=b+'_'+i++;seen[n]=1;if(n!==h)chg(9,null,h,h,n);map[h]=n;return n});
+ if(on[9]){const seen={},nh=H.map(h=>{let b=String(h).trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097f]+/g,'_').replace(/^_+|_+$/g,'')||'column',n=b,i=2;while(seen[n])n=b+'_'+i++;seen[n]=1;if(n!==h)chg(9,null,h,h,n);map[h]=n;return n});
   R.forEach(r=>{const d={};H.forEach((h,i)=>d[nh[i]]=r.d[h]);r.d=d});H=nh}
- const nm=c=>map[c]||c;
+ const nm=c=>map[c]||c;Object.keys(cfg.roles||{}).forEach(k=>RL[nm(k)]=cfg.roles[k]);H.forEach(h=>ty(h));
  if(on[14]){R=R.filter(r=>{if(H.some(h=>!blank(r.d[h])))return true;removed.push({'Removed because':'Empty row','Original row':r.r});inc(14);return false});const k=H.filter(h=>R.some(r=>!blank(r.d[h])));inc(14,H.length-k.length);H=k}
  if(on[2])cell((r,h,v)=>{if(typeof v==='string'){const t=v.replace(/[\u00a0\u200b]/g,' ').replace(/\s+/g,' ').trim();if(t!==v){const w=[];if(/^\s/.test(v))w.push('leading space');if(/\s$/.test(v))w.push('trailing space');if(/\s{2,}/.test(v.trim()))w.push('double space');if(/[\u00a0\u200b]/.test(v))w.push('hidden character');chg(2,r,h,v,t,t===''?'Cell had only spaces - becomes blank':'Removed: '+w.join(' + '));r.d[h]=t}}});
- if(on[3])H.filter(txtC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'){const p=v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase()).replace(/[A-Za-z]+/g,w=>ACR.has(w.toUpperCase())?w.toUpperCase():w);if(p!==v){chg(3,r,h,v,p);r.d[h]=p}}}));
+ if(on[3])H.filter(txtC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&(v===v.toLowerCase()||v===v.toUpperCase())){const p=tcase(v);if(p!==v){chg(3,r,h,v,p);r.d[h]=p}}}));
  if(on[5])H.filter(numC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const n=pn(v);if(!isNaN(n)){chg(5,r,h,v,n);r.d[h]=n}else{nf5.add(r.r+'|'+h);fl(r,h,'Cannot convert to number (not changed)',5)}}}));
- if(on[6])H.filter(dateC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const d=pd(v);if(d){if(d!==v){chg(6,r,h,v,d);r.d[h]=d}}else fl(r,h,'Invalid or impossible date (not changed)',6)}));
+ if(on[5])H.filter(h=>ty(h)==='id').forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&String(Math.abs(v)).length>=12){chg(5,r,h,v,String(v),'Long ID kept as text (Excel would show 1.23E+11)');r.d[h]=String(v)}}));
+ if(on[6])H.filter(dateC).forEach(h=>{const us=colUS(h);DC.add(h);R.forEach(r=>{const v=r.d[h];if(blank(v))return;const d=pd(v,us);if(d){if(v instanceof Date)r.d[h]=d;else if(d!==v){chg(6,r,h,v,d);r.d[h]=d}}else fl(r,h,'Invalid, impossible or incomplete date (not changed)',6)})});
  if(on[10]&&cfg.split&&H.includes(nm(cfg.split))){const c=nm(cfg.split),a=c+'_first',b=c+'_last';H.splice(H.indexOf(c)+1,0,a,b);
   R.forEach(r=>{const p=String(r.d[c]??'').trim().split(/\s+/);r.d[a]=p[0]||'';r.d[b]=p.slice(1).join(' ');inc(10)})}
  if(on[11]&&cfg.merge&&cfg.merge.length>1){const cs=cfg.merge.map(nm).filter(c=>H.includes(c)),n=cfg.mname||'merged';
   if(cs.length>1){H.push(n);R.forEach(r=>{r.d[n]=cs.map(c=>r.d[c]).filter(v=>!blank(v)).join(cfg.sep??', ');inc(11)})}}
- if(on[12])H.filter(h=>!emC(h)&&!phC(h)&&!numC(h)&&!dateC(h)).forEach(h=>{const v=vals(h).filter(x=>typeof x==='string');if(!v.length||v.length<vals(h).length*.9)return;
-  const g={};v.forEach(x=>{const k=x.toLowerCase().replace(/[^a-z0-9\u0900-\u097f]/g,'');(g[k]=g[k]||{})[x]=(g[k][x]||0)+1});
+ if(on[12])H.filter(h=>ty(h)==='text').forEach(h=>{const v=vals(h).filter(x=>typeof x==='string');if(!v.length||v.length<vals(h).length*.9)return;
+  const g={};v.forEach(x=>{const k=nk(x);(g[k]=g[k]||{})[x]=(g[k][x]||0)+1});
   const ks=Object.keys(g);if(ks.length>60||v.reduce((a,x)=>a+x.length,0)/v.length>30)return;
   const best={};ks.forEach(k=>{const e=Object.entries(g[k]);if(e.length>1)best[k]=e.sort((a,b)=>b[1]-a[1])[0][0]});
-  R.forEach(r=>{const x=r.d[h];if(typeof x==='string'){const k=x.toLowerCase().replace(/[^a-z0-9\u0900-\u097f]/g,'');if(best[k]&&best[k]!==x){chg(12,r,h,x,best[k]);r.d[h]=best[k]}}})});
- if(on[4])R.forEach(r=>H.forEach(h=>{if(blank(r.d[h]))fl(r,h,'Blank cell',4)}));
+  R.forEach(r=>{const x=r.d[h];if(typeof x==='string'){const k=nk(x);if(best[k]&&best[k]!==x){chg(12,r,h,x,best[k]);r.d[h]=best[k]}}})});
+ if(on[4])R.forEach(r=>H.forEach(h=>{const v=r.d[h];if(blank(v)&&ty(h)!=='ignore')fl(r,h,typeof v==='string'&&v.trim()?'Placeholder instead of a real value':'Blank cell',4)}));
  if(on[7])H.filter(emC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(!blank(v)&&!EM.test(String(v).trim()))fl(r,h,'Invalid email',7)}));
  if(on[8])H.filter(phC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const raw=String(v),nz=raw.replace(/[\s\-().]/g,'');let d=nz.replace(/^\+/,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');
   if(!/^[6-9]\d{9}$/.test(d))fl(r,h,'Invalid phone (need 10-digit Indian mobile)',8);else if(nz!==raw)fl(r,h,'Phone contains spaces/hyphens',8,nz)}));
- if(on[13])H.filter(h=>!/(^|_)(id|code|pin|phone|mobile|invoice|sr|sno)/i.test(h)).forEach(h=>{const n=R.map(r=>r.d[h]).filter(v=>typeof v==='number');if(n.length<8||n.length<vals(h).length*.8)return;
+ if(on[13])H.filter(h=>ty(h)==='num').forEach(h=>{const n=R.map(r=>r.d[h]).filter(v=>typeof v==='number');if(n.length<8||n.length<vals(h).length*.8)return;
   const s=[...n].sort((a,b)=>a-b),q=p=>s[Math.floor((s.length-1)*p)],i=q(.75)-q(.25),lo=q(.25)-3*i,hi=q(.75)+3*i;if(!i)return;
   R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&(v>hi||v<lo))fl(r,h,v>hi?'Unusually high value':'Unusually low value',13)})});
  if(on[15])H.forEach(h=>{const q=/qty|quantity/i.test(h);
-  if(/qty|quantity|amount|price|sales|rate|total|stock/i.test(h))R.forEach(r=>{const v=r.d[h];if(blank(v))return;const n=pn(v);
+  if(ty(h)==='num'&&hw(h,/^(qty|quantity|amount|amt|price|sales|rate|total|stock|cost|mrp|value|revenue)$/))R.forEach(r=>{const v=r.d[h];if(blank(v))return;const n=pn(v);
    if(isNaN(n)){if(!nf5.has(r.r+'|'+h))fl(r,h,'Non-numeric value (not changed)',15)}else if(n<0)fl(r,h,'Negative value (not changed)',15);else if(n===0&&q)fl(r,h,'Zero quantity',15);else if(n===0&&/cost/i.test(h))fl(r,h,'Zero cost price - please verify',15)});
   if(/cost/i.test(h)&&/price|rate|amount|^cost/i.test(h)){const sc=H.find(x=>x!==h&&/unit|selling|sale|mrp/i.test(x)&&/price|rate/i.test(x));
    if(sc)R.forEach(r=>{const c=pn(r.d[h]),u=pn(r.d[sc]);if(blank(r.d[h])||blank(r.d[sc])||isNaN(c)||isNaN(u))return;if(c>u)fl(r,h,`Cost price is higher than selling price (${u}) - possible loss, please verify`,15)})}
-  if(/status/i.test(h)){const ok=cfg.statuses&&cfg.statuses.length?cfg.statuses:DEFST,al=ok.map(x=>x.toLowerCase());
+  if(/status/i.test(h)){const ok=cfg.statuses&&cfg.statuses.length?cfg.statuses:DEFST,al=ok.map(x=>x.toLowerCase());if(ratio(h,v=>al.includes(String(v).trim().toLowerCase()))<.4)return;
    R.forEach(r=>{const v=r.d[h];if(blank(v))return;const k=String(v).trim().toLowerCase();if(al.includes(k))return;let b=99,c=[];
     ok.forEach(x=>{const e=osa(k,x.toLowerCase());if(e<b){b=e;c=[x]}else if(e===b)c.push(x)});
     fl(r,h,'Status not in allowed list',15,c.length===1&&b<=(k.length>5?2:1)?c[0]:undefined)})}});
- if(on[1]){const sel=cfg.dup&&cfg.dup.length,ks=sel?cfg.dup.map(nm).filter(c=>H.includes(c)):H.filter(h=>!/(^|[_ ])id$|^(sr|sno)/i.test(h.trim()));
+ if(on[1]){const sel=cfg.dup&&cfg.dup.length,ks=sel?cfg.dup.map(nm).filter(c=>H.includes(c)):H.filter(h=>!/(^|[_ ])id$|^(sr|sno)/i.test(h.trim())&&ty(h)!=='ignore'&&!(ty(h)==='id'&&uq(h)));
   const em=H.find(emC),ph=H.find(phC),nz=v=>String(v??'').trim().toLowerCase(),dg=v=>{let d=String(v??'').replace(/\D/g,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');return d.length>=10?d:''};
+  const cnt=new Map(),kk=r=>[em?nz(r.d[em]):'',ph?dg(r.d[ph]):''];R.forEach(r=>kk(r).forEach(x=>x&&cnt.set(x,(cnt.get(x)||0)+1)));const tx=cfg.dmode==='tx'||(cfg.dmode!=='list'&&R.filter(r=>kk(r).some(x=>x&&cnt.get(x)>1)).length>R.length*.25);
   const ex=new Map(),ema=new Map(),pha=new Map(),W='(whole row)';
   R.forEach(r=>{if(!ks.some(c=>!blank(r.d[c])))return;const k=JSON.stringify(ks.map(c=>nz(r.d[c]))),e=em?nz(r.d[em]):'',p=ph?dg(r.d[ph]):'';
    if(ex.has(k))fl(r,W,`Exact duplicate of row ${ex.get(k)} (${sel?'selected columns':'all columns except ID'})`,1);
-   else if(e&&ema.has(e))fl(r,W,`Possible duplicate: same email as row ${ema.get(e)}`,1);
-   else if(p&&pha.has(p))fl(r,W,`Possible duplicate: same phone as row ${pha.get(p)} - check if same customer`,1);
+   else if(!tx&&e&&ema.has(e))fl(r,W,`Possible duplicate: same email as row ${ema.get(e)}`,1);
+   else if(!tx&&p&&pha.has(p))fl(r,W,`Possible duplicate: same phone as row ${pha.get(p)} - check if same customer`,1);
    if(!ex.has(k))ex.set(k,r.r);if(e&&!ema.has(e))ema.set(e,r.r);if(p&&!pha.has(p))pha.set(p,r.r)})}
  const st={};[det,app].forEach(o=>Object.keys(o).forEach(k=>bump(st,k,o[k])));
- return{R,H,st,det,sug,app,flags,removed,changes}}
+ return{R,H,st,det,sug,app,flags,removed,changes,ty:TY,map,dc:[...DC]}}
 function err(m){const e=$('#err');e.textContent=m;e.classList.toggle('hid',!m)}
 function load(f){err('');if(!f)return;if(f.size>25e6)return err('File is larger than 25 MB. Please split it and try again.');
  if(!/\.(xlsx|xls|csv)$/i.test(f.name))return err('Unsupported file. Please upload .xlsx, .xls or .csv.');
@@ -142,25 +169,30 @@ function dtl(k){if(!SCANR)return{n:0,h:''};const L=O.find(o=>o[0]==k)||[k,''],lb
  const srt=a=>a.sort((x,y)=>(+x[0]||0)-(+y[0]||0));
  const tb=(t,a)=>a.length?`<p class="dh">${t} (${a.length})</p><div class="tw" style="max-height:240px"><table><thead><tr><th>Row</th><th>${esc(HEADS[0])}</th><th>Column</th><th>Value</th><th>What's wrong / why</th></tr></thead><tbody>${srt(a).slice(0,300).map(x=>`<tr><td>${esc(x[0])}</td><td>${esc(id(x[0]))}</td><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${esc(x[3])}</td></tr>`).join('')}</tbody></table></div>${a.length>300?`<small>+${a.length-300} more – all are in the downloaded file.</small>`:''}`:'';
  return{n:F.length+C.length,h:tb('⚑ Flagged for review – NOT changed',F)+tb('✎ Will be changed',C)}}
+function getRoles(){const r={};document.querySelectorAll('[data-rh]').forEach(x=>{if(x.value)r[x.dataset.rh]=x.value});return r}
+function scanUI(){const prev={};document.querySelectorAll('[data-o]').forEach(c=>prev[c.dataset.o]=c.checked);const all={};O.forEach(o=>all[o[0]]=1);SCANR=run(ROWS,HEADS,all,{roles:getRoles()});SCAN=SCANR.st;
+ $('#opts').innerHTML=O.map(o=>{const n=SCAN[o[0]]||0,ck=prev[o[0]]!==undefined?prev[o[0]]:n>0&&o[0]!==10&&o[0]!==11,d=dtl(o[0]);return`<div class="ow"><div class="or"><label class="opt"><input type="checkbox" data-o="${o[0]}" ${ck?'checked':''}><span><b>${o[0]}. ${o[1]}</b><small>${o[2]}</small></span>${[10,11].includes(o[0])?'':`<span class="bg">${n} found</span>`}</label>${d.n?`<button type="button" class="g dtb" data-k="${o[0]}" aria-expanded="false" aria-controls="dp${o[0]}">Details (${d.n}) ▾</button>`:''}</div>${d.n?`<div class="dp hid" id="dp${o[0]}">${d.h}</div>`:''}</div>`}).join('');}
+const TL={email:'Email',phone:'Phone',date:'Date',num:'Number',id:'ID / code',text:'Text',other:'Other'},RV=[['text','Text / name'],['email','Email'],['phone','Phone'],['date','Date'],['amount','Number / amount'],['id','ID / code (keep as is)'],['ignore','Ignore (skip)']];
+function mkRoles(){const mp=SCANR.map||{};$('#roles').innerHTML=HEADS.map(h=>`<label><span>${esc(h)}</span><select data-rh="${esc(h)}"><option value="">Auto: ${TL[SCANR.ty[mp[h]||h]]||'Empty'}</option>${RV.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('')}</select></label>`).join('')}
 function sheet(){const a=XLSX.utils.sheet_to_json(WB.Sheets[$('#sh').value],{header:1,defval:'',raw:true});
  if(a.length<2){ROWS=[];HEADS=[];$('#info').textContent='Sheet has no data rows.';$('#opts').innerHTML='';return}
  const seen={};HEADS=a[0].map((h,i)=>{let b=String(h).trim()||'Column '+(i+1),n=b,k=2;while(seen[n])n=b+'_'+k++;seen[n]=1;return n});
  ROWS=a.slice(1).map(r=>{const d={};HEADS.forEach((h,i)=>d[h]=r[i]??'');return d});
  $('#info').textContent=`${ROWS.length} rows · ${HEADS.length} columns`;
- const all={};O.forEach(o=>all[o[0]]=1);SCANR=run(ROWS,HEADS,all,{});SCAN=SCANR.st;
- $('#opts').innerHTML=O.map(o=>{const n=SCAN[o[0]]||0,ck=n>0&&o[0]!==10&&o[0]!==11,d=dtl(o[0]);return`<div class="ow"><div class="or"><label class="opt"><input type="checkbox" data-o="${o[0]}" ${ck?'checked':''}><span><b>${o[0]}. ${o[1]}</b><small>${o[2]}</small></span>${[10,11].includes(o[0])?'':`<span class="bg">${n} found</span>`}</label>${d.n?`<button type="button" class="g dtb" data-k="${o[0]}" aria-expanded="false" aria-controls="dp${o[0]}">Details (${d.n}) ▾</button>`:''}</div>${d.n?`<div class="dp hid" id="dp${o[0]}">${d.h}</div>`:''}</div>`}).join('');
+ $('#res').classList.add('hid');$('#opts').innerHTML='';$('#roles').innerHTML='';scanUI();mkRoles();
  const ch=n=>HEADS.map(h=>`<label><input type="checkbox" name="${n}" value="${esc(h)}"> ${esc(h)}</label>`).join('');
  $('#dupc').innerHTML=ch('dup');$('#mgc').innerHTML=ch('mg');$('#spc').innerHTML='<option value="">— none —</option>'+HEADS.map(h=>`<option>${esc(h)}</option>`).join('')}
 function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forEach(c=>{if(c.checked)on[c.dataset.o]=1});
  if(!Object.keys(on).length)return err('Please tick at least one option.');
  const g=n=>[...document.querySelectorAll(`[name=${n}]:checked`)].map(c=>c.value);
- const cfg={dup:g('dup'),split:$('#spc').value,merge:g('mg'),sep:$('#mgs').value,mname:$('#mgn').value.trim(),statuses:$('#sts').value.split(',').map(x=>x.trim()).filter(Boolean)};
+ const cfg={roles:getRoles(),dmode:$('#dpm').value,dup:g('dup'),split:$('#spc').value,merge:g('mg'),sep:$('#mgs').value,mname:$('#mgn').value.trim(),statuses:$('#sts').value.split(',').map(x=>x.trim()).filter(Boolean)};
  if(on[10]&&!cfg.split)return err('Option 10 needs a column: choose "Split column" in settings.');
  if(on[11]&&cfg.merge.length<2)return err('Option 11 needs at least 2 columns ticked under "Merge columns".');
  const o=run(ROWS,HEADS,on,cfg),clean=o.R.map(r=>{const d={};o.H.forEach(h=>d[h]=r.d[h]);return d});
  o.flags.sort((x,y)=>x.Row-y.Row);
  const w=XLSX.utils.book_new(),add=(n,d,h)=>XLSX.utils.book_append_sheet(w,XLSX.utils.json_to_sheet(d,h?{header:h}:{}),n);
- add('Cleaned',clean,o.H);add('Removed Rows',o.removed.length?o.removed:[{Info:'No rows removed'}]);add('Flags',o.flags.length?o.flags:[{Info:'No issues flagged'}]);
+ add('Cleaned',clean,o.H);{const ws=w.Sheets['Cleaned'];if(ws&&ws['!ref']){const rg=XLSX.utils.decode_range(ws['!ref']);ws['!cols']=o.H.map(h=>({wch:Math.min(40,Math.max(String(h).length,...clean.slice(0,300).map(r=>String(r[h]??'').length))+2)}));
+ o.dc.forEach(h=>{const c=o.H.indexOf(h);if(c<0)return;for(let r=1;r<=rg.e.r;r++){const x=ws[XLSX.utils.encode_cell({r,c})],m=x&&x.t==='s'&&x.v.match(/^(\d{4})-(\d\d)-(\d\d)(?: (\d\d):(\d\d))?$/);if(m){x.t='n';x.v=(Date.UTC(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0))-Date.UTC(1899,11,30))/864e5;x.z=m[4]?'yyyy-mm-dd hh:mm':'yyyy-mm-dd';delete x.w}}})}}add('Removed Rows',o.removed.length?o.removed:[{Info:'No rows removed'}]);add('Flags',o.flags.length?o.flags:[{Info:'No issues flagged'}]);
  add('Applied Changes',o.changes.length?o.changes:[{Info:'No cell changes applied'}]);XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(mkSummary(o,on,ROWS.length,clean.length)),'Summary');
  XLSX.writeFile(w,FN.replace(/\.\w+$/,'')+'_cleaned.xlsx',{cellDates:false});
  const fm=new Set(o.flags.map(f=>f.Row+'|'+f.Column)),rr=o.R.slice(0,100);
@@ -170,6 +202,6 @@ function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forE
  $('#res').classList.remove('hid');$('#res').scrollIntoView({behavior:'smooth'})}
  catch(x){err('Processing failed, so no file was created. Your original file is untouched. ('+x.message+')')}}
 const dz=$('#drop'),fi=$('#fi');dz.onclick=()=>fi.click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
-fi.onchange=()=>load(fi.files[0]);dz.ondragover=e=>{e.preventDefault();dz.classList.add('on')};dz.ondragleave=()=>dz.classList.remove('on');
-dz.ondrop=e=>{e.preventDefault();dz.classList.remove('on');load(e.dataTransfer.files[0])};$('#opts').addEventListener('click',e=>{const b=e.target.closest('.dtb');if(!b)return;const open=$('#dp'+b.dataset.k).classList.toggle('hid')===false;b.setAttribute('aria-expanded',open);b.textContent=b.textContent.replace(/[▾▴]/,open?'▴':'▾')});$('#sh').onchange=sheet;$('#go').onclick=go;
+fi.onchange=()=>{load(fi.files[0]);fi.value=''};dz.ondragover=e=>{e.preventDefault();dz.classList.add('on')};dz.ondragleave=()=>dz.classList.remove('on');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('on');load(e.dataTransfer.files[0])};$('#opts').addEventListener('click',e=>{const b=e.target.closest('.dtb');if(!b)return;const open=$('#dp'+b.dataset.k).classList.toggle('hid')===false;b.setAttribute('aria-expanded',open);b.textContent=b.textContent.replace(/[▾▴]/,open?'▴':'▾')});$('#sh').onchange=sheet;$('#roles').addEventListener('change',()=>scanUI());$('#go').onclick=()=>{const b=$('#go');b.disabled=true;b.textContent='Cleaning...';setTimeout(()=>{try{go()}finally{b.disabled=false;b.innerHTML='Clean &amp; Download'}},40)};
 </script></body></html>
