@@ -88,6 +88,7 @@ tr.fl td{animation:fl2 1.6s}@keyframes fl2{from{outline:3px solid var(--pr);outl
 </div><div id="st"></div><div id="res" class="hid" style="margin-top:14px"></div></div>
 <p class="s">Dates are read as day/month/year (Indian style) unless a column clearly uses month/day. Original file is never changed; removed rows are saved in a separate sheet. Flags are suggestions – please review.</p><div class="foot">© CleanSheet · Your data never leaves this device</div>
 </main>
+<div id="ed" role="dialog" aria-label="Edit cell"></div><div id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>window.XLSX||document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
 <script>
@@ -368,4 +369,4 @@ $('#ed').addEventListener('click',e=>{const b=e.target.closest('[data-e]');if(!b
  closeEd();if(a!=='x')st()});
 $('#ed').addEventListener('keydown',e=>{if(e.key==='Enter')$('#ed [data-e="ok"]').click();if(e.key==='Escape')closeEd()});
 document.addEventListener('mousedown',e=>{if(EDK&&!e.target.closest('#ed')&&!e.target.closest('td[data-r]'))closeEd()});
-</script><div id="ed" role="dialog" aria-label="Edit cell"></div><div id="toast" role="status" aria-live="polite"></div></body></html>
+</script></body></html>
