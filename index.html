@@ -45,6 +45,21 @@ button.p{background:linear-gradient(135deg,var(--pr),#12b886);border-radius:14px
 .or{display:grid!important;grid-template-columns:1fr 112px;gap:8px;align-items:center}.ow .opt{min-width:0}.dtb{width:100%}.bg{min-width:78px;text-align:center}
 .chips label{display:inline-flex;gap:6px;align-items:center;border-radius:99px;padding:5px 12px;cursor:pointer;transition:.2s}.chips label:has(input:checked){background:color-mix(in srgb,var(--pr) 14%,transparent);border-color:var(--pr)}.chips input{accent-color:var(--pr)}
 #cfg select,#cfg input[type=text]{font:inherit;padding:8px 10px;border-radius:10px}#sts{width:100%;flex:1 1 100%}
+.bar2{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px;margin-bottom:12px;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(8px);border:1px solid var(--bd);border-radius:14px;box-shadow:var(--sh)}
+.bar2 .t{flex:1 1 230px;font-size:13px;color:var(--mu)}.bar2 .t b{color:var(--tx);font-size:16px}
+.b2{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}.b2.pr{background:linear-gradient(135deg,var(--pr),#12b886);color:#fff;border:0}.b2.wn{background:var(--wa)}.b2:disabled{opacity:.45;cursor:not-allowed}
+.lay{display:grid;grid-template-columns:minmax(280px,330px) 1fr;gap:12px;align-items:start}@media(max-width:820px){.lay{grid-template-columns:1fr}}.lay .card{margin:0 0 12px;padding:14px}
+.as,.pd{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--bd);border-radius:10px;margin:5px 0;cursor:pointer;background:var(--card)}.as.on{border-color:var(--pr);background:color-mix(in srgb,var(--pr) 8%,var(--card))}
+.as>div,.pd>div{flex:1;min-width:0}.as small,.pd small{display:block;color:var(--mu);font-size:12px}
+.as .x{border:0;background:none;color:var(--mu);font-size:16px;cursor:pointer;border-radius:6px;padding:2px 7px}.as .x:hover{background:var(--er);color:#c92a2a}
+.pd.sel{border-color:var(--pr);box-shadow:0 0 0 3px color-mix(in srgb,var(--pr) 16%,transparent)}.pd .b2{padding:4px 10px}.dim{opacity:.5;pointer-events:none}
+.gt{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mu);margin:12px 0 2px}
+td .o{text-decoration:line-through;color:var(--mu);margin-right:6px}td.ch2,td.pc{background:color-mix(in srgb,#12b886 28%,transparent)}td.pf{background:var(--wa);outline:2px dashed #e0a800;outline-offset:-2px}td.pc{outline:2px dashed #12b886;outline-offset:-2px}
+.wb{font-size:11px;background:var(--wa);border-radius:99px;padding:0 6px;margin-left:4px}
+.pb{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;border-radius:10px;background:color-mix(in srgb,var(--pr) 10%,transparent);margin:8px 0;font-size:13px}.pb span{flex:1}.pb .b2{padding:5px 12px}
+.is{display:flex;gap:8px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--bd);font-size:13px}.is>span{flex:1;min-width:0;overflow-wrap:anywhere}.is small{color:var(--mu)}.is .b2{padding:4px 10px}
+tr.fl td{animation:fl2 1.6s}@keyframes fl2{from{outline:3px solid var(--pr);outline-offset:-3px}}
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;pointer-events:none;background:#0f1b33;color:#fff;padding:10px 16px;border-radius:12px;transition:.25s;z-index:50;font-size:14px}#toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}#toast button{margin-left:10px;border:0;background:none;color:#7fb0ff;font-weight:700;cursor:pointer}
 </style></head><body><main>
 <header class="nav"><div class="brand"><svg viewBox="0 0 32 32"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a5cff"/><stop offset="1" stop-color="#12b886"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><path d="M9 16.5l5 5 9-11" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>CleanSheet</div><span class="pill">🔒 100% private · runs in your browser</span></header>
 <section class="hero"><h1>Clean any Excel file in <span>one click</span></h1>
@@ -56,10 +71,10 @@ button.p{background:linear-gradient(135deg,var(--pr),#12b886);border-radius:14px
 <input id="fi" type="file" accept=".xlsx,.xls,.csv" class="hid"></div>
 <div id="work" class="hid">
 <div class="card"><div class="row"><b id="fn"></b><span id="info" class="s" style="margin:0"></span>
-<span class="row" style="margin-left:auto">Sheet: <select id="sh"></select></span></div></div>
-<div class="seg" id="modes" role="tablist"><button type="button" class="on" data-m="q">⚡ Quick clean<small>one click, review if you like</small></button><button type="button" data-m="s">🧭 Step by step<small>execute, preview, undo, repeat</small></button></div>
+<span class="row" style="margin-left:auto"><button type="button" class="g" data-a="chfile">📁 Change file</button> Sheet: <select id="sh"></select></span></div></div>
+<div class="seg hid" id="modes" role="tablist"><button type="button" class="on" data-m="q">⚡ Quick clean<small>one click, review if you like</small></button><button type="button" data-m="s">🧭 Step by step<small>execute, preview, undo, repeat</small></button></div>
 <div class="card"><details><summary><b>Column check</b> <small style="color:var(--mu)">(I guessed each column's type - change only if I got one wrong)</small></summary><div id="roles" class="roles"></div></details></div>
-<div id="qm"><div id="sum" class="card"></div><div id="rv"></div>
+<div id="qm" class="hid"><div id="sum" class="card"></div><div id="rv"></div>
 <div class="bar hid" id="bar"><i></i></div><button class="p" id="go">✨ Clean my file &amp; Download</button>
 <details class="adv"><summary>⚙️ Advanced options <small>(optional – the best settings are already selected)</small></summary><div class="card"><b>Choose what to clean</b> <small style="color:var(--mu)">(items found in your file are pre-ticked)</small><div class="row" style="margin:8px 0"><button type="button" class="g" id="sa">Select all</button><button type="button" class="g" id="sn">Select none</button></div><div id="opts"></div></div>
 <div class="card" id="cfg"><b>Settings for selected options</b>
@@ -70,11 +85,10 @@ button.p{background:linear-gradient(135deg,var(--pr),#12b886);border-radius:14px
 <p class="row">Separator <input type="text" id="mgs" value=", " size="4" aria-label="Separator"> New name <input type="text" id="mgn" value="merged" size="12" aria-label="New column name"></p>
 </div><div data-for="15"><p class="row">Allowed status values <small>(only checked in "status" columns that mostly use these)</small> <input type="text" id="sts" value="Paid, Pending, Refunded, Unpaid, Partially Paid, Overdue, Disputed, Cancelled, Draft" size="45" aria-label="Allowed payment statuses"></p></div></div>
 </details>
-</div><div id="st" class="hid"></div><div id="res" class="hid" style="margin-top:14px"></div></div>
+</div><div id="st"></div><div id="res" class="hid" style="margin-top:14px"></div></div>
 <p class="s">Dates are read as day/month/year (Indian style) unless a column clearly uses month/day. Original file is never changed; removed rows are saved in a separate sheet. Flags are suggestions – please review.</p><div class="foot">© CleanSheet · Your data never leaves this device</div>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script>window.XLSX||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>')</script>
 <script>window.XLSX||document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
 <script>
 const $=s=>document.querySelector(s);
@@ -265,7 +279,7 @@ function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forE
  $('#res').innerHTML=`<div class="stat"><div><b class="cu">${ROWS.length}</b>rows before</div><div><b class="cu">${clean.length}</b>rows after</div><div><b class="cu">${o.removed.length}</b>rows removed</div><div><b class="cu">${o.flags.length}</b>cells flagged</div></div>
  <p><b>✅ Done!</b> Your cleaned file is saving as ${esc(FN.replace(/\.\w+$/,''))}_cleaned.xlsx . Open the “Cleaned” sheet for your clean data and “Flags” for items to check by hand. <button type="button" class="g" id="dl">⬇ Download again</button></p>
  ${rp}<p style="margin-top:14px"><small>Preview of first ${rr.length} rows – yellow cells are flagged for your review.</small></p><div class="tw"><table><thead><tr>${o.H.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rr.map(r=>`<tr>${o.H.map(h=>`<td class="${fm.has(r.r+'|'+h)?'f':''}">${esc(r.d[h])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
- $('#res').classList.remove('hid');document.querySelectorAll('#res .cu').forEach(cu);$('#res').scrollIntoView({behavior:'smooth'})}
+ toast('⬇ Cleaned file downloaded')}
  catch(x){err('Processing failed, so no file was created. Your original file is untouched. ('+x.message+')')}}
 const dz=$('#drop'),fi=$('#fi');dz.onclick=()=>fi.click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
 fi.onchange=()=>{load(fi.files[0]);fi.value=''};dz.ondragover=e=>{e.preventDefault();dz.classList.add('on')};dz.ondragleave=()=>dz.classList.remove('on');
@@ -278,4 +292,57 @@ $('#st').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)r
  else if(b.dataset.u)w(()=>{STEPS=STEPS.filter(k=>k!==+b.dataset.u);SK=[];PK2=new Set();st()});
  else if(b.id==='srs')w(()=>{STEPS=[];SK=[];PK2=new Set();st()});
  else if(b.id==='sdl')dls()});$('#opts').addEventListener('change',()=>{sy();sm()});$('#res').addEventListener('click',e=>{if(e.target.id==='dl'&&LAST)sv(LAST[0],LAST[1])});$('#sa').onclick=()=>{document.querySelectorAll('[data-o]').forEach(c=>c.checked=true);sy();sm()};$('#sn').onclick=()=>{document.querySelectorAll('[data-o]').forEach(c=>c.checked=false);sy();sm()};$('#go').onclick=()=>{const b=$('#go');b.disabled=true;b.textContent='Cleaning your data...';$('#bar').classList.remove('hid');setTimeout(()=>{try{go()}finally{b.disabled=false;b.innerHTML='✨ Clean my file &amp; Download';$('#bar').classList.add('hid')}},450)};
-</script></body></html>
+/* ===== New UI layer (Power Query style) – engine above is unchanged ===== */
+MODE='s';
+const FIXK=[14,2,3,12,5,6,16],FLGK=[1,4,7,8,13,15];let HIST=[],VIEW=-1,PREVK=0,DATA={},PC={};
+const nmk=k=>O.find(o=>o[0]==k)[1],cfg2=rl=>({roles:rl,dmode:$('#dpm').value,dup:[],split:'',merge:[],statuses:$('#sts').value.split(',').map(x=>x.trim()).filter(Boolean)});
+const sv2=x=>{const s=x==null||x===''?'∅':String(x);return s.length>40?s.slice(0,40)+'…':s};
+function toast(m,u){const t=$('#toast');t.innerHTML=esc(m)+(u?'<button type="button" data-a="undo">Undo</button>':'');t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),6000)}
+sm=function(){};
+const _sheet=sheet;sheet=function(){HIST=[];VIEW=-1;PREVK=0;PC={};document.querySelector('.hero').classList.add('hid');$('#drop').classList.add('hid');_sheet()};
+function exec(keys,label){const a=SEQ.filter(k=>keys.includes(k)&&!STEPS.includes(k));if(!a.length)return;HIST.push([...STEPS]);STEPS.push(...a);SK=a;VIEW=-1;PREVK=0;st();toast('✓ '+(label||a.map(nmk).join(', '))+' done',1)}
+function undo(){if(!HIST.length)return;STEPS=HIST.pop();SK=[];VIEW=-1;PREVK=0;st();toast('↶ Undone')}
+function selMark(){document.querySelectorAll('.pd').forEach(x=>x.classList.toggle('sel',+x.dataset.p===PREVK))}
+function setPrev(k){if(VIEW!==-1||k===PREVK)return;PREVK=k;selMark();drawTable()}
+st=function(){const box=$('#st');if(!ROWS||!ROWS.length){box.innerHTML='';return}PC={};
+ const up=VIEW===-2?[]:VIEW<0?STEPS:STEPS.slice(0,VIEW+1),r0=getRoles(),CUR=up.length?run(ROWS,HEADS,onOf(up),cfg2(r0)):null;if(CUR&&VIEW===-1)pk(CUR);
+ const RR=CUR?CUR.R.map(r=>({r:r.r,d:r.d})):ROWS.map((d,i)=>({r:i+2+ROFF,d})),hd=CUR?CUR.H:HEADS,rl={};Object.entries(r0).forEach(([k,v])=>rl[(CUR&&CUR.map&&CUR.map[k])||k]=v);
+ const SC=run(RR.map(r=>({...r.d,__r:r.r})),hd,onOf(O.map(o=>o[0])),cfg2(rl)),fd=k=>SC.st[k]||0,act=SEQ.filter(k=>!STEPS.includes(k)&&fd(k)>0),
+ safe=act.filter(k=>FIXK.includes(k)),flg=act.filter(k=>FLGK.includes(k)),opt=act.filter(k=>!FIXK.includes(k)&&!FLGK.includes(k)),sum=a=>a.reduce((s,k)=>s+fd(k),0),fl=CUR?CUR.flags:[],open=fl.filter(f=>!/^Applied/.test(f.Status)).length;
+ DATA={CUR,RR,hd,fl,r0,act,safe,flg};
+ const last=STEPS.length-1,on=i=>VIEW===-2?false:VIEW<0?i===last:i===VIEW,
+ ap=`<div class="as${VIEW===-2?' on':''}" data-a="view" data-i="-2"><span>📄</span><div><b>Source</b><small>${ROWS.length} rows · ${HEADS.length} columns</small></div></div>`+STEPS.map((k,i)=>`<div class="as${on(i)?' on':''}" data-a="view" data-i="${i}"><span>✅</span><div><b>${esc(nmk(k))}</b><small>${(CUR&&CUR.st[k])||0} ${FLGK.includes(k)?'flagged':'changed'}</small></div><button type="button" class="x" data-a="rm" data-k="${k}" title="Remove this step" aria-label="Remove step ${esc(nmk(k))}">✕</button></div>`).join(''),
+ grp=(t,a)=>a.length?`<div class="gt">${t}</div>`+a.map(k=>`<div class="pd" data-p="${k}"><div><b>${esc(nmk(k))}</b><small>${esc(O.find(o=>o[0]==k)[2])}</small></div><span class="bg">${fd(k)}</span><button type="button" class="b2" data-a="run" data-k="${k}">▶ Run</button></div>`).join(''):'',
+ inv={};Object.entries((CUR&&CUR.map)||{}).forEach(([a,b])=>inv[b]=a);const ak=f=>'s'+f.Row+'|'+(inv[f.Column]||f.Column)+'|'+parseInt(f.Check),
+ sg=VIEW===-1?fl.filter(f=>f['Suggested correction']!==''):[],ns=sg.filter(f=>!AC.has(ak(f))).length,
+ idv=r=>{const x=ROWS[r-2-ROFF];return x&&x[HEADS[0]]!=null?String(x[HEADS[0]]):''},
+ iss=[...fl].sort((a,b)=>a.Row-b.Row).slice(0,80).map(f=>{const s=f['Suggested correction'],acc=s!==''&&AC.has(ak(f)),i=idv(f.Row);return`<div class="is"><span><b>Row ${f.Row}</b>${i?' ('+esc(i)+')':''} · ${esc(f.Column)}<br><small>${esc(f.Issue)} · ${esc(vis(f.Value))}${s!==''?' → <b>'+esc(s)+'</b>':''}</small></span><button type="button" class="b2" data-a="go" data-r="${f.Row}" title="Show in table">📍</button>${s!==''&&VIEW===-1?(acc?`<button type="button" class="b2" data-a="rej" data-x="${esc(ak(f))}">↶ Undo</button>`:`<button type="button" class="b2 pr" data-a="acc" data-x="${esc(ak(f))}">Accept</button>`):''}</div>`}).join('');
+ box.innerHTML=`<div class="bar2" role="toolbar"><div class="t"><b>${sum(safe)}</b> safe fixes ready · <b>${sum(flg)}</b> to flag · <b>${open}</b> flagged</div>
+ <button type="button" class="b2 pr" data-a="safe"${safe.length?'':' disabled'}>▶ Execute safe fixes${safe.length?' ('+sum(safe)+')':''}</button><button type="button" class="b2 wn" data-a="flag"${flg.length?'':' disabled'}>🚩 Flag issues${flg.length?' ('+sum(flg)+')':''}</button><button type="button" class="b2" data-a="undo"${HIST.length?'':' disabled'} title="Ctrl+Z">↶ Undo</button><button type="button" class="b2" data-a="reset"${STEPS.length?'':' disabled'}>↺ Reset</button><button type="button" class="b2 pr" data-a="dl"${STEPS.length?'':' disabled'} title="${STEPS.length?'':'Run at least one step first'}">⬇ Download</button></div>
+ <div class="lay"><div><div class="card"><div class="sh"><b>Applied steps</b><small>click = view · ✕ = remove</small></div>${ap}</div>
+ <div class="card${VIEW!==-1?' dim':''}"><div class="sh"><b>Suggested steps</b><small>hover = preview · ▶ = run</small></div>${act.length?grp('✨ Safe fixes',safe)+grp('🚩 Flag for review',flg)+grp('Optional',opt)+(act.length>1?'<button type="button" class="b2" data-a="all" style="width:100%;margin-top:10px">Run everything</button>':''):'<p class="s">🎉 No more issues found</p>'}</div></div>
+ <div><div class="card" id="pvw"></div>${fl.length?`<div class="card"><div class="sh"><b>Issues</b><small>${fl.length} found${ns?' · '+ns+' have a suggested fix':''}</small>${ns?'<button type="button" class="b2 pr" data-a="accall" style="margin-left:auto">Accept all suggestions</button>':''}</div>${iss}${fl.length>80?'<small>Showing first 80 – all are in the download’s Flags sheet.</small>':''}</div>`:''}</div></div>`;
+ drawTable();selMark()}
+function drawTable(){const D=DATA,el=$('#pvw');if(!el||!D.hd)return;let hd=D.hd,RR=D.RR,pv='',pre=PREVK&&VIEW===-1,chg=D.CUR&&VIEW===-1?D.CUR.changes.filter(c=>SK.includes(parseInt(c.Check))||/^Suggestion/.test(c.Reason)):[],flg=D.fl;
+ if(pre){const key=STEPS.join()+'|'+PREVK,P=PC[key]||(PC[key]=run(ROWS,HEADS,onOf([...STEPS,PREVK]),cfg2(D.r0)));hd=P.H;RR=P.R;chg=P.changes.filter(c=>parseInt(c.Check)===PREVK);flg=P.flags.filter(f=>parseInt(f.Check)===PREVK);
+  const rem=[14,17].includes(PREVK)?P.removed.length-(D.CUR?D.CUR.removed.length:0):0;
+  pv=`<div class="pb"><span>👁 <b>Preview – not applied yet:</b> ${esc(nmk(PREVK))} → ${chg.length} cell changes${flg.length?', '+flg.length+' flagged':''}${rem>0?', '+rem+' rows moved aside':''}</span><button type="button" class="b2 pr" data-a="run" data-k="${PREVK}">Apply</button><button type="button" class="b2" data-a="unprev">✕ Close</button></div>`}
+ else if(VIEW!==-1)pv=`<div class="pb"><span>🕘 Viewing ${VIEW===-2?'the original data':'data after “'+esc(nmk(STEPS[VIEW]))+'”'} (read-only)</span><button type="button" class="b2 pr" data-a="latest">Back to latest</button></div>`;
+ const cm=new Map(),fm=new Map(),rf=new Set(),cc={};chg.forEach(c=>cm.set(c.Row+'|'+c.Column,c));flg.forEach(f=>{if(f.Column==='(whole row)')rf.add(f.Row);else{fm.set(f.Row+'|'+f.Column,f.Issue);cc[f.Column]=(cc[f.Column]||0)+1}});
+ const td=(r,h)=>{const k=r.r+'|'+h,c=cm.get(k),v=r.d[h];if(c)return`<td class="${pre?'pc':'ch2'}" title="${esc(c.Reason||'')}"><span class="o">${esc(sv2(c['Old value']))}</span>${esc(sv2(v))}</td>`;
+  return fm.has(k)||rf.has(r.r)?`<td class="${pre?'pf':'f'}" title="${esc(fm.get(k)||'Possible duplicate row')}">${esc(v)}</td>`:`<td>${esc(v)}</td>`};
+ el.innerHTML=`<div class="sh"><b>Live preview</b><small>${RR.length} rows · ${D.CUR?D.CUR.changes.length:0} changes applied · ${D.fl.length} flagged</small></div>${pv}<p style="margin:6px 0"><span class="ch ok">green = changed (old struck through)</span><span class="ch wn">yellow = flagged for review</span></p><div class="tw" style="max-height:460px"><table><thead><tr>${hd.map(h=>`<th>${esc(h)}${cc[h]?`<span class="wb">⚠ ${cc[h]}</span>`:''}</th>`).join('')}</tr></thead><tbody>${RR.slice(0,200).map(r=>`<tr id="r${r.r}">${hd.map(h=>td(r,h)).join('')}</tr>`).join('')}</tbody></table></div>${RR.length>200?`<small>Showing first 200 rows – the download has all ${RR.length}.</small>`:''}`}
+$('#st').addEventListener('mouseover',e=>{const p=e.target.closest('.pd');if(p&&!e.target.closest('button'))setPrev(+p.dataset.p)});
+$('#st').addEventListener('click',e=>{const p=e.target.closest('.pd');if(p&&!e.target.closest('button'))setPrev(+p.dataset.p)});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,k=+b.dataset.k,w=f=>{b.disabled=true;b.textContent='Working…';setTimeout(f,25)};
+ if(a==='run')w(()=>exec([k]));else if(a==='all')w(()=>exec(DATA.act,'Everything'));else if(a==='safe')w(()=>exec(DATA.safe,'Safe fixes'));else if(a==='flag')w(()=>exec(DATA.flg,'Issues flagged'));
+ else if(a==='undo')undo();else if(a==='unprev'){PREVK=0;selMark();drawTable()}else if(a==='latest'){VIEW=-1;st()}
+ else if(a==='rm'){HIST.push([...STEPS]);STEPS=STEPS.filter(x=>x!==k);SK=[];VIEW=-1;PREVK=0;st();toast('Removed “'+nmk(k)+'”',1)}
+ else if(a==='reset'){HIST.push([...STEPS]);STEPS=[];SK=[];VIEW=-1;PREVK=0;AC.clear();st();toast('All steps reset',1)}
+ else if(a==='view'){const i=+b.dataset.i;VIEW=i===STEPS.length-1?-1:i;PREVK=0;st()}
+ else if(a==='acc'){AC.add(b.dataset.x);st()}else if(a==='rej'){AC.delete(b.dataset.x);st()}
+ else if(a==='accall'){const inv={};Object.entries((DATA.CUR&&DATA.CUR.map)||{}).forEach(([x,y])=>inv[y]=x);DATA.fl.filter(f=>f['Suggested correction']!=='').forEach(f=>AC.add('s'+f.Row+'|'+(inv[f.Column]||f.Column)+'|'+parseInt(f.Check)));st();toast('✓ All suggestions accepted',1)}
+ else if(a==='go'){const r=document.getElementById('r'+b.dataset.r);if(!r)return toast('Row '+b.dataset.r+' is beyond the rows shown – it is in the download');r.scrollIntoView({block:'center',behavior:'smooth'});r.classList.remove('fl');void r.offsetWidth;r.classList.add('fl')}
+ else if(a==='dl')w(()=>{try{dls()}finally{st()}});else if(a==='chfile')$('#fi').click()});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&HIST.length){e.preventDefault();undo()}});
+</script><div id="toast" role="status" aria-live="polite"></div></body></html>
