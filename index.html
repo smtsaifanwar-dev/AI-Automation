@@ -19,7 +19,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 select,input[type=text]{padding:6px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx)}
 .tw{overflow:auto;max-height:380px;border:1px solid var(--bd);border-radius:8px}table{border-collapse:collapse;font-size:13px;width:100%}
 th,td{border-bottom:1px solid var(--bd);padding:4px 8px;white-space:nowrap;text-align:left}th{position:sticky;top:0;background:var(--card)}td.f{background:var(--wa)}
-.dt{margin:0 0 6px 34px}.dt summary{cursor:pointer;color:var(--pr);font-size:13px;padding:2px 0}.dt td,.dt th{font-size:12px}.msg{padding:10px;border-radius:8px;background:var(--er);margin-bottom:10px}.hid{display:none}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.ow{border-bottom:1px solid var(--bd)}.ow:last-child{border:0}.or{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ow .opt{border:0;flex:1;min-width:230px}.dtb{white-space:nowrap;font-size:13px}.dp{margin:0 0 10px 34px}.dp td,.dp th{font-size:12px}.dp td{white-space:pre}.dh{font-weight:600;font-size:13px;margin:8px 0 4px}.msg{padding:10px;border-radius:8px;background:var(--er);margin-bottom:10px}.hid{display:none}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.stat div{border:1px solid var(--bd);border-radius:8px;padding:8px}.stat b{font-size:20px;display:block}
 </style></head><body><main>
 <h1>Excel Cleaner</h1>
@@ -57,6 +57,8 @@ function pd(v){if(v instanceof Date){if(isNaN(v))return null;const t=new Date(v.
  if(m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?:[ T].*)?$/)){let d=+m[1],mo=+m[2];if(mo>12&&d<=12)[d,mo]=[mo,d];return iso(+m[3],mo,d)}
  if(/[a-z]{3}/i.test(s)&&/\d/.test(s)){const t=new Date(s+' 12:00');if(!isNaN(t)&&t.getFullYear()>1900)return iso(t.getFullYear(),t.getMonth()+1,t.getDate())}return null}
 const ACR=new Set(['USB','LED','LCD','HDMI','SSD','HDD','RAM','CPU','GPU','UPS','PVC','GST','PAN','CCTV','WIFI','LAN','ATM','UPI','OTP','PDF','SMS','AC','TV','PC','UK','USA','UAE','HP','LG','IT']);
+const RS={2:'Extra spaces removed',3:'Text case standardized',5:'Text converted to number',6:'Date converted to yyyy-mm-dd',9:'Column name cleaned',12:'Spelling/case unified to most common variant'};
+const vis=v=>v===''||v==null?'(blank)':typeof v==='string'?'"'+v+'"':String(v);
 const DEFST=['Paid','Pending','Refunded','Unpaid','Partially Paid','Overdue','Disputed','Cancelled','Draft'];
 function osa(a,b){const d=[];for(let i=0;i<=a.length;i++)d[i]=[i];for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++){d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1])d[i][j]=Math.min(d[i][j],d[i-2][j-2]+1)}return d[a.length][b.length]}
 function mkSummary(o,on,n0,n1){const nf=o.flags.length,ns=o.flags.filter(f=>f['Suggested correction']!=='').length,na=Object.values(o.app).reduce((a,b)=>a+b,0);
@@ -69,7 +71,7 @@ const ST=['paid','unpaid','pending','partial','partially paid','overdue','active
 function run(rows,heads,on,cfg){
  let H=[...heads],R=rows.map((x,i)=>({r:i+2,d:{...x}})),flags=[],removed=[],changes=[],map={},seenF=new Set();
  const lab=k=>{const x=O.find(o=>o[0]==k);return x?k+'. '+x[1]:k},nf5=new Set(),det={},sug={},app={},bump=(o,k,n=1)=>o[k]=(o[k]||0)+n,inc=(k,n=1)=>bump(app,k,n);
- const chg=(k,r,c,o,n)=>{bump(app,k);changes.push({Row:r?r.r:'Header',Column:c,'Old value':o,'New value':n,Check:lab(k)})};
+ const chg=(k,r,c,o,n,w)=>{bump(app,k);changes.push({Row:r?r.r:'Header',Column:c,'Old value':o,'New value':n,Reason:w||RS[k]||'',Check:lab(k)})};
  const fl=(r,c,t,k,s)=>{const key=r.r+'|'+c+'|'+t;if(seenF.has(key))return;seenF.add(key);bump(det,k);if(s!=null)bump(sug,k);
   flags.push({Row:r.r,Column:c,Value:r.d[c]??'',Issue:t,'Suggested correction':s??'',Status:s!=null?'Suggestion only - not applied':'Unresolved - needs manual review',Check:lab(k)})};
  const vals=c=>R.map(r=>r.d[c]).filter(v=>!blank(v));
@@ -83,7 +85,7 @@ function run(rows,heads,on,cfg){
   R.forEach(r=>{const d={};H.forEach((h,i)=>d[nh[i]]=r.d[h]);r.d=d});H=nh}
  const nm=c=>map[c]||c;
  if(on[14]){R=R.filter(r=>{if(H.some(h=>!blank(r.d[h])))return true;removed.push({'Removed because':'Empty row','Original row':r.r});inc(14);return false});const k=H.filter(h=>R.some(r=>!blank(r.d[h])));inc(14,H.length-k.length);H=k}
- if(on[2])cell((r,h,v)=>{if(typeof v==='string'){const t=v.replace(/[\u00a0\u200b]/g,' ').replace(/\s+/g,' ').trim();if(t!==v){chg(2,r,h,v,t);r.d[h]=t}}});
+ if(on[2])cell((r,h,v)=>{if(typeof v==='string'){const t=v.replace(/[\u00a0\u200b]/g,' ').replace(/\s+/g,' ').trim();if(t!==v){const w=[];if(/^\s/.test(v))w.push('leading space');if(/\s$/.test(v))w.push('trailing space');if(/\s{2,}/.test(v.trim()))w.push('double space');if(/[\u00a0\u200b]/.test(v))w.push('hidden character');chg(2,r,h,v,t,t===''?'Cell had only spaces - becomes blank':'Removed: '+w.join(' + '));r.d[h]=t}}});
  if(on[3])H.filter(txtC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'){const p=v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase()).replace(/[A-Za-z]+/g,w=>ACR.has(w.toUpperCase())?w.toUpperCase():w);if(p!==v){chg(3,r,h,v,p);r.d[h]=p}}}));
  if(on[5])H.filter(numC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const n=pn(v);if(!isNaN(n)){chg(5,r,h,v,n);r.d[h]=n}else{nf5.add(r.r+'|'+h);fl(r,h,'Cannot convert to number (not changed)',5)}}}));
  if(on[6])H.filter(dateC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const d=pd(v);if(d){if(d!==v){chg(6,r,h,v,d);r.d[h]=d}}else fl(r,h,'Invalid or impossible date (not changed)',6)}));
@@ -131,21 +133,22 @@ function load(f){err('');if(!f)return;if(f.size>25e6)return err('File is larger 
   $('#sh').innerHTML=WB.SheetNames.map(n=>`<option>${esc(n)}</option>`).join('');$('#work').classList.remove('hid');$('#res').classList.add('hid');sheet()}
   catch(x){err('This file looks corrupted or is not a valid spreadsheet. Nothing was changed.')}};rd.readAsArrayBuffer(f)}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function dtl(k){if(!SCANR)return'';const lb=(O.find(o=>o[0]==k)||[k,''])[0]+'. '+(O.find(o=>o[0]==k)||[0,''])[1];
+function dtl(k){if(!SCANR)return{n:0,h:''};const L=O.find(o=>o[0]==k)||[k,''],lb=L[0]+'. '+L[1];
  const id=r=>{if(r==='Header')return'';const v=ROWS[r-2]&&ROWS[r-2][HEADS[0]];return v==null?'':String(v)};
  const nt=t=>String(t).replace(/row (\d+)/g,(m,n)=>'row '+n+(id(+n)?' ('+id(+n)+')':''));
- const it=[];SCANR.flags.filter(f=>f.Check===lb).forEach(f=>it.push([f.Row,f.Column,String(f.Value),nt(f.Issue)+(f['Suggested correction']!==''?' → suggested: '+f['Suggested correction']:''),'Flag only']));
- SCANR.changes.filter(c=>c.Check===lb).forEach(c=>it.push([c.Row,c.Column,c['Old value']+' → '+c['New value'],'Will be changed','Change']));
- SCANR.removed.filter(x=>k==14).forEach(x=>it.push([x['Original row'],'(whole row)','','Empty row','Removed']));
- if(!it.length)return'';it.sort((a,b)=>(+a[0]||0)-(+b[0]||0));
- return`<details class="dt"><summary>Show details (${it.length})</summary><div class="tw" style="max-height:260px"><table><thead><tr><th>Row</th><th>${esc(HEADS[0])}</th><th>Column</th><th>Value</th><th>What</th><th>Action</th></tr></thead><tbody>${it.slice(0,300).map(x=>`<tr><td>${esc(x[0])}</td><td>${esc(id(x[0]))}</td><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${esc(x[3])}</td><td>${x[4]}</td></tr>`).join('')}</tbody></table></div>${it.length>300?`<small>+${it.length-300} more – all are in the downloaded file.</small>`:''}</details>`}
+ const F=SCANR.flags.filter(f=>f.Check===lb).map(f=>[f.Row,f.Column,vis(f.Value),nt(f.Issue)+(f['Suggested correction']!==''?' → suggested: '+f['Suggested correction']:'')]);
+ const C=SCANR.changes.filter(c=>c.Check===lb).map(c=>[c.Row,c.Column,vis(c['Old value'])+' → '+vis(c['New value']),c.Reason||'Will be changed']);
+ SCANR.removed.filter(()=>k==14).forEach(x=>C.push([x['Original row'],'(whole row)','','Empty row - will be removed']));
+ const srt=a=>a.sort((x,y)=>(+x[0]||0)-(+y[0]||0));
+ const tb=(t,a)=>a.length?`<p class="dh">${t} (${a.length})</p><div class="tw" style="max-height:240px"><table><thead><tr><th>Row</th><th>${esc(HEADS[0])}</th><th>Column</th><th>Value</th><th>What's wrong / why</th></tr></thead><tbody>${srt(a).slice(0,300).map(x=>`<tr><td>${esc(x[0])}</td><td>${esc(id(x[0]))}</td><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${esc(x[3])}</td></tr>`).join('')}</tbody></table></div>${a.length>300?`<small>+${a.length-300} more – all are in the downloaded file.</small>`:''}`:'';
+ return{n:F.length+C.length,h:tb('⚑ Flagged for review – NOT changed',F)+tb('✎ Will be changed',C)}}
 function sheet(){const a=XLSX.utils.sheet_to_json(WB.Sheets[$('#sh').value],{header:1,defval:'',raw:true});
  if(a.length<2){ROWS=[];HEADS=[];$('#info').textContent='Sheet has no data rows.';$('#opts').innerHTML='';return}
  const seen={};HEADS=a[0].map((h,i)=>{let b=String(h).trim()||'Column '+(i+1),n=b,k=2;while(seen[n])n=b+'_'+k++;seen[n]=1;return n});
  ROWS=a.slice(1).map(r=>{const d={};HEADS.forEach((h,i)=>d[h]=r[i]??'');return d});
  $('#info').textContent=`${ROWS.length} rows · ${HEADS.length} columns`;
  const all={};O.forEach(o=>all[o[0]]=1);SCANR=run(ROWS,HEADS,all,{});SCAN=SCANR.st;
- $('#opts').innerHTML=O.map(o=>{const n=SCAN[o[0]]||0,ck=n>0&&o[0]!==10&&o[0]!==11;return`<label class="opt"><input type="checkbox" data-o="${o[0]}" ${ck?'checked':''}><span><b>${o[0]}. ${o[1]}</b><small>${o[2]}</small></span>${[10,11].includes(o[0])?'':`<span class="bg">${n} found</span>`}</label>${dtl(o[0])}`}).join('');
+ $('#opts').innerHTML=O.map(o=>{const n=SCAN[o[0]]||0,ck=n>0&&o[0]!==10&&o[0]!==11,d=dtl(o[0]);return`<div class="ow"><div class="or"><label class="opt"><input type="checkbox" data-o="${o[0]}" ${ck?'checked':''}><span><b>${o[0]}. ${o[1]}</b><small>${o[2]}</small></span>${[10,11].includes(o[0])?'':`<span class="bg">${n} found</span>`}</label>${d.n?`<button type="button" class="g dtb" data-k="${o[0]}" aria-expanded="false" aria-controls="dp${o[0]}">Details (${d.n}) ▾</button>`:''}</div>${d.n?`<div class="dp hid" id="dp${o[0]}">${d.h}</div>`:''}</div>`}).join('');
  const ch=n=>HEADS.map(h=>`<label><input type="checkbox" name="${n}" value="${esc(h)}"> ${esc(h)}</label>`).join('');
  $('#dupc').innerHTML=ch('dup');$('#mgc').innerHTML=ch('mg');$('#spc').innerHTML='<option value="">— none —</option>'+HEADS.map(h=>`<option>${esc(h)}</option>`).join('')}
 function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forEach(c=>{if(c.checked)on[c.dataset.o]=1});
@@ -168,5 +171,5 @@ function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forE
  catch(x){err('Processing failed, so no file was created. Your original file is untouched. ('+x.message+')')}}
 const dz=$('#drop'),fi=$('#fi');dz.onclick=()=>fi.click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
 fi.onchange=()=>load(fi.files[0]);dz.ondragover=e=>{e.preventDefault();dz.classList.add('on')};dz.ondragleave=()=>dz.classList.remove('on');
-dz.ondrop=e=>{e.preventDefault();dz.classList.remove('on');load(e.dataTransfer.files[0])};$('#sh').onchange=sheet;$('#go').onclick=go;
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('on');load(e.dataTransfer.files[0])};$('#opts').addEventListener('click',e=>{const b=e.target.closest('.dtb');if(!b)return;const open=$('#dp'+b.dataset.k).classList.toggle('hid')===false;b.setAttribute('aria-expanded',open);b.textContent=b.textContent.replace(/[▾▴]/,open?'▴':'▾')});$('#sh').onchange=sheet;$('#go').onclick=go;
 </script></body></html>
