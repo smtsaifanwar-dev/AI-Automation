@@ -41,7 +41,7 @@ input,select{font:inherit;color:var(--tx);background:var(--cd);border:1px solid 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const CFG={maxMB:15,maxFiles:30,tol:1};/* tol = allowed difference (in currency units) between reported and calculated total */
+const CFG={maxMB:15,maxFiles:30,tol:1,lineTol:.5};/* tol = allowed difference (in currency units) between reported and calculated totals; lineTol = same, for quantity × unit price on one line */
 const AMT=['subtotal','discount','freight','cgst','sgst','igst','roundoff','total'];
 const LBL={docType:'Document type',invNo:'Invoice number',invDate:'Invoice date',dueDate:'Due date',po:'PO number',vendor:'Supplier',vGst:'Supplier GSTIN',buyer:'Buyer',bGst:'Buyer GSTIN',cur:'Currency',subtotal:'Subtotal',discount:'Discount',freight:'Freight / shipping',cgst:'CGST',sgst:'SGST',igst:'IGST',roundoff:'Round-off',total:'Grand total'};
 const GRP=[['Document',['docType','invNo','invDate','dueDate','po']],['Supplier and buyer',['vendor','vGst','buyer','bGst']],['Amounts',['cur','subtotal','discount','freight','cgst','sgst','igst','roundoff','total']]];
@@ -86,32 +86,104 @@ function drawFiles(){$('#fl').innerHTML=files.length?'<p class="mu" style="margi
 /* ---------- reading and parsing ---------- */
 async function pdfLines(f){const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise,out=[];
  for(let p=1;p<=pdf.numPages;p++){const c=await(await pdf.getPage(p)).getTextContent(),rows={};
-  c.items.forEach(i=>{if(!i.str.trim())return;const y=Math.round(i.transform[5]/3);(rows[y]=rows[y]||[]).push([i.transform[4],i.str])});
-  Object.keys(rows).map(Number).sort((a,b)=>b-a).forEach(y=>out.push({p,t:rows[y].sort((a,b)=>a[0]-b[0]).map(z=>z[1]).join('  ').replace(/\s{3,}/g,'  ').trim()}))}
+  c.items.forEach(i=>{if(!i.str.trim())return;const y=Math.round(i.transform[5]/3),h=i.height||Math.abs(i.transform[3])||8;(rows[y]=rows[y]||[]).push([i.transform[4],i.str,i.width>0?i.width:i.str.length*h*.5,h,i.transform[5]])});
+  Object.keys(rows).map(Number).sort((a,b)=>b-a).forEach(y=>{const it=rows[y].sort((a,b)=>a[0]-b[0]);
+   /* t = the row as plain text (as before). cells = the same row split into columns, with x positions, so layout can be used. y = vertical position. */
+   out.push({p,y:it[0][4],t:it.map(z=>z[1]).join('  ').replace(/\s{3,}/g,'  ').trim(),cells:mkCells(it)})})}
  return{lines:out,pages:pdf.numPages}}
+/* Text pieces on one row become one cell only when they nearly touch. A wider gap starts a new column, so side-by-side blocks (supplier | buyer | details) stay apart. */
+function mkCells(it){const cs=[];it.forEach(([x,s,w,h])=>{const t=s.trim(),l=cs[cs.length-1];
+  if(l&&x-l.x2<=.6*h){l.s+=(x-l.x2>.15*h?' ':'')+t;l.x2=x+w}else cs.push({x,x2:x+w,s:t})});return cs}
 function amt(s){s=s.replace(/\d+(?:\.\d+)?\s*%/g,'');let m,l=null;const re=/(?:₹|rs\.?|inr|usd|\$|€|£)?\s*(-?\(?\d[\d,]*(?:\.\d{1,2})?\)?)/gi;while((m=re.exec(s)))l=m[1];return l?pa(l):null}
-function fa(L,re,not,nl){for(let i=0;i<L.length;i++){const t=L[i].t;if(re.test(t)&&!(not&&not.test(t))){let v=amt(t);if(v==null&&nl&&L[i+1])v=amt(L[i+1].t);if(v!=null&&!isNaN(v))return{v,c:'high',p:L[i].p}}}return null}
+function fa(L,re,not,nl){for(let i=0;i<L.length;i++){const t=L[i].t;if(re.test(t)&&!(not&&not.test(t))&&!isHdr(L[i])){let v=amt(t);if(v==null&&nl&&L[i+1]&&!isHdr(L[i+1]))v=amt(L[i+1].t);if(v!=null&&!isNaN(v))return{v,c:'high',p:L[i].p}}}return null}
 function ft(L,re){for(const x of L){const m=x.t.match(re);if(m&&m[1])return{v:m[1].trim(),c:'high',p:x.p}}return null}
-function parse(L){const f={},set=(k,o)=>{f[k]=o||{v:null,c:'missing'}},txt=L.map(x=>x.t).join('\n');
+/* Like ft, but tries each cell on its own first, so text from a neighbouring column (a phone number, say) is never read as part of the match. */
+function ftc(L,re){for(const x of L)for(const c of cellsOf(x)){const m=c.s.match(re);if(m&&m[1])return{v:m[1].trim(),c:'high',p:x.p}}return ft(L,re)}
+
+/* ---------- layout: cells, party blocks, item table ---------- */
+const rnd=v=>Math.round(v*100)/100;
+const cellsOf=x=>x.cells||(()=>{let p=0;return x.t.split(/ {2,}/).filter(Boolean).map(s=>{const c={x:p,x2:p+s.length*5,s};p+=s.length*5+40;return c})})();
+const CTX=/^(?:phone|ph|tel|telephone|mobile|mob|cell|whatsapp|e-?mail|email|fax|web(?:site)?|url|gstin|gst|pan|cin|address|contact|upi|bank|a\/c|ifsc)\b/i;
+/* True for phone, email, web, tax-id or mostly-numeric lines. These are never a company name. */
+const looksContact=s=>{s=String(s??'').trim();if(!s)return false;const d=s.replace(/\D/g,'').length;return CTX.test(s)||/@/.test(s)||/^(?:https?:\/\/|www\.)/i.test(s)||(d>=6&&d/s.replace(/\s/g,'').length>.5)};
+const nameOK=s=>{s=String(s??'').trim();return s.replace(/[^A-Za-z]/g,'').length>=3&&!looksContact(s)};
+const GL=/(?:gstin|gst\s*(?:no\.?|number|in))(?:\/uin)?\s*[:\-]?\s*([0-9A-Z]{10,16})/i,GB=/\b\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]\b/;
+const gstIn=s=>{let m=s.match(GL);if(m)return m[1].toUpperCase();m=s.match(GB);return m?m[0]:null};
+const PO=/\b(?:p\.?\s?o\.?|purchase\s*order)(?:\s*(?:no\.?|number|num|#)\s*[:\-#]?|\s*[:\-#])\s*([A-Z0-9][A-Z0-9\/\-_.]{2,24})/i;
+
+/* Party labels: who a block of text belongs to. 'other' (ship to, invoice details) is not a party we extract, but it still ends the column before it. */
+const PLB=[['seller',/^(?:supplier|seller|vendor|sold\s*by|billed?\s*from|from|remit(?:ted)?\s*to|payee)\b/i],['buyer',/^(?:bill(?:ed)?\s*to|buyer|customer(?:\s*name)?|sold\s*to|invoice\s*to|client|recipient)\b/i],['other',/^(?:ship(?:ped)?\s*to|deliver(?:y|ed)?\s*to|consignee|invoice\s*details|bill\s*details|place\s*of\s*supply)\b/i]];
+function partyLabel(s){s=String(s).trim();for(const[role,re]of PLB){const m=s.match(re);if(m){const tail=s.slice(m[0].length),sep=/^\s*(?:name\s*)?[:\-–]/i.test(tail);let rest=tail.replace(/^\s*(?:name\s*)?[:\-–]?\s*/i,'').trim();if(/^(?:details?|info(?:rmation)?|address|name)$/i.test(rest))rest='';return{role,rest,sep}}}return null}
+/* Find the supplier and buyer from labels and column positions. A label alone in its cell (SUPPLIER, BILL TO) owns the lines under it, within its own column.
+   A label with a value after a colon (Bill To: Name) owns that value. Nothing is guessed from another column. */
+function parties(L,T){const lim=T?T.head:L.length,out={seller:null,buyer:null,hdr:-1};
+ for(let i=0;i<lim;i++){const cs=cellsOf(L[i]);
+  cs.forEach((c,j)=>{const lb=partyLabel(c.s);if(!lb||lb.role==='other'||out[lb.role])return;
+   if(lb.rest){if(lb.sep&&nameOK(lb.rest)){out[lb.role]={v:lb.rest,p:L[i].p,gst:null,inline:true};if(out.hdr<0||i<out.hdr)out.hdr=i}return}
+   const start=c.x-3,nx=cs.slice(j+1).find(z=>z.x>c.x+3),end=nx?nx.x-3:(cs.length===1?c.x+12:Infinity),lines=[];let prevY=L[i].y,pitch=0;
+   for(let k=i+1;k<lim&&lines.length<8;k++){if(L[k].p!==L[i].p)break;const gap=prevY-L[k].y;if(k>i+1&&!pitch)pitch=gap;
+    if(k>i+1&&gap>Math.max(24,2.2*(pitch||10)))break;
+    const inb=cellsOf(L[k]).filter(z=>z.x>=start&&z.x<end);if(inb.some(z=>partyLabel(z.s)))break;
+    if(inb.length)lines.push(inb.map(z=>z.s).join(' '));prevY=L[k].y}
+   out[lb.role]={v:lines.find(nameOK)||null,p:L[i].p,gst:gstIn(lines.join('\n')),inline:false};if(out.hdr<0||i<out.hdr)out.hdr=i})}
+ return out}
+/* Last resort when the invoice has no supplier label: the first plausible name on page 1 above the table, read cell by cell (never a whole row). */
+function sellerFB(L,T,P,bn){const lim=Math.min(T?T.head:L.length,P.hdr>=0?P.hdr:L.length),SK=/\b(?:invoice|bill\s*of|original|duplicate|triplicate|gstin|page|date|tax|due|total|amount|currency|supplier|details|copy)\b/i;
+ for(let i=0;i<lim;i++){if(L[i].p>1)break;for(const c of cellsOf(L[i])){if(SK.test(c.s)||partyLabel(c.s)||!nameOK(c.s)||c.s.replace(/[^A-Za-z]/g,'').length<4||c.s===bn)continue;return{v:c.s,c:'med',p:L[i].p}}}return null}
+
+/* Item table. Header words decide which column is which. Every header cell, mapped or not, marks where a column starts,
+   and a value belongs to the column whose start is the last one at or left of the value's centre. That works for left- and right-aligned numbers. */
+const HK=[['sr',/^(?:#|sr\.?(?:\s*no\.?)?|s\.?\s*no\.?|sl\.?(?:\s*no\.?)?)$/i],['hsn',/^(?:hsn(?:\s*\/?\s*sac)?(?:\s*code)?|sac(?:\s*code)?)$/i],['qty',/^(?:qty|quantity|qnty|no\.?\s*of\s*(?:units|items))\.?$/i],['taxable',/^taxable(?:\s*(?:value|amount|amt))?$/i],['price',/^(?:unit\s*price|rate(?:\s*\/\s*unit)?|price|unit\s*cost)$/i],['amount',/^(?:amount|amt|line\s*total|total|net\s*amount|value)$/i],['desc',/^(?:description(?:\s*of\s*(?:goods|services))?|item(?:\s*description)?|particulars|product(?:\s*description)?)$/i]];
+const hkey=s=>{s=String(s).replace(/\(.*?\)|[₹$€£]/g,'').trim();for(const[k,re]of HK)if(re.test(s))return k;return null};
+const isHdr=x=>cellsOf(x).filter(c=>hkey(c.s)).length>=3;
+const STOP=/^(?:sub\s*-?\s*total|total|grand\s*total|cgst|sgst|igst|utgst|discount|freight|shipping|round[\s-]*off|amount\s*in\s*words|tax\s*summary|notes?\b|terms|payment|bank|authori[sz]ed|net\s*(?:amount|payable)|balance|amount\s*(?:paid|payable|due)|taxable\s*(?:value|amount))/i;
+function tableHead(L){for(let i=0;i<L.length;i++){const cols=cellsOf(L[i]).map(c=>({...c,key:hkey(c.s)})),ks=new Set(cols.map(c=>c.key).filter(Boolean));
+ if(ks.size>=3&&ks.has('desc')&&(ks.has('taxable')||ks.has('amount')||ks.has('price'))&&(ks.has('qty')||ks.has('hsn')||ks.has('price')))return{i,cols}}return null}
+function scanTable(L){const th=tableHead(L);if(!th)return null;const cols=th.cols,items=[];let end=L.length,last=null,pitch=0;
+ const colOf=c=>{const m=(c.x+c.x2)/2;let j=0;cols.forEach((h,k)=>{if(m>=h.x-3)j=k});return j},val=s=>{if(s==null)return null;const v=pa(s);return v==null||isNaN(v)?null:v};
+ for(let k=th.i+1;k<L.length;k++){const cs=cellsOf(L[k]);if(!cs.length)continue;
+  const row={};cs.forEach(c=>{const j=colOf(c),key=cols[j].key||'_'+j;row[key]=(row[key]?row[key]+' ':'')+c.s});
+  const sr=row.sr!=null&&/^\d+$/.test(row.sr.trim());
+  if(!sr&&STOP.test(cs[0].s)){end=k;break}
+  if(!sr&&isHdr(L[k]))continue;/* header repeated on a later page */
+  const q=val(row.qty),pr=val(row.price),vk=row.taxable!=null?'taxable':'amount',tv=val(row[vk]),d=(row.desc||'').trim();
+  if(q==null&&pr==null&&tv==null){/* text only: the wrapped end of the description above, if it sits directly under it */
+   if(d&&last&&!row.hsn&&!sr&&last.p===L[k].p&&last.y-L[k].y<=1.5*(pitch||14)){last.it.desc+=' '+d;last.y=L[k].y}continue}
+  if(!d&&tv==null)continue;
+  const it={no:sr?+row.sr.trim():items.length+1,desc:d,hsn:(row.hsn||'').trim()||null,qty:q,price:pr,taxable:tv,col:tv!=null?cols.find(h=>h.key===vk).s:null,p:L[k].p};
+  it.calc=q!=null&&pr!=null?rnd(q*pr):null;it.diff=it.calc!=null&&tv!=null?rnd(tv-it.calc):null;
+  if(last)pitch=last.y-L[k].y;items.push(it);last={it,y:L[k].y,p:L[k].p}}
+ return{head:th.i,end,items}}
+function rates(La){const o={};[['cgst',/\bcgst\b/i],['sgst',/\b(?:sgst|utgst)\b/i],['igst',/\bigst\b/i]].forEach(([k,re])=>{for(const x of La){if(re.test(x.t)){const m=x.t.match(/(\d+(?:\.\d+)?)\s*%/);if(m){o[k]=parseFloat(m[1]);break}}}});return o}
+
+/* Returns the header fields (f, unchanged shape), the item rows, and any tax rates read from labels such as "CGST (9%)". Source values only; nothing is calculated here. */
+function parseAll(L){const f={},set=(k,o)=>{f[k]=o||{v:null,c:'missing'}},txt=L.map(x=>x.t).join('\n'),T=scanTable(L),La=T?L.filter((_,i)=>i<T.head||i>=T.end):L,P=parties(L,T);
  const dt=!L.length?null:/credit\s*note/i.test(txt)?'Credit note':/debit\s*note/i.test(txt)?'Debit note':/pro\s*forma/i.test(txt)?'Pro forma invoice':/tax\s*invoice/i.test(txt)?'Tax invoice':/invoice/i.test(txt)?'Invoice':'Unknown';
  set('docType',dt?{v:dt,c:dt==='Unknown'?'low':'med'}:null);
  set('invNo',ft(L,/(?:invoice|inv|bill|credit\s*note|debit\s*note)\s*(?:no\.?|number|num|#)\s*[:\-#]?\s*([A-Z0-9][A-Z0-9\/\-_.]{1,29})/i));
  let a=null;for(const x of L){if(/date/i.test(x.t)&&!/due/i.test(x.t)){const m=x.t.match(DT);if(m){a={v:m[1],c:'high',p:x.p};break}}}
  if(!a)for(const x of L){const m=x.t.match(DT);if(m){a={v:m[1],c:'low',p:x.p};break}}
  set('invDate',a);a=null;for(const x of L){if(/due/i.test(x.t)){const m=x.t.match(DT);if(m){a={v:m[1],c:'high',p:x.p};break}}}set('dueDate',a);
- set('po',ft(L,/(?:p\.?o\.?\s*(?:no\.?|number)?|purchase\s*order)\s*[:\-#]?\s*([A-Z0-9][A-Z0-9\/\-]{2,24})/i));
+ set('po',ftc(L,PO));
+ /* GSTINs belong to the party whose block they sit in. Only without a party layout do they fall back to the order found, at medium confidence. */
  const G=[];L.forEach(x=>{for(const m of x.t.matchAll(/(?:gstin|gst\s*(?:no\.?|number|in))(?:\/uin)?\s*[:\-]?\s*([0-9A-Z]{10,16})/gi))if(!G.some(g=>g.v===m[1].toUpperCase()))G.push({v:m[1].toUpperCase(),p:x.p});
   for(const m of x.t.matchAll(/\b\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]\b/g))if(!G.some(g=>g.v===m[0]))G.push({v:m[0],p:x.p})});
- set('vGst',G[0]?{...G[0],c:'med'}:null);set('bGst',G[1]?{...G[1],c:'med'}:null);
- a=null;let n=0;for(const x of L){if(x.p>1)break;if(x.t.replace(/[^A-Za-z]/g,'').length<4||/invoice|bill\s*of|original|duplicate|gstin|page|date|tax\b/i.test(x.t))continue;a={v:x.t.split('  ')[0],c:'med',p:x.p};if(++n>=1)break}set('vendor',a);
- a=null;for(let i=0;i<L.length;i++){if(/bill(?:ed)?\s*to|buyer|customer\s*name|sold\s*to/i.test(L[i].t)){const m=L[i].t.match(/[:\-]\s*(\S.{2,})$/),v=m?m[1]:(L[i+1]?L[i+1].t.split('  ')[0]:'');if(v){a={v,c:'med',p:L[i].p};break}}}set('buyer',a);
+ const sg=P.seller&&P.seller.gst,bg=P.buyer&&P.buyer.gst,sOpen=!P.seller||P.seller.inline,bOpen=!P.buyer||P.buyer.inline;
+ const vg=sg?{v:sg,c:'high',p:P.seller.p}:sOpen?(G.find(g=>g.v!==bg)?{...G.find(g=>g.v!==bg),c:'med'}:null):null;
+ set('vGst',vg);
+ set('bGst',bg?{v:bg,c:'high',p:P.buyer.p}:bOpen?(G.find(g=>g.v!==(vg&&vg.v))?{...G.find(g=>g.v!==(vg&&vg.v)),c:'med'}:null):null);
+ const bn=P.buyer&&P.buyer.v;
+ set('vendor',P.seller&&P.seller.v?{v:P.seller.v,c:'high',p:P.seller.p}:sellerFB(L,T,P,bn));
+ set('buyer',bn?{v:bn,c:'high',p:P.buyer.p}:null);
  const cu=/₹|\brs\b\.?|\binr\b/i.test(txt)?'INR':/\$|\busd\b/i.test(txt)?'USD':/€|\beur\b/i.test(txt)?'EUR':/£|\bgbp\b/i.test(txt)?'GBP':null;set('cur',cu?{v:cu,c:'med'}:null);
- set('subtotal',fa(L,/sub\s*-?\s*total|total\s*before\s*tax|taxable\s*(?:value|amount)|net\s*amount/i,/words/i,true));
- set('discount',fa(L,/discount/i));set('freight',fa(L,/freight|shipping|delivery\s*charge/i));
- set('cgst',fa(L,/cgst/i));set('sgst',fa(L,/sgst|utgst/i));set('igst',fa(L,/igst/i));set('roundoff',fa(L,/round[\s-]*off/i));
- let t=fa(L,/grand\s*total|total\s*amount|amount\s*payable|net\s*payable|invoice\s*total|total\s*due/i,/before\s*tax|words/i,true);
- if(!t){for(let i=L.length-1;i>=0;i--){if(/^total\b/i.test(L[i].t)&&!/sub/i.test(L[i].t)){const v=amt(L[i].t);if(v!=null&&!isNaN(v)){t={v,c:'med',p:L[i].p};break}}}}
- set('total',t);return f}
+ /* Amount labels are searched outside the item table, so a column header such as "Taxable Value" or an item row can never be read as a total. */
+ set('subtotal',fa(La,/sub\s*-?\s*total|total\s*before\s*tax|taxable\s*(?:value|amount)|net\s*amount/i,/words/i,true));
+ set('discount',fa(La,/discount/i));set('freight',fa(La,/freight|shipping|delivery\s*charge/i));
+ set('cgst',fa(La,/cgst/i));set('sgst',fa(La,/sgst|utgst/i));set('igst',fa(La,/igst/i));set('roundoff',fa(La,/round[\s-]*off/i));
+ let t=fa(La,/grand\s*total|total\s*amount|amount\s*payable|net\s*payable|invoice\s*total|total\s*due/i,/before\s*tax|words/i,true);
+ if(!t){for(let i=La.length-1;i>=0;i--){if(/^total\b/i.test(La[i].t)&&!/sub/i.test(La[i].t)){const v=amt(La[i].t);if(v!=null&&!isNaN(v)){t={v,c:'med',p:La[i].p};break}}}}
+ set('total',t);return{f,items:T?T.items:[],rates:rates(La)}}
+const parse=L=>parseAll(L).f;
 
 /* ---------- validation ---------- */
 function validate(r){const f=r.f,F=[],add=(id,sev,field,msg,src,exp,act)=>F.push({id,sev,field,msg,src:src??'',exp:exp??'',act:act||''});
@@ -126,12 +198,21 @@ function validate(r){const f=r.f,F=[],add=(id,sev,field,msg,src,exp,act)=>F.push
  if(f.dueDate.v&&(!dd||dd.bad))add('R5','warning','dueDate','Due date could not be read as a valid date.',String(f.dueDate.v),'','Correct the date.');
  if(di&&di.iso&&dd&&dd.iso&&dd.iso<di.iso)add('R6','warning','dueDate','Due date is earlier than the invoice date.',dd.iso,di.iso,'Check both dates.');
  if(di&&di.iso&&di.iso>new Date(Date.now()+864e5).toISOString().slice(0,10))add('R6f','info','invDate','Invoice date is in the future.',di.iso,'','Check the date.');
- const g=k=>{const v=num(f[k].v);return v==null||isNaN(v)?0:v},T=num(f.total.v),S=num(f.subtotal.v);r.calc=null;r.diff=null;
- if(T!=null&&!isNaN(T)&&S!=null&&!isNaN(S)){const c=S-g('discount')+g('freight')+g('cgst')+g('sgst')+g('igst')+g('roundoff'),d=T-c;r.calc=c;r.diff=d;
+ const g=k=>{const v=num(f[k].v);return v==null||isNaN(v)?0:v},T=num(f.total.v),S=num(f.subtotal.v),items=r.items||[],Sok=S!=null&&!isNaN(S),Tok=T!=null&&!isNaN(T);r.calc=null;r.diff=null;
+ /* Subtotal: the value read from the invoice (f.subtotal) is never replaced. The sum of the line items is kept beside it, and any difference is reported. */
+ r.subCalc=items.length&&items.every(i=>i.taxable!=null)?rnd(items.reduce((a,i)=>a+i.taxable,0)):null;r.subDiff=null;
+ if(Sok&&r.subCalc!=null){r.subDiff=rnd(S-r.subCalc);if(Math.abs(r.subDiff)>CFG.tol)add('R13','critical','subtotal','Reported subtotal does not match the sum of the line items.',fmt(S),fmt(r.subCalc),'Check that every line item was read, or whether the subtotal includes other charges.')}
+ else if(!Sok&&r.subCalc!=null)add('R15','info','subtotal','No subtotal was found on the invoice, so the sum of the line items ('+fmt(r.subCalc)+') is used for the total check. The Subtotal field is left empty.');
+ const base=Sok?S:r.subCalc;
+ if(Tok&&base!=null){const c=base-g('discount')+g('freight')+g('cgst')+g('sgst')+g('igst')+g('roundoff'),d=rnd(T-c);r.calc=rnd(c);r.diff=d;
   if(Math.abs(d)>CFG.tol)add('R7','critical','total','Reported total does not match the calculated total.',fmt(T),fmt(c),'Check subtotal, taxes and charges. Prices may include tax, or a charge may not have been captured.')}
- else if(T!=null&&!isNaN(T))add('R7i','info','total','Total could not be cross-checked because no subtotal was found.');
+ else if(Tok)add('R7i','info','total','Total could not be cross-checked because no subtotal was found.');
  if(num(f.cgst.v)!=null&&num(f.sgst.v)!=null&&Math.abs(g('cgst')-g('sgst'))>CFG.tol)add('R8','warning','cgst','CGST and SGST amounts differ. They are normally equal.',fmt(g('cgst')),fmt(g('sgst')),'Check the tax lines.');
  if(g('igst')&&(g('cgst')||g('sgst')))add('R8','warning','igst','IGST appears together with CGST/SGST.','','','Check the tax lines.');
+ [['vendor','Supplier name'],['buyer','Buyer name']].forEach(([k,n])=>{const v=f[k].v;if(v&&looksContact(v))add('R11','warning',k,n+' looks like a contact detail (phone, email or tax id), not a name.',String(v),'','Enter the correct name from the invoice.')});
+ items.forEach(it=>{if(it.diff!=null&&Math.abs(it.diff)>CFG.lineTol)add('R12','warning','document','Line '+it.no+': quantity × unit price does not match the taxable value.',fmt(it.taxable),fmt(it.calc),'Check for a line discount or a misread number.')});
+ [['cgst','CGST'],['sgst','SGST'],['igst','IGST']].forEach(([k,n])=>{const rate=(r.rates||{})[k],v=num(f[k].v);if(rate==null||v==null||isNaN(v)||base==null)return;
+  const b0=base-g('discount'),opt=[b0,b0+g('freight')].map(b=>rnd(b*rate/100));if(!opt.some(e=>Math.abs(e-v)<=CFG.tol))add('R14','warning',k,n+' amount does not match its stated rate ('+rate+'%) applied to the taxable amount.',fmt(v),fmt(opt[0]),'Check the rate and the taxable amount.')});
  Object.keys(f).forEach(k=>{if(f[k].c==='low'&&f[k].v!=null)add('R9','warning',k,LBL[k]+' was found with low confidence.',String(f[k].v),'','Confirm against the source.')});
  return F}
 const rank={none:0,possible:1,likely:2,exact:3};
@@ -151,11 +232,11 @@ function refresh(){dupes();recs.forEach(r=>{if(['Failed','Cancelled','Processing
  r.status=r.verified?'Reviewed':needs(r)?'Needs Review':'Completed'})}
 
 /* ---------- processing ---------- */
-const mk=(d,s)=>({id:d.id,name:d.f.name,h:d.h,size:d.f.size,type:d.t,file:d.f,status:s,f:parse([]),fd:[],edits:[],dup:{t:'none',w:''},verified:false,pages:0,err:''});
+const mk=(d,s)=>({id:d.id,name:d.f.name,h:d.h,size:d.f.size,type:d.t,file:d.f,status:s,f:parse([]),items:[],rates:{},subCalc:null,subDiff:null,fd:[],edits:[],dup:{t:'none',w:''},verified:false,pages:0,err:''});
 function friendly(e){return e&&e.name==='NoLib'?'The PDF reader could not load. Check your internet connection and refresh the page.':e&&e.name==='PasswordException'?'This PDF is password-protected. Remove the password and upload it again.':e&&e.name==='InvalidPDFException'?'This PDF is corrupt or unreadable.':'Could not read this file ('+((e&&e.message)||'unknown error')+'). Try again.'}
-async function proc(r){r.status='Processing';r.err='';r.noText=false;
+async function proc(r){r.status='Processing';r.err='';r.noText=false;r.items=[];r.rates={};
  try{if(r.type==='pdf'){if(!window.pdfjsLib)throw{name:'NoLib'};const x=await pdfLines(r.file);r.pages=x.pages;
-   if(x.lines.map(l=>l.t).join('').replace(/\s/g,'').length<40){r.noText=true;r.f=parse([])}else r.f=parse(x.lines)}
+   if(x.lines.map(l=>l.t).join('').replace(/\s/g,'').length<40){r.noText=true;r.f=parse([])}else{const z=parseAll(x.lines);r.f=z.f;r.items=z.items;r.rates=z.rates}}
   else{r.noText=true;r.pages=1;r.f=parse([])}
   r.status='Extracted'}catch(e){r.status='Failed';r.err=friendly(e)}}
 const setP=t=>$('#prog').textContent=t;
@@ -186,7 +267,9 @@ function open(id){const r=recs.find(x=>x.id===id);if(!r)return;cur=r;if(curUrl)U
  paint();$('#dlg').hidden=false;$('#dx').focus()}
 function paint(){const r=cur,f=r.f;let h='<p><span class="st '+sc(r.status)+'">'+r.status+'</span> <span class="mu">'+r.pages+' page'+(r.pages>1?'s':'')+'</span></p>';
  GRP.forEach(([g,ks])=>{h+='<h3>'+g+'</h3>'+ks.map(k=>{const o=f[k],c=CL[o.c]||CL.missing;return'<label class="fl"><span>'+LBL[k]+'</span><input class="fv" data-k="'+k+'" value="'+esc(o.v==null?'':o.v)+'"><span class="st '+c[1]+'">'+c[0]+(o.p?' · p.'+o.p:'')+'</span></label>'}).join('')});
+ if(r.subCalc!=null&&r.subDiff!=null)h+='<h3>Subtotal check</h3><div class="cmp"><div><span class="mu">Reported</span><b>'+fmt(num(f.subtotal.v))+'</b></div><div><span class="mu">From line items</span><b>'+fmt(r.subCalc)+'</b></div><div><span class="mu">Difference</span><b>'+fmt(r.subDiff)+'</b></div></div>';
  if(r.calc!=null)h+='<h3>Total check</h3><div class="cmp"><div><span class="mu">Reported</span><b>'+fmt(num(f.total.v))+'</b></div><div><span class="mu">Calculated</span><b>'+fmt(r.calc)+'</b></div><div><span class="mu">Difference</span><b>'+fmt(r.diff)+'</b></div></div>';
+ if(r.items.length)h+='<h3>Line items ('+r.items.length+')</h3><div class="tw"><table><thead><tr><th>#</th><th>Description</th><th>HSN/SAC</th><th class="n">Qty</th><th class="n">Unit price</th><th class="n">Taxable value</th><th class="n">Qty × price</th></tr></thead><tbody>'+r.items.map(it=>'<tr><td>'+it.no+'</td><td class="w">'+esc(it.desc)+'</td><td>'+esc(it.hsn)+'</td><td class="n">'+(it.qty==null?'–':it.qty)+'</td><td class="n">'+fmt(it.price)+'</td><td class="n">'+fmt(it.taxable)+'</td><td class="n">'+fmt(it.calc)+'</td></tr>').join('')+'</tbody></table></div>';
  h+='<h3>Findings ('+r.fd.length+')</h3>'+(r.fd.length?r.fd.map(x=>'<div class="fd '+x.sev+'"><b>'+x.sev[0].toUpperCase()+x.sev.slice(1)+'</b> · '+esc(x.msg)+(x.src!==''?'<br><span class="mu">Found: '+esc(x.src)+(x.exp!==''?' · Expected: '+esc(x.exp):'')+'</span>':'')+(x.act?'<br><span class="mu">'+esc(x.act)+'</span>':'')+'</div>').join(''):'<p class="mu">No issues found.</p>');
  if(r.edits.length)h+='<h3>Your changes</h3>'+r.edits.map(e=>'<div class="fd info">'+esc(LBL[e.field])+': '+esc(e.old==null?'(empty)':e.old)+' → '+esc(e.nw==null?'(empty)':e.nw)+'<br><span class="mu">'+new Date(e.ts).toLocaleString()+'</span></div>').join('');
  h+='<div class="row" style="margin-top:12px"><button class="btn p" id="rv"'+(r.verified?' disabled':'')+'>'+(r.verified?'Reviewed':'Mark as reviewed')+'</button></div><p class="note">“Reviewed” means you checked the values yourself. It is not a tax, GST or legal verification. Your original file is never changed.</p>';
@@ -199,21 +282,24 @@ function closeD(){$('#dlg').hidden=true;$('#mv').innerHTML='';if(curUrl){URL.rev
 /* ---------- export ---------- */
 const safe=v=>typeof v==='string'&&/^[=+\-@\t\r]/.test(v)?"'"+v:v;
 function sheets(){const R=(sel.size?recs.filter(r=>sel.has(r.id)):recs),ok=R.filter(r=>!['Failed','Cancelled','Queued','Processing'].includes(r.status));
- const inv=[['Record ID','Source file','Document type','Invoice number','Invoice date (ISO)','Invoice date (as written)','Due date (ISO)','PO number','Supplier','Supplier GSTIN','Buyer','Buyer GSTIN','Currency','Subtotal','Discount','Freight','CGST','SGST','IGST','Round-off','Grand total (reported)','Grand total (calculated)','Difference','Duplicate status','Critical issues','Warnings','Status','Pages','File SHA-256']];
+ /* "Subtotal" and the other plain amount columns are values read from the invoice. Columns marked (calculated) are worked out here. Differences are shown, never applied. */
+ const inv=[['Record ID','Source file','Document type','Invoice number','Invoice date (ISO)','Invoice date (as written)','Due date (ISO)','PO number','Supplier','Supplier GSTIN','Buyer','Buyer GSTIN','Currency','Subtotal','Subtotal (calculated from line items)','Subtotal difference (reported − calculated)','Discount','Freight','CGST','SGST','IGST','Round-off','Grand total (reported)','Grand total (calculated)','Difference','Duplicate status','Critical issues','Warnings','Line items','Status','Pages','File SHA-256']];
+ const li=[['Record ID','Source file','Invoice number','Line no.','Description','HSN/SAC','Quantity','Unit price','Taxable value (reported)','Quantity × unit price (calculated)','Difference (reported − calculated)','Line check','Value column on invoice','Page']];
  const fl=[['Record ID','Source file','Invoice number','Rule ID','Severity','Field','Issue','Found','Expected / calculated','Suggested action']],ch=[['Record ID','Source file','Field','Original value','Final value','Change type','Time']],er=[['Source file','Status','Error']];
- ok.forEach(r=>{const f=r.f,n=k=>{const x=num(f[k].v);return x==null||isNaN(x)?null:x};
-  inv.push([r.id,r.name,f.docType.v,f.invNo.v,isoOf(f.invDate.v),f.invDate.v,isoOf(f.dueDate.v),f.po.v,f.vendor.v,f.vGst.v,f.buyer.v,f.bGst.v,f.cur.v,n('subtotal'),n('discount'),n('freight'),n('cgst'),n('sgst'),n('igst'),n('roundoff'),n('total'),r.calc,r.diff,r.dup.t==='none'?'No duplicate detected':r.dup.t+' – '+r.dup.w,r.fd.filter(x=>x.sev==='critical').length,r.fd.filter(x=>x.sev==='warning').length,r.status,r.pages,r.h].map(safe));
+ ok.forEach(r=>{const f=r.f,n=k=>{const x=num(f[k].v);return x==null||isNaN(x)?null:x},items=r.items||[];
+  inv.push([r.id,r.name,f.docType.v,f.invNo.v,isoOf(f.invDate.v),f.invDate.v,isoOf(f.dueDate.v),f.po.v,f.vendor.v,f.vGst.v,f.buyer.v,f.bGst.v,f.cur.v,n('subtotal'),r.subCalc??null,r.subDiff??null,n('discount'),n('freight'),n('cgst'),n('sgst'),n('igst'),n('roundoff'),n('total'),r.calc,r.diff,r.dup.t==='none'?'No duplicate detected':r.dup.t+' – '+r.dup.w,r.fd.filter(x=>x.sev==='critical').length,r.fd.filter(x=>x.sev==='warning').length,items.length,r.status,r.pages,r.h].map(safe));
+  items.forEach(it=>li.push([r.id,r.name,f.invNo.v,it.no,it.desc,it.hsn,it.qty,it.price,it.taxable,it.calc,it.diff,it.diff==null?'Not checked (value, quantity or price missing)':Math.abs(it.diff)>CFG.lineTol?'Mismatch':'OK',it.col,it.p].map(safe)));
   r.fd.forEach(x=>fl.push([r.id,r.name,f.invNo.v,x.id,x.sev,LBL[x.field]||x.field,x.msg,x.src,x.exp,x.act].map(safe)));
   r.edits.forEach(e=>ch.push([r.id,r.name,LBL[e.field],e.old,e.nw,'Manual edit',e.ts].map(safe)))});
  R.filter(r=>['Failed','Cancelled'].includes(r.status)).forEach(r=>er.push([r.name,r.status,r.err||'Cancelled by user'].map(safe)));
  const T={};ok.forEach(r=>{const t=num(r.f.total.v);if(t==null||isNaN(t))return;const c=r.f.cur.v||'Unknown';T[c]=(T[c]||0)+t});
- const sm=[['Metric','Value'],['Files in export',R.length],['Processed',ok.length],['Needing review',ok.filter(r=>r.status==='Needs Review').length],['Failed',R.filter(r=>r.status==='Failed').length],['Duplicate flags',ok.filter(r=>r.dup.t!=='none').length],['Total mismatches',ok.filter(r=>r.fd.some(x=>x.id==='R7')).length],['Exported at',new Date().toISOString()],...Object.keys(T).map(c=>['Total extracted ('+c+')',T[c]]),['Note','Totals include flagged invoices. Values come from the invoices and may contain extraction errors.']];
- return{inv,fl,ch,sm,er}}
+ const sm=[['Metric','Value'],['Files in export',R.length],['Processed',ok.length],['Needing review',ok.filter(r=>r.status==='Needs Review').length],['Failed',R.filter(r=>r.status==='Failed').length],['Duplicate flags',ok.filter(r=>r.dup.t!=='none').length],['Total mismatches',ok.filter(r=>r.fd.some(x=>x.id==='R7')).length],['Subtotal mismatches',ok.filter(r=>r.fd.some(x=>x.id==='R13')).length],['Line items extracted',ok.reduce((a,r)=>a+(r.items||[]).length,0)],['Exported at',new Date().toISOString()],...Object.keys(T).map(c=>['Total extracted ('+c+')',T[c]]),['Note','Totals include flagged invoices. Values come from the invoices and may contain extraction errors.']];
+ return{inv,li,fl,ch,sm,er}}
 const sheet=a=>{const w=XLSX.utils.aoa_to_sheet(a);w['!cols']=a[0].map(()=>({wch:20}));return w};
 function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 const stamp=()=>new Date().toISOString().slice(0,10);
 function exp(kind){if(!recs.length)return;if(typeof XLSX==='undefined')return alert('The Excel library could not load. Check your internet connection and refresh.');const S=sheets();
- if(kind==='x'){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(S.inv),'Invoices');XLSX.utils.book_append_sheet(wb,sheet(S.fl),'Validation Flags');XLSX.utils.book_append_sheet(wb,sheet(S.ch),'Applied Changes');XLSX.utils.book_append_sheet(wb,sheet(S.sm),'Summary');XLSX.utils.book_append_sheet(wb,sheet(S.er),'Processing Errors');XLSX.writeFile(wb,'invoices_'+stamp()+'.xlsx')}
+ if(kind==='x'){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,sheet(S.inv),'Invoices');XLSX.utils.book_append_sheet(wb,sheet(S.li),'Line Items');XLSX.utils.book_append_sheet(wb,sheet(S.fl),'Validation Flags');XLSX.utils.book_append_sheet(wb,sheet(S.ch),'Applied Changes');XLSX.utils.book_append_sheet(wb,sheet(S.sm),'Summary');XLSX.utils.book_append_sheet(wb,sheet(S.er),'Processing Errors');XLSX.writeFile(wb,'invoices_'+stamp()+'.xlsx')}
  else dl(new Blob(['\ufeff'+XLSX.utils.sheet_to_csv(sheet(kind==='c'?S.inv:S.fl))],{type:'text/csv;charset=utf-8'}),(kind==='c'?'invoices_':'validation_flags_')+stamp()+'.csv')}
 
 /* ---------- events ---------- */
