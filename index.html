@@ -56,6 +56,7 @@ function pd(v){if(v instanceof Date){if(isNaN(v))return null;const t=new Date(v.
  if(m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})(?:[ T].*)?$/))return iso(+m[1],+m[2],+m[3]);
  if(m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})(?:[ T].*)?$/)){let d=+m[1],mo=+m[2];if(mo>12&&d<=12)[d,mo]=[mo,d];return iso(+m[3],mo,d)}
  if(/[a-z]{3}/i.test(s)&&/\d/.test(s)){const t=new Date(s+' 12:00');if(!isNaN(t)&&t.getFullYear()>1900)return iso(t.getFullYear(),t.getMonth()+1,t.getDate())}return null}
+const ACR=new Set(['USB','LED','LCD','HDMI','SSD','HDD','RAM','CPU','GPU','UPS','PVC','GST','PAN','CCTV','WIFI','LAN','ATM','UPI','OTP','PDF','SMS','AC','TV','PC','UK','USA','UAE','HP','LG','IT']);
 const DEFST=['Paid','Pending','Refunded','Unpaid','Partially Paid','Overdue','Disputed','Cancelled','Draft'];
 function osa(a,b){const d=[];for(let i=0;i<=a.length;i++)d[i]=[i];for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++){d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1])d[i][j]=Math.min(d[i][j],d[i-2][j-2]+1)}return d[a.length][b.length]}
 function mkSummary(o,on,n0,n1){const nf=o.flags.length,ns=o.flags.filter(f=>f['Suggested correction']!=='').length,na=Object.values(o.app).reduce((a,b)=>a+b,0);
@@ -83,7 +84,7 @@ function run(rows,heads,on,cfg){
  const nm=c=>map[c]||c;
  if(on[14]){R=R.filter(r=>{if(H.some(h=>!blank(r.d[h])))return true;removed.push({'Removed because':'Empty row','Original row':r.r});inc(14);return false});const k=H.filter(h=>R.some(r=>!blank(r.d[h])));inc(14,H.length-k.length);H=k}
  if(on[2])cell((r,h,v)=>{if(typeof v==='string'){const t=v.replace(/[\u00a0\u200b]/g,' ').replace(/\s+/g,' ').trim();if(t!==v){chg(2,r,h,v,t);r.d[h]=t}}});
- if(on[3])H.filter(txtC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'){const p=v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase());if(p!==v){chg(3,r,h,v,p);r.d[h]=p}}}));
+ if(on[3])H.filter(txtC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'){const p=v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase()).replace(/[A-Za-z]+/g,w=>ACR.has(w.toUpperCase())?w.toUpperCase():w);if(p!==v){chg(3,r,h,v,p);r.d[h]=p}}}));
  if(on[5])H.filter(numC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const n=pn(v);if(!isNaN(n)){chg(5,r,h,v,n);r.d[h]=n}}}));
  if(on[6])H.filter(dateC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const d=pd(v);if(d){if(d!==v){chg(6,r,h,v,d);r.d[h]=d}}else fl(r,h,'Invalid or impossible date (not changed)',6)}));
  if(on[10]&&cfg.split&&H.includes(nm(cfg.split))){const c=nm(cfg.split),a=c+'_first',b=c+'_last';H.splice(H.indexOf(c)+1,0,a,b);
@@ -104,7 +105,9 @@ function run(rows,heads,on,cfg){
   R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&(v>hi||v<lo))fl(r,h,v>hi?'Unusually high value':'Unusually low value',13)})});
  if(on[15])H.forEach(h=>{const q=/qty|quantity/i.test(h);
   if(/qty|quantity|amount|price|sales|rate|total|stock/i.test(h))R.forEach(r=>{const v=r.d[h];if(blank(v))return;const n=pn(v);
-   if(isNaN(n))fl(r,h,'Non-numeric value (not changed)',15);else if(n<0)fl(r,h,'Negative value (not changed)',15);else if(q&&n===0)fl(r,h,'Zero quantity',15)});
+   if(isNaN(n))fl(r,h,'Non-numeric value (not changed)',15);else if(n<0)fl(r,h,'Negative value (not changed)',15);else if(n===0&&q)fl(r,h,'Zero quantity',15);else if(n===0&&/cost/i.test(h))fl(r,h,'Zero cost price - please verify',15)});
+  if(/cost/i.test(h)&&/price|rate|amount|^cost/i.test(h)){const sc=H.find(x=>x!==h&&/unit|selling|sale|mrp/i.test(x)&&/price|rate/i.test(x));
+   if(sc)R.forEach(r=>{const c=pn(r.d[h]),u=pn(r.d[sc]);if(blank(r.d[h])||blank(r.d[sc])||isNaN(c)||isNaN(u))return;if(c>u)fl(r,h,`Cost price is higher than selling price (${u}) - possible loss, please verify`,15)})}
   if(/status/i.test(h)){const ok=cfg.statuses&&cfg.statuses.length?cfg.statuses:DEFST,al=ok.map(x=>x.toLowerCase());
    R.forEach(r=>{const v=r.d[h];if(blank(v))return;const k=String(v).trim().toLowerCase();if(al.includes(k))return;let b=99,c=[];
     ok.forEach(x=>{const e=osa(k,x.toLowerCase());if(e<b){b=e;c=[x]}else if(e===b)c.push(x)});
