@@ -19,7 +19,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 select,input[type=text]{padding:6px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx)}
 .tw{overflow:auto;max-height:380px;border:1px solid var(--bd);border-radius:8px}table{border-collapse:collapse;font-size:13px;width:100%}
 th,td{border-bottom:1px solid var(--bd);padding:4px 8px;white-space:nowrap;text-align:left}th{position:sticky;top:0;background:var(--card)}td.f{background:var(--wa)}
-.msg{padding:10px;border-radius:8px;background:var(--er);margin-bottom:10px}.hid{display:none}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.dt{margin:0 0 6px 34px}.dt summary{cursor:pointer;color:var(--pr);font-size:13px;padding:2px 0}.dt td,.dt th{font-size:12px}.msg{padding:10px;border-radius:8px;background:var(--er);margin-bottom:10px}.hid{display:none}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.stat div{border:1px solid var(--bd);border-radius:8px;padding:8px}.stat b{font-size:20px;display:block}
 </style></head><body><main>
 <h1>Excel Cleaner</h1>
@@ -46,7 +46,7 @@ th,td{border-bottom:1px solid var(--bd);padding:4px 8px;white-space:nowrap;text-
 <script>
 const $=s=>document.querySelector(s);
 const O=[[1,'Detect duplicates','Exact + possible duplicates (flagged, never deleted)'],[2,'Trim spaces','" Jaipur " → "Jaipur"'],[3,'Standardize text','jaipur, JAIPUR → Jaipur'],[4,'Find blank cells','Missing email or amount (flagged)'],[5,'Fix data types','"1500" → number 1500'],[6,'Standardize dates','Mixed date formats → yyyy-mm-dd'],[7,'Validate emails','Invalid email format flagged'],[8,'Validate phone numbers','Not a valid 10-digit Indian mobile flagged'],[9,'Clean column names','"Customer Name " → customer_name'],[10,'Split columns','Full name → first / last (choose column below)'],[11,'Merge columns','City + State (choose columns below)'],[12,'Find inconsistent categories','Delhi, delhi, DELHI → one spelling'],[13,'Detect outliers','Unusually high / low numbers flagged'],[14,'Remove empty rows/columns','Unused worksheet areas'],[15,'Find invalid values','Negative quantity/amount, unknown status flagged']];
-let WB,FN,ROWS,HEADS,SCAN={};
+let WB,FN,ROWS,HEADS,SCAN={},SCANR=null;
 const blank=v=>v===''||v==null||(typeof v==='string'&&!v.trim());
 const pn=v=>{if(typeof v==='number')return v;const s=String(v).replace(/[₹$,\s]|^rs\.?/gi,'');return /^-?\d+(\.\d+)?$/.test(s)?+s:NaN};
 const pad=n=>String(n).padStart(2,'0');
@@ -131,13 +131,21 @@ function load(f){err('');if(!f)return;if(f.size>25e6)return err('File is larger 
   $('#sh').innerHTML=WB.SheetNames.map(n=>`<option>${esc(n)}</option>`).join('');$('#work').classList.remove('hid');$('#res').classList.add('hid');sheet()}
   catch(x){err('This file looks corrupted or is not a valid spreadsheet. Nothing was changed.')}};rd.readAsArrayBuffer(f)}
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function dtl(k){if(!SCANR)return'';const lb=(O.find(o=>o[0]==k)||[k,''])[0]+'. '+(O.find(o=>o[0]==k)||[0,''])[1];
+ const id=r=>{if(r==='Header')return'';const v=ROWS[r-2]&&ROWS[r-2][HEADS[0]];return v==null?'':String(v)};
+ const nt=t=>String(t).replace(/row (\d+)/g,(m,n)=>'row '+n+(id(+n)?' ('+id(+n)+')':''));
+ const it=[];SCANR.flags.filter(f=>f.Check===lb).forEach(f=>it.push([f.Row,f.Column,String(f.Value),nt(f.Issue)+(f['Suggested correction']!==''?' → suggested: '+f['Suggested correction']:''),'Flag only']));
+ SCANR.changes.filter(c=>c.Check===lb).forEach(c=>it.push([c.Row,c.Column,c['Old value']+' → '+c['New value'],'Will be changed','Change']));
+ SCANR.removed.filter(x=>k==14).forEach(x=>it.push([x['Original row'],'(whole row)','','Empty row','Removed']));
+ if(!it.length)return'';it.sort((a,b)=>(+a[0]||0)-(+b[0]||0));
+ return`<details class="dt"><summary>Show details (${it.length})</summary><div class="tw" style="max-height:260px"><table><thead><tr><th>Row</th><th>${esc(HEADS[0])}</th><th>Column</th><th>Value</th><th>What</th><th>Action</th></tr></thead><tbody>${it.slice(0,300).map(x=>`<tr><td>${esc(x[0])}</td><td>${esc(id(x[0]))}</td><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${esc(x[3])}</td><td>${x[4]}</td></tr>`).join('')}</tbody></table></div>${it.length>300?`<small>+${it.length-300} more – all are in the downloaded file.</small>`:''}</details>`}
 function sheet(){const a=XLSX.utils.sheet_to_json(WB.Sheets[$('#sh').value],{header:1,defval:'',raw:true});
  if(a.length<2){ROWS=[];HEADS=[];$('#info').textContent='Sheet has no data rows.';$('#opts').innerHTML='';return}
  const seen={};HEADS=a[0].map((h,i)=>{let b=String(h).trim()||'Column '+(i+1),n=b,k=2;while(seen[n])n=b+'_'+k++;seen[n]=1;return n});
  ROWS=a.slice(1).map(r=>{const d={};HEADS.forEach((h,i)=>d[h]=r[i]??'');return d});
  $('#info').textContent=`${ROWS.length} rows · ${HEADS.length} columns`;
- const all={};O.forEach(o=>all[o[0]]=1);SCAN=run(ROWS,HEADS,all,{}).st;
- $('#opts').innerHTML=O.map(o=>{const n=SCAN[o[0]]||0,ck=n>0&&o[0]!==10&&o[0]!==11;return`<label class="opt"><input type="checkbox" data-o="${o[0]}" ${ck?'checked':''}><span><b>${o[0]}. ${o[1]}</b><small>${o[2]}</small></span>${[10,11].includes(o[0])?'':`<span class="bg">${n} found</span>`}</label>`}).join('');
+ const all={};O.forEach(o=>all[o[0]]=1);SCANR=run(ROWS,HEADS,all,{});SCAN=SCANR.st;
+ $('#opts').innerHTML=O.map(o=>{const n=SCAN[o[0]]||0,ck=n>0&&o[0]!==10&&o[0]!==11;return`<label class="opt"><input type="checkbox" data-o="${o[0]}" ${ck?'checked':''}><span><b>${o[0]}. ${o[1]}</b><small>${o[2]}</small></span>${[10,11].includes(o[0])?'':`<span class="bg">${n} found</span>`}</label>${dtl(o[0])}`}).join('');
  const ch=n=>HEADS.map(h=>`<label><input type="checkbox" name="${n}" value="${esc(h)}"> ${esc(h)}</label>`).join('');
  $('#dupc').innerHTML=ch('dup');$('#mgc').innerHTML=ch('mg');$('#spc').innerHTML='<option value="">— none —</option>'+HEADS.map(h=>`<option>${esc(h)}</option>`).join('')}
 function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forEach(c=>{if(c.checked)on[c.dataset.o]=1});
