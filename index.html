@@ -36,6 +36,11 @@ button.p{background:linear-gradient(135deg,var(--pr),#12b886);border-radius:14px
 .stat div{border-radius:16px;text-align:center;background:var(--card);animation:up .6s both}.stat div:nth-child(2){animation-delay:.1s}.stat div:nth-child(3){animation-delay:.2s}.stat div:nth-child(4){animation-delay:.3s}.stat b{font-size:32px;color:var(--pr)}#res{animation:up .6s both}.foot{text-align:center;font-size:12px;color:var(--mu);padding:8px 0 24px}
 @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}@keyframes sh{to{background-position:200%}}@keyframes fl{50%{transform:translateY(-7px)}}@keyframes ld{0%{margin-left:-40%}100%{margin-left:100%}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.ch{display:inline-flex;gap:6px;align-items:center;border-radius:99px;padding:6px 13px;margin:3px 5px 3px 0;font-size:13px;border:1px solid var(--bd)}.ch.ok{background:color-mix(in srgb,#12b886 14%,transparent)}.ch.wn{background:var(--wa)}.sh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:18px}.sh small{color:var(--mu)}
+.adv{margin-bottom:14px}.adv>summary{cursor:pointer;padding:12px 6px;font-weight:600;color:var(--mu)}#go{margin:2px 0 16px}
+.or{display:grid!important;grid-template-columns:1fr 112px;gap:8px;align-items:center}.ow .opt{min-width:0}.dtb{width:100%}.bg{min-width:78px;text-align:center}
+.chips label{display:inline-flex;gap:6px;align-items:center;border-radius:99px;padding:5px 12px;cursor:pointer;transition:.2s}.chips label:has(input:checked){background:color-mix(in srgb,var(--pr) 14%,transparent);border-color:var(--pr)}.chips input{accent-color:var(--pr)}
+#cfg select,#cfg input[type=text]{font:inherit;padding:8px 10px;border-radius:10px}#sts{width:100%;flex:1 1 100%}
 </style></head><body><main>
 <header class="nav"><div class="brand"><svg viewBox="0 0 32 32"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a5cff"/><stop offset="1" stop-color="#12b886"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><path d="M9 16.5l5 5 9-11" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>CleanSheet</div><span class="pill">🔒 100% private · runs in your browser</span></header>
 <section class="hero"><h1>Clean any Excel file in <span>one click</span></h1>
@@ -49,15 +54,17 @@ button.p{background:linear-gradient(135deg,var(--pr),#12b886);border-radius:14px
 <div class="card"><div class="row"><b id="fn"></b><span id="info" class="s" style="margin:0"></span>
 <span class="row" style="margin-left:auto">Sheet: <select id="sh"></select></span></div></div>
 <div class="card"><details><summary><b>Column check</b> <small style="color:var(--mu)">(I guessed each column's type - change only if I got one wrong)</small></summary><div id="roles" class="roles"></div></details></div>
-<div class="card"><b>What should I do?</b> <small style="color:var(--mu)">(items found in your file are pre-ticked)</small><div class="row" style="margin:8px 0"><button type="button" class="g" id="sa">Select all</button><button type="button" class="g" id="sn">Select none</button></div><div id="opts"></div></div>
+<div id="sum" class="card"></div>
+<div class="bar hid" id="bar"><i></i></div><button class="p" id="go">✨ Clean my file &amp; Download</button>
+<details class="adv"><summary>⚙️ Advanced options <small>(optional – the best settings are already selected)</small></summary><div class="card"><b>Choose what to clean</b> <small style="color:var(--mu)">(items found in your file are pre-ticked)</small><div class="row" style="margin:8px 0"><button type="button" class="g" id="sa">Select all</button><button type="button" class="g" id="sn">Select none</button></div><div id="opts"></div></div>
 <div class="card" id="cfg"><b>Settings for selected options</b>
-<p><small>Duplicate check columns (none ticked = all columns except ID)</small></p><div id="dupc" class="chips"></div>
-<p class="row"><span>Duplicate mode:</span><select id="dpm"><option value="auto">Auto-detect</option><option value="list">Customer list (same email/phone = possible duplicate)</option><option value="tx">Sales / transactions (exact duplicate rows only)</option></select></p>
-<p class="row"><span>Split column:</span><select id="spc"></select><small>into first / last name</small></p>
-<p><small>Merge columns (tick 2 or more)</small></p><div id="mgc" class="chips"></div>
+<div data-for="1,17"><p><small>Duplicate check columns (none ticked = all columns except ID)</small></p><div id="dupc" class="chips"></div>
+<p class="row"><span>Duplicate mode:</span><select id="dpm"><option value="auto">Auto-detect</option><option value="list">Customer list (same email/phone = possible duplicate)</option><option value="tx">Sales / transactions (exact duplicate rows only)</option></select></p></div>
+<div data-for="10"><p class="row"><span>Split column:</span><select id="spc"></select><small>into first / last name</small></p></div>
+<div data-for="11"><p><small>Merge columns (tick 2 or more)</small></p><div id="mgc" class="chips"></div>
 <p class="row">Separator <input type="text" id="mgs" value=", " size="4" aria-label="Separator"> New name <input type="text" id="mgn" value="merged" size="12" aria-label="New column name"></p>
-<p class="row">Allowed status values <small>(only checked in "status" columns that mostly use these)</small> <input type="text" id="sts" value="Paid, Pending, Refunded, Unpaid, Partially Paid, Overdue, Disputed, Cancelled, Draft" size="45" aria-label="Allowed payment statuses"></p></div>
-<div class="bar hid" id="bar"><i></i></div><button class="p" id="go">Clean &amp; Download</button>
+</div><div data-for="15"><p class="row">Allowed status values <small>(only checked in "status" columns that mostly use these)</small> <input type="text" id="sts" value="Paid, Pending, Refunded, Unpaid, Partially Paid, Overdue, Disputed, Cancelled, Draft" size="45" aria-label="Allowed payment statuses"></p></div></div>
+</details>
 <div id="res" class="hid" style="margin-top:14px"></div></div>
 <p class="s">Dates are read as day/month/year (Indian style) unless a column clearly uses month/day. Original file is never changed; removed rows are saved in a separate sheet. Flags are suggestions – please review.</p><div class="foot">© CleanSheet · Your data never leaves this device</div>
 </main>
@@ -67,7 +74,7 @@ button.p{background:linear-gradient(135deg,var(--pr),#12b886);border-radius:14px
 <script>
 const $=s=>document.querySelector(s);
 const O=[[1,'Detect duplicates','Exact + possible duplicates (flagged, never deleted)'],[2,'Trim spaces','" Jaipur " → "Jaipur"'],[3,'Standardize text','jaipur, JAIPUR → Jaipur'],[4,'Find blank cells','Missing email or amount (flagged)'],[5,'Fix data types','"1500" → number 1500'],[6,'Standardize dates','Mixed date formats → yyyy-mm-dd'],[7,'Validate emails','Invalid email format flagged'],[8,'Validate phone numbers','Not a valid 10-digit Indian mobile flagged'],[9,'Clean column names','"Customer Name " → customer_name'],[10,'Split columns','Full name → first / last (choose column below)'],[11,'Merge columns','City + State (choose columns below)'],[12,'Find inconsistent categories','Delhi, delhi, DELHI → one spelling'],[13,'Detect outliers','Unusually high / low numbers flagged'],[14,'Remove empty rows/columns','Unused worksheet areas'],[15,'Find invalid values','Negative quantity/amount, unknown status flagged'],[16,'Auto-fix phone & email','+91 98765 43210 → 9876543210 · emails to lowercase'],[17,'Remove exact duplicate rows','Identical rows moved to the "Removed Rows" sheet - nothing is lost']];
-let WB,FN,ROWS,HEADS,SCAN={},SCANR=null,ROFF=0;
+let WB,FN,ROWS,HEADS,SCAN={},SCANR=null,ROFF=0,LAST=null;
 const PH=/^(n\/?a|nan|nil|null|none|missing|not available|tbd|#n\/a|-+|\?+|\.+)$/i;
 const blank=v=>v===''||v==null||(typeof v==='string'&&(!v.trim()||PH.test(v.trim())));
 const pn=v=>{if(typeof v==='number')return v;let s=String(v).trim(),g=1;if(/^\(.*\)$/.test(s)){g=-1;s=s.slice(1,-1)}s=s.replace(/^(rs\.?|inr)\s*/i,'').replace(/\/-$/,'').replace(/[₹$€£,\s]/g,'');return /^-?\d+(\.\d+)?$/.test(s)?g*+s:NaN};
@@ -172,6 +179,14 @@ function run(rows,heads,on,cfg){
  const st={};[det,app].forEach(o=>Object.keys(o).forEach(k=>bump(st,k,o[k])));
  return{R,H,st,det,sug,app,flags,removed,changes,ty:TY,map,dc:[...DC]}}
 function cu(e){const n=+e.textContent,t0=performance.now(),f=t=>{const p=Math.min(1,(t-t0)/900);e.textContent=Math.round(n*(1-Math.pow(1-p,3)));p<1&&requestAnimationFrame(f)};requestAnimationFrame(f)}
+function sv(w,nm){const bin=XLSX.write(w,{bookType:'xlsx',type:'array',cellDates:false}),fb=()=>{try{XLSX.writeFile(w,nm,{cellDates:false})}catch(x){const u=URL.createObjectURL(new Blob([bin],{type:'application/octet-stream'})),a=document.createElement('a');a.href=u;a.download=nm;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},1500)}};
+ if(!window.claude||!claude.use)return fb();claude.use('downloads').then(d=>d?d.save({filename:nm,data:bin}):fb()).catch(e=>{if(!e||e.code!=='declined')fb()})}
+function sy(){let any=0;document.querySelectorAll('#cfg [data-for]').forEach(d=>{const on=d.dataset.for.split(',').some(k=>{const c=document.querySelector('[data-o="'+k+'"]');return c&&c.checked});d.classList.toggle('hid',!on);any|=on});$('#cfg').classList.toggle('hid',!any)}
+function sm(){if(!SCANR)return;const ck=[...document.querySelectorAll('[data-o]:checked')].map(c=>+c.dataset.o),A=SCANR.app,D=SCANR.det,
+ FX={2:'extra spaces',3:'capitalisation',5:'text → numbers',6:'dates made uniform',9:'column names',12:'spelling variants',14:'empty rows/columns',16:'phone & email formats',17:'duplicate rows moved aside'},
+ RV={1:'possible duplicates',4:'blank cells',5:'values that are not numbers',6:'invalid dates',7:'invalid emails',8:'invalid phone numbers',13:'unusual numbers',15:'suspicious values'},
+ f=ck.filter(k=>FX[k]&&A[k]),r=ck.filter(k=>RV[k]&&D[k]),nf=f.reduce((a,k)=>a+A[k],0),nr=r.reduce((a,k)=>a+D[k],0);
+ $('#sum').innerHTML=`<div class="sh"><b>${nf+nr?'Here is what we found in your file':'Your file looks clean!'}</b><small>${ROWS.length} rows · ${HEADS.length} columns${ROFF?' · header on row '+(ROFF+1):''}</small></div>${f.length?`<p class="dh">✅ Will be fixed automatically (${nf})</p><div>${f.map(k=>`<span class="ch ok"><b>${A[k]}</b> ${FX[k]}</span>`).join('')}</div>`:''}${r.length?`<p class="dh">👀 Please check these yourself – we only flag them, never change them (${nr})</p><div>${r.map(k=>`<span class="ch wn"><b>${D[k]}</b> ${RV[k]}</span>`).join('')}</div>`:''}<p class="s" style="margin:12px 0 0">Nothing to set up – just press the big button below. Want more control? Open “Advanced options”.</p>`}
 function err(m){const e=$('#err');e.textContent=m;e.classList.toggle('hid',!m)}
 function load(f){err('');if(!f)return;if(f.size>25e6)return err('File is larger than 25 MB. Please split it and try again.');
  if(!/\.(xlsx|xls|csv)$/i.test(f.name))return err('Unsupported file. Please upload .xlsx, .xls or .csv.');
@@ -203,7 +218,7 @@ function sheet(){const a0=XLSX.utils.sheet_to_json(WB.Sheets[$('#sh').value],{he
  $('#info').textContent=`${ROWS.length} rows · ${HEADS.length} columns`+(ROFF?` · header found on row ${ROFF+1}`:'');
  $('#res').classList.add('hid');$('#opts').innerHTML='';$('#roles').innerHTML='';scanUI();mkRoles();
  const ch=n=>HEADS.map(h=>`<label><input type="checkbox" name="${n}" value="${esc(h)}"> ${esc(h)}</label>`).join('');
- $('#dupc').innerHTML=ch('dup');$('#mgc').innerHTML=ch('mg');$('#spc').innerHTML='<option value="">— none —</option>'+HEADS.map(h=>`<option>${esc(h)}</option>`).join('')}
+ $('#dupc').innerHTML=ch('dup');$('#mgc').innerHTML=ch('mg');$('#spc').innerHTML='<option value="">— none —</option>'+HEADS.map(h=>`<option>${esc(h)}</option>`).join('');sy();sm()}
 function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forEach(c=>{if(c.checked)on[c.dataset.o]=1});
  if(!Object.keys(on).length)return err('Please tick at least one option.');
  const g=n=>[...document.querySelectorAll(`[name=${n}]:checked`)].map(c=>c.value);
@@ -216,14 +231,14 @@ function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forE
  add('Cleaned',clean,o.H);{const ws=w.Sheets['Cleaned'];if(ws&&ws['!ref']){const rg=XLSX.utils.decode_range(ws['!ref']);ws['!cols']=o.H.map(h=>({wch:Math.min(40,Math.max(String(h).length,...clean.slice(0,300).map(r=>String(r[h]??'').length))+2)}));
  o.dc.forEach(h=>{const c=o.H.indexOf(h);if(c<0)return;for(let r=1;r<=rg.e.r;r++){const x=ws[XLSX.utils.encode_cell({r,c})],m=x&&x.t==='s'&&x.v.match(/^(\d{4})-(\d\d)-(\d\d)(?: (\d\d):(\d\d))?$/);if(m){x.t='n';x.v=(Date.UTC(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0))-Date.UTC(1899,11,30))/864e5;x.z=m[4]?'yyyy-mm-dd hh:mm':'yyyy-mm-dd';delete x.w}}})}}add('Removed Rows',o.removed.length?o.removed:[{Info:'No rows removed'}]);add('Flags',o.flags.length?o.flags:[{Info:'No issues flagged'}]);
  add('Applied Changes',o.changes.length?o.changes:[{Info:'No cell changes applied'}]);XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(mkSummary(o,on,ROWS.length,clean.length)),'Summary');WB.SheetNames.filter(n=>n!==$('#sh').value).forEach(n=>{try{XLSX.utils.book_append_sheet(w,WB.Sheets[n],('Original - '+n).slice(0,31))}catch(e){}});
- {const nm=FN.replace(/\.\w+$/,'')+'_cleaned.xlsx',bin=XLSX.write(w,{bookType:'xlsx',type:'array',cellDates:false});(window.claude?claude.use('downloads'):Promise.resolve(null)).then(d=>d?d.save({filename:nm,data:bin}):err('Download is not available in this view.')).catch(e=>{if(!e||e.code!=='declined')err('Download failed: '+((e&&(e.message||e.code))||'unknown error'))})}
+ LAST=[w,FN.replace(/\.\w+$/,'')+'_cleaned.xlsx'];sv(LAST[0],LAST[1])
  const fm=new Set(o.flags.map(f=>f.Row+'|'+f.Column)),rr=o.R.slice(0,100);
  $('#res').innerHTML=`<div class="stat"><div><b class="cu">${ROWS.length}</b>rows before</div><div><b class="cu">${clean.length}</b>rows after</div><div><b class="cu">${o.removed.length}</b>rows removed</div><div><b class="cu">${o.flags.length}</b>cells flagged</div></div>
- <p><b>Downloaded:</b> ${esc(FN.replace(/\.\w+$/,''))}_cleaned.xlsx (sheets: Cleaned, Removed Rows, Flags, Applied Changes, Summary)</p>
+ <p><b>✅ Done!</b> Your cleaned file is saving as ${esc(FN.replace(/\.\w+$/,''))}_cleaned.xlsx . Open the “Cleaned” sheet for your clean data and “Flags” for items to check by hand. <button type="button" class="g" id="dl">⬇ Download again</button></p>
  <p><small>Preview of first ${rr.length} rows – yellow cells are flagged for your review.</small></p><div class="tw"><table><thead><tr>${o.H.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rr.map(r=>`<tr>${o.H.map(h=>`<td class="${fm.has(r.r+'|'+h)?'f':''}">${esc(r.d[h])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
  $('#res').classList.remove('hid');document.querySelectorAll('#res .cu').forEach(cu);$('#res').scrollIntoView({behavior:'smooth'})}
  catch(x){err('Processing failed, so no file was created. Your original file is untouched. ('+x.message+')')}}
 const dz=$('#drop'),fi=$('#fi');dz.onclick=()=>fi.click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
 fi.onchange=()=>{load(fi.files[0]);fi.value=''};dz.ondragover=e=>{e.preventDefault();dz.classList.add('on')};dz.ondragleave=()=>dz.classList.remove('on');
-dz.ondrop=e=>{e.preventDefault();dz.classList.remove('on');load(e.dataTransfer.files[0])};$('#opts').addEventListener('click',e=>{const b=e.target.closest('.dtb');if(!b)return;const open=$('#dp'+b.dataset.k).classList.toggle('hid')===false;b.setAttribute('aria-expanded',open);b.textContent=b.textContent.replace(/[▾▴]/,open?'▴':'▾')});$('#sh').onchange=sheet;$('#roles').addEventListener('change',()=>scanUI());$('#sa').onclick=()=>document.querySelectorAll('[data-o]').forEach(c=>c.checked=true);$('#sn').onclick=()=>document.querySelectorAll('[data-o]').forEach(c=>c.checked=false);$('#go').onclick=()=>{const b=$('#go');b.disabled=true;b.textContent='Cleaning your data...';$('#bar').classList.remove('hid');setTimeout(()=>{try{go()}finally{b.disabled=false;b.innerHTML='Clean &amp; Download';$('#bar').classList.add('hid')}},450)};
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('on');load(e.dataTransfer.files[0])};$('#opts').addEventListener('click',e=>{const b=e.target.closest('.dtb');if(!b)return;const open=$('#dp'+b.dataset.k).classList.toggle('hid')===false;b.setAttribute('aria-expanded',open);b.textContent=b.textContent.replace(/[▾▴]/,open?'▴':'▾')});$('#sh').onchange=sheet;$('#roles').addEventListener('change',()=>{scanUI();sy();sm()});$('#opts').addEventListener('change',()=>{sy();sm()});$('#res').addEventListener('click',e=>{if(e.target.id==='dl'&&LAST)sv(LAST[0],LAST[1])});$('#sa').onclick=()=>{document.querySelectorAll('[data-o]').forEach(c=>c.checked=true);sy();sm()};$('#sn').onclick=()=>{document.querySelectorAll('[data-o]').forEach(c=>c.checked=false);sy();sm()};$('#go').onclick=()=>{const b=$('#go');b.disabled=true;b.textContent='Cleaning your data...';$('#bar').classList.remove('hid');setTimeout(()=>{try{go()}finally{b.disabled=false;b.innerHTML='✨ Clean my file &amp; Download';$('#bar').classList.add('hid')}},450)};
 </script></body></html>
