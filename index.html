@@ -61,7 +61,7 @@ button.p{background:linear-gradient(135deg,var(--pr),#12b886);border-radius:14px
 <div id="res" class="hid" style="margin-top:14px"></div></div>
 <p class="s">Dates are read as day/month/year (Indian style) unless a column clearly uses month/day. Original file is never changed; removed rows are saved in a separate sheet. Flags are suggestions – please review.</p><div class="foot">© CleanSheet · Your data never leaves this device</div>
 </main>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>window.XLSX||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>')</script>
 <script>window.XLSX||document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
 <script>
@@ -216,7 +216,7 @@ function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forE
  add('Cleaned',clean,o.H);{const ws=w.Sheets['Cleaned'];if(ws&&ws['!ref']){const rg=XLSX.utils.decode_range(ws['!ref']);ws['!cols']=o.H.map(h=>({wch:Math.min(40,Math.max(String(h).length,...clean.slice(0,300).map(r=>String(r[h]??'').length))+2)}));
  o.dc.forEach(h=>{const c=o.H.indexOf(h);if(c<0)return;for(let r=1;r<=rg.e.r;r++){const x=ws[XLSX.utils.encode_cell({r,c})],m=x&&x.t==='s'&&x.v.match(/^(\d{4})-(\d\d)-(\d\d)(?: (\d\d):(\d\d))?$/);if(m){x.t='n';x.v=(Date.UTC(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0))-Date.UTC(1899,11,30))/864e5;x.z=m[4]?'yyyy-mm-dd hh:mm':'yyyy-mm-dd';delete x.w}}})}}add('Removed Rows',o.removed.length?o.removed:[{Info:'No rows removed'}]);add('Flags',o.flags.length?o.flags:[{Info:'No issues flagged'}]);
  add('Applied Changes',o.changes.length?o.changes:[{Info:'No cell changes applied'}]);XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(mkSummary(o,on,ROWS.length,clean.length)),'Summary');WB.SheetNames.filter(n=>n!==$('#sh').value).forEach(n=>{try{XLSX.utils.book_append_sheet(w,WB.Sheets[n],('Original - '+n).slice(0,31))}catch(e){}});
- XLSX.writeFile(w,FN.replace(/\.\w+$/,'')+'_cleaned.xlsx',{cellDates:false});
+ {const nm=FN.replace(/\.\w+$/,'')+'_cleaned.xlsx',bin=XLSX.write(w,{bookType:'xlsx',type:'array',cellDates:false});(window.claude?claude.use('downloads'):Promise.resolve(null)).then(d=>d?d.save({filename:nm,data:bin}):err('Download is not available in this view.')).catch(e=>{if(!e||e.code!=='declined')err('Download failed: '+((e&&(e.message||e.code))||'unknown error'))})}
  const fm=new Set(o.flags.map(f=>f.Row+'|'+f.Column)),rr=o.R.slice(0,100);
  $('#res').innerHTML=`<div class="stat"><div><b class="cu">${ROWS.length}</b>rows before</div><div><b class="cu">${clean.length}</b>rows after</div><div><b class="cu">${o.removed.length}</b>rows removed</div><div><b class="cu">${o.flags.length}</b>cells flagged</div></div>
  <p><b>Downloaded:</b> ${esc(FN.replace(/\.\w+$/,''))}_cleaned.xlsx (sheets: Cleaned, Removed Rows, Flags, Applied Changes, Summary)</p>
