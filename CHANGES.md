@@ -20,3 +20,10 @@
 - VAT / a single "GST" line is not a supported tax field (the total check flags it loudly).
 - CDN libraries are not vendored and have no SRI hashes; the Invoices tool still has no CSP (needs network to vendor; OCR must be re-tested after).
 - Storage is still localStorage (no IndexedDB / auto-backup). Audit module, branding, Web Worker for large Excel files: unchanged.
+
+# UI polish pass (Phase 1)
+- Shared look: one primary blue in the shell, sticky blurred header, privacy pill moved out of the tab list (and hidden on small screens), SVG lock instead of emoji.
+- Mobile: tabs scroll horizontally, no sideways page overflow (verified at 390px).
+- Home: 3-step strip, file-type chips, compact task cards with icons and an "Open" button, trust row.
+- All tools: shared base style injected into each iframe (fixes the background seam, consistent font, reduced-motion support).
+- Phase 2 (not done yet): Invoices/Payments/Audit result screens, status chips, toasts, demo data, tool-level token unification.

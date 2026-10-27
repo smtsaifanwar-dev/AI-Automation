@@ -4,8 +4,8 @@
 <title>BizPilot – Clean Excel &amp; Process Invoices in One Click</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a5cff'/%3E%3Cpath d='M9 16.5l5 5 9-11' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
-:root{--bg:#f4f6fb;--card:#fff;--tx:#0f1b33;--mu:#5b6a85;--bd:#e3e8f1;--pr:#0a5cff;--gr:#12b886;--prt:#fff;--sh:0 1px 2px rgba(15,27,51,.05),0 12px 32px rgba(15,27,51,.08)}
-@media(prefers-color-scheme:dark){:root{--bg:#0a1020;--card:#121a2e;--tx:#e9eefb;--mu:#93a1bf;--bd:#223052;--pr:#4d8bff;--prt:#06101f;--sh:none}}
+:root{--bg:#f4f6fb;--card:#fff;--tx:#0f1b33;--mu:#5b6a85;--bd:#e3e8f1;--pr:#2563eb;--gr:#12b886;--prt:#fff;--sh:0 1px 2px rgba(15,27,51,.05),0 12px 32px rgba(15,27,51,.08)}
+@media(prefers-color-scheme:dark){:root{--bg:#0a1020;--card:#121a2e;--tx:#e9eefb;--mu:#93a1bf;--bd:#223052;--pr:#5b9bff;--prt:#06101f;--sh:none}}
 *{box-sizing:border-box}html,body{height:100%;margin:0}
 body{background:radial-gradient(900px 420px at 85% -8%,color-mix(in srgb,var(--pr) 16%,transparent),transparent),var(--bg);color:var(--tx);font:15px/1.5 Inter,system-ui,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
 button{font:inherit;color:inherit}
@@ -52,20 +52,51 @@ ul.f li:before{content:"✓";color:var(--gr);font-weight:700;margin-right:8px}
 .or{text-align:center;color:var(--mu);font-size:13px;margin:0 0 14px}
 ul.f{display:none}.card{padding:16px}.drop{padding:18px 12px}.drop svg{width:30px;height:30px}.ic{display:none}.go{display:none}
 .pill{display:none}@media(min-width:900px){.pill{display:inline-block}}
+
+/* ---- Phase 1 polish ---- */
+.bar{position:sticky;top:0;z-index:20;backdrop-filter:saturate(1.4) blur(10px);background:color-mix(in srgb,var(--card) 88%,transparent)}
+.pill{display:none;align-items:center;gap:6px;margin-left:auto}@media(min-width:720px){.pill{display:inline-flex}}
+.tab{white-space:nowrap;transition:background .15s,color .15s}
+html,body{overflow-x:hidden}
+@media(max-width:720px){
+ .bar{padding:8px 12px;gap:8px}
+ .tabs{order:3;flex:1 1 100%;margin:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+ .tabs::-webkit-scrollbar{display:none}
+ .brand{font-size:17px}
+}
+.steps{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:18px 0 0;padding:0;list-style:none;color:var(--mu);font-size:13px;font-weight:600}
+.steps li{display:flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--bd);border-radius:99px;background:var(--card)}
+.steps b{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--pr);color:var(--prt);font-size:11px}
+.smart{border-width:2px;transition:transform .2s,box-shadow .2s,background .2s}
+.smart:hover,.smart.on{transform:translateY(-2px)}
+.smart .fmt{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.smart .fmt i{font-style:normal;font-size:12px;font-weight:600;color:var(--mu);border:1px solid var(--bd);border-radius:6px;padding:2px 8px;background:var(--bg)}
+.card{padding:18px;transition:transform .2s,box-shadow .2s,border-color .2s}
+.card:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--pr) 40%,var(--bd))}
+.ic{display:grid!important;width:44px;height:44px;border-radius:12px;margin-bottom:10px}
+.card h2{font-size:18px}.card .sub{font-size:14px;margin-bottom:14px}
+.drop{padding:12px;border-width:1.5px;border-radius:12px}
+.drop svg{display:none}.drop b{margin:0;font-size:14px}.drop small{font-size:12px}
+.go{display:block!important;background:none;color:var(--pr);border:1px solid color-mix(in srgb,var(--pr) 35%,var(--bd));padding:9px;font-size:14px}
+.go:hover{background:color-mix(in srgb,var(--pr) 8%,transparent);filter:none}
+.trust{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:26px;color:var(--mu);font-size:13px}
+.trust span{display:inline-flex;align-items:center;gap:6px}.trust svg{color:var(--gr)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 body.app #home{display:none}body.app #apps{display:block}
 </style></head><body>
 <header class="bar">
 <button class="brand" id="logo" aria-label="Home"><svg viewBox="0 0 32 32"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a5cff"/><stop offset="1" stop-color="#12b886"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#g)"/><path d="M9 16.5l5 5 9-11" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>BizPilot</button>
-<nav class="tabs" role="tablist"><button class="tab" role="tab" data-t="home" aria-selected="true">Home</button><button class="tab" role="tab" data-t="clean" aria-selected="false">Clean Excel</button><button class="tab" role="tab" data-t="invoice" aria-selected="false">Invoices</button><button class="tab" role="tab" data-t="payments" aria-selected="false">Payments</button><button class="tab" role="tab" data-t="audit" aria-selected="false">Audit</button>
-<span class="pill">🔒 Runs in your browser · files are never uploaded</span>
+<nav class="tabs" role="tablist"><button class="tab" role="tab" data-t="home" aria-selected="true">Home</button><button class="tab" role="tab" data-t="clean" aria-selected="false">Clean Excel</button><button class="tab" role="tab" data-t="invoice" aria-selected="false">Invoices</button><button class="tab" role="tab" data-t="payments" aria-selected="false">Payments</button><button class="tab" role="tab" data-t="audit" aria-selected="false">Audit</button></nav>
+<span class="pill"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Private: files never leave your device</span>
 </header>
 
 <main id="home"><div class="wrap">
 <section class="hero"><h1>Clean data. Read invoices. <span>In one click.</span></h1>
-<p>Drop a file below. Fix messy Excel sheets or turn invoices into a checked Excel report, right here, with nothing sent to any server.</p></section>
+<p>Drop a file below. Fix messy Excel sheets or turn invoices into a checked Excel report, right here, with nothing sent to any server.</p><ol class="steps" aria-label="How it works"><li><b>1</b>Drop a file</li><li><b>2</b>Quick review</li><li><b>3</b>Download or send on</li></ol></section>
 <div class="smart" id="smart" tabindex="0" role="button" aria-label="Drop any file here">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
 <b>Drop any file here</b><small>Invoices (PDF, JPG, PNG) open straight away. Excel or CSV: you pick what to do next.</small>
+<div class="fmt" aria-hidden="true"><i>PDF</i><i>JPG</i><i>PNG</i><i>XLSX</i><i>XLS</i><i>CSV</i></div>
 <div id="choose" role="group" aria-label="What should we do with this file?"><button type="button" data-x="clean">Clean this file</button><button type="button" data-x="payments">Use as payment sheet</button></div>
 <p class="err" id="e-smart" role="alert"></p></div>
 <input type="file" id="i-smart" accept=".xlsx,.xls,.csv,.pdf,.jpg,.jpeg,.png" multiple hidden>
@@ -100,7 +131,7 @@ body.app #home{display:none}body.app #apps{display:block}
 <div class="drop" data-open="audit" tabindex="0" role="button" aria-label="Open Business Audit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8 11l2 2 4-4"/></svg><b>Open Business Audit</b><small>Only the website address is sent, to your own audit server (if set up)</small></div>
 <button class="go" data-t="audit">Open business audit →</button></section>
 </div>
-<p class="foot">Your files stay on your device. Everything is processed inside this page.</p>
+<div class="trust"><span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Nothing is uploaded</span><span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Every change is logged</span><span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Original files never modified</span></div>
 </div></main>
 
 <div id="apps"></div>
@@ -123,7 +154,7 @@ function open(t,files){
   return new Promise(res=>{
     if(!FR[t]){
       const f=document.createElement('iframe');f.title={clean:'Excel cleaner',invoice:'Invoice processor',payments:'Payment follow-up',audit:'Business audit'}[t];
-      f.onload=()=>res(f);f.srcdoc=dec('#src-'+t);$('#apps').appendChild(f);FR[t]=f;
+      f.onload=()=>{try{const d=f.contentDocument,s=d.createElement('style');s.textContent='html{min-height:100%;background:var(--bg,#f4f6fb)}body{min-height:100vh;font-family:Inter,system-ui,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}';d.head.appendChild(s)}catch(e){}res(f)};f.srcdoc=dec('#src-'+t);$('#apps').appendChild(f);FR[t]=f;
     }else res(FR[t]);
   }).then(f=>{show(t);if(files&&files.length)handoff(t,f,files)})
 }
