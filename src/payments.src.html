@@ -20,6 +20,8 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 #dlg{position:fixed;inset:0;background:rgba(0,0,0,.5);overflow:auto;padding:10px;z-index:9}#dlg[hidden]{display:none}.dg{max-width:900px;margin:0 auto;background:var(--bg);border-radius:14px;padding:14px}
 #toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#0f1b33;color:#fff;padding:9px 15px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:20}#toast.on{opacity:1}
 .dz{border:2px dashed var(--bd);border-radius:12px;padding:18px;text-align:center;cursor:pointer;color:var(--mu);font-weight:600;margin:8px 0}.dz:hover,.dz.on{border-color:var(--pr);color:var(--pr)}
+.ch{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}.ch button{border:1px solid var(--bd);background:var(--cd);color:var(--tx);border-radius:99px;padding:5px 12px;font:inherit;font-weight:600;cursor:pointer}.ch button.on{background:var(--pr);color:#fff;border-color:var(--pr)}.ch button.bad:not(.on){border-color:var(--er);color:var(--er)}
+tr.rov td{background:color-mix(in srgb,var(--er) 11%,transparent)}tr.rov td:first-child{box-shadow:inset 4px 0 var(--er)}tr.rsoon td{background:color-mix(in srgb,var(--wa) 12%,transparent)}tr.rsoon td:first-child{box-shadow:inset 4px 0 var(--wa)}
 </style></head><body><main>
 <div class="top"><h1>Payment Follow-up</h1><span class="mu">Reminder drafts only. Nothing is sent, charged or uploaded.</span><span class="sp"></span><button class="btn p" id="an">Analyze Payments</button></div>
 <div id="warn"></div><div class="tabs" id="tabs" role="tablist"></div><div id="main"></div>
@@ -32,7 +34,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY='bpPaymentFollowUp.v1',DEF={business:'',sender:'',instr:'',cur:'INR',tz:'Asia/Kolkata',dueSoonDays:3,order:'DMY',cc:'91'};
 function load(){try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&j.v===1){j.S={...DEF,...j.S};return j}}catch(e){}return{v:1,S:{...DEF},inv:[],pay:[],con:[],tsk:[],bat:[]}}
-let M=load(),T='ov',F={q:'',st:'',cur:'',limit:100},STG=null,OPEN=null,RM={id:'',tpl:'',dirty:false,subject:'',body:''},saveErr=false;
+let SUM=null,M=load(),T='ov',F={q:'',st:'',cur:'',limit:100},STG=null,OPEN=null,RM={id:'',tpl:'',dirty:false,subject:'',body:''},saveErr=false;
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(M));saveErr=false}catch(e){saveErr=true}};
 const today=()=>PF.todayISO(M.S.tz),rows=()=>PF.rowsOf(M,today()),$f=(v,c)=>PF.fmt(v,c);
 const aud=(i,a)=>(i.audit=i.audit||[]).push({ts:new Date().toISOString(),a});
@@ -44,22 +46,32 @@ function pass(r){if(F.cur&&r.inv.currency!==F.cur)return false;const s=F.st;
  if(s==='fu'&&!(r.next&&r.next<=today()))return false;if(s==='flag'&&!r.flags.length)return false;if(s==='Hold'&&!['Disputed','On Hold'].includes(r.status))return false;
  if(s&&!['partial','due7','fu','flag','Hold'].includes(s)&&r.status!==s)return false;
  const q=F.q.toLowerCase();return!q||[r.inv.invoiceNo,r.inv.customer,r.inv.email,r.inv.phone].some(x=>String(x||'').toLowerCase().includes(q))}
+const ovSum=a=>{const t={};a.forEach(r=>t[r.inv.currency]=(t[r.inv.currency]||0)+r.bal);return Object.entries(t).map(([c,v])=>' · '+c+' '+$f(v,c)).join('')};
+function vSum(rs){const S=SUM||{n:0,d:0,x:0},ov=rs.filter(r=>r.status==='Overdue').sort((a,b)=>b.pr.s-a.pr.s),soon=rs.filter(r=>r.status==='Due Soon');
+ return`<div class="dg" role="dialog" aria-label="Import summary" style="max-width:520px"><h1>✓ ${S.n} invoice${S.n===1?'':'s'} imported</h1>
+ <p class="mu">${S.d?S.d+' duplicate'+(S.d===1?'':'s')+' skipped. ':''}${S.x?S.x+' row'+(S.x===1?'':'s')+' not imported (see Import history). ':''}</p>
+ ${ov.length?`<div class="msg e"><b>${ov.length} overdue</b>${ovSum(ov)}</div>`:'<div class="msg i">Nothing is overdue right now.</div>'}
+ ${soon.length?`<div class="msg"><b>${soon.length} due soon</b> (within ${M.S.dueSoonDays} days)</div>`:''}
+ <div class="row">${ov.length?'<button class="btn p" data-a="flt" data-v="Overdue">Show overdue only</button>':''}<button class="btn ${ov.length?'':'p'}" data-a="flt" data-v="">Show all invoices</button>${ov.length?`<button class="btn" data-a="rem" data-v="${ov[0].inv.id}">Draft reminders</button>`:''}</div></div>`}
 function vOv(rs){
  if(!M.inv.length)return`<div class="card"><b>No invoices yet.</b><p class="mu">Import a payment sheet or add an invoice to start.</p><button class="btn p" data-a="tab" data-v="imp">Import invoices</button> <button class="btn" data-a="add">Add invoice</button></div>`;
  const T=PF.totals(rs),c=k=>rs.filter(r=>r.status===k).length,k=(l,v,f)=>`<button data-a="flt" data-v="${f}"><span class="mu">${l}</span><b>${v}</b></button>`;
  const fu=M.tsk.filter(t=>t.status!=='done').sort((a,b)=>a.date<b.date?-1:1),due=fu.filter(t=>t.date<=today());
  const ex=rs.filter(r=>r.flags.length);
- return`${Object.entries(T).map(([cur,t])=>`<div class="card"><b>${cur}</b><div class="kp" style="margin-top:6px">${k('Outstanding',cur+' '+$f(t.out,cur),'')}${k('Overdue',cur+' '+$f(t.over,cur),'Overdue')}${k('Due in 7 days',cur+' '+$f(t.due7,cur),'due7')}</div></div>`).join('')||'<div class="card mu">No open balances.</div>'}
+ const ovr=rs.filter(r=>r.status==='Overdue');
+ return`${ovr.length?`<div class="msg e"><b>${ovr.length} overdue</b>${ovSum(ovr)} <button class="btn s" data-a="flt" data-v="Overdue">Show overdue only</button></div>`:''}${Object.entries(T).map(([cur,t])=>`<div class="card"><b>${cur}</b><div class="kp" style="margin-top:6px">${k('Outstanding',cur+' '+$f(t.out,cur),'')}${k('Overdue',cur+' '+$f(t.over,cur),'Overdue')}${k('Due in 7 days',cur+' '+$f(t.due7,cur),'due7')}</div></div>`).join('')||'<div class="card mu">No open balances.</div>'}
  <div class="kp">${k('Unpaid',c('Unpaid'),'Unpaid')}${k('Partially paid (any)',rs.filter(r=>r.partial).length,'partial')}${k('Overdue',c('Overdue'),'Overdue')}${k('Due soon',c('Due Soon'),'Due Soon')}${k('Paid',c('Paid'),'Paid')}${k('Disputed / on hold',rs.filter(r=>['Disputed','On Hold'].includes(r.status)).length,'Hold')}${k('Follow-ups due today',due.length,'fu')}${k('Need review',ex.length,'flag')}</div>
  <p class="mu">Counts overlap (a partly paid invoice can also be overdue). Totals are per currency, never mixed.</p>
  <h3>Follow-ups ${due.length?'due now':''}</h3>${fu.slice(0,8).map(t=>{const i=M.inv.find(x=>x.id===t.invoiceId);return i?`<div class="row"><b>${esc(t.date)}</b> ${t.date<today()?'<span class="st Overdue">late</span>':''}${t.status==='snoozed'?'<span class="st">snoozed</span>':''} ${esc(i.invoiceNo||'—')} · ${esc(i.customer)} <button class="btn s" data-a="open" data-v="${i.id}">Open</button><button class="btn s" data-a="snz" data-v="${t.id}">Snooze 3 days</button></div>`:''}).join('')||'<p class="mu">Nothing scheduled.</p>'}
  <h3>Exceptions to review</h3>${ex.slice(0,15).map(r=>`<div class="msg"><b>${esc(r.inv.invoiceNo||'—')} · ${esc(r.inv.customer||'(no customer)')}</b>: ${esc(r.flags.join('; '))} <button class="btn s" data-a="open" data-v="${r.inv.id}">Open</button></div>`).join('')||'<p class="mu">No exceptions.</p>'}`}
 function vInv(rs){
  const sel=rs.filter(pass).sort((a,b)=>b.pr.s-a.pr.s||(a.inv.dueDate||'z')<(b.inv.dueDate||'z')?-1:1),cur=[...new Set(M.inv.map(i=>i.currency))];
- return`<div class="row"><input id="q" placeholder="Search invoice, customer, contact" value="${esc(F.q)}"><select id="fs">${[['','All statuses'],['Unpaid'],['Partially Paid'],['partial','Partly paid (incl. overdue)'],['Overdue'],['Due Soon'],['due7','Due in 7 days'],['Paid'],['Overpaid'],['Hold','Disputed / on hold'],['Cancelled'],['fu','Follow-up due'],['flag','Has flags']].map(([v,l])=>`<option value="${v}" ${F.st===v?'selected':''}>${l||v}</option>`).join('')}</select>
+ const cn=k=>rs.filter(r=>k==='Overdue'?r.status==='Overdue':k==='Due Soon'?r.status==='Due Soon':k==='due7'?(r.open&&r.daysTo!=null&&r.daysTo>=0&&r.daysTo<=7):true).length;
+ const chips=[['','All'],['Overdue','Overdue','bad'],['Due Soon','Due soon'],['due7','Due in 7 days']].map(([v,l,c])=>`<button data-a="flt" data-v="${v}" class="${F.st===v?'on':''} ${c||''}" aria-pressed="${F.st===v}">${l} (${cn(v)})</button>`).join('');
+ return`<div class="ch">${chips}</div><div class="row"><input id="q" placeholder="Search invoice, customer, contact" value="${esc(F.q)}"><select id="fs">${[['','All statuses'],['Unpaid'],['Partially Paid'],['partial','Partly paid (incl. overdue)'],['Overdue'],['Due Soon'],['due7','Due in 7 days'],['Paid'],['Overpaid'],['Hold','Disputed / on hold'],['Cancelled'],['fu','Follow-up due'],['flag','Has flags']].map(([v,l])=>`<option value="${v}" ${F.st===v?'selected':''}>${l||v}</option>`).join('')}</select>
  <select id="fc"><option value="">All currencies</option>${cur.map(c=>`<option ${F.cur===c?'selected':''}>${c}</option>`).join('')}</select><button class="btn" data-a="add">+ Add invoice</button><span class="mu">${sel.length} shown</span></div>
  <div class="tw"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Due</th><th>Cur</th><th class="n">Total</th><th class="n">Paid</th><th class="n">Outstanding</th><th class="n">Days over</th><th>Status</th><th>Priority</th><th>Next F/U</th><th></th></tr></thead><tbody>
- ${sel.slice(0,F.limit).map(r=>{const c=r.inv.currency;return`<tr><td>${esc(r.inv.invoiceNo||'—')}</td><td>${esc(r.inv.customer)}<br><small class="mu">${esc(r.inv.email||r.inv.phone)}</small></td><td>${r.inv.dueDate||'<span class="mu">missing</span>'}</td><td>${c}</td><td class="n">${$f(r.inv.total,c)}</td><td class="n">${$f(r.paid,c)}</td><td class="n">${$f(r.bal,c)}</td><td class="n">${r.open&&r.daysOver?r.daysOver:''}</td><td>${badge(r.status)}${r.partial&&r.status!=='Partially Paid'?' <small class="mu">part-paid</small>':''}${r.flags.length?' ⚠':''}</td><td title="${esc(r.pr.why.join(', '))}">${r.pr.lvl}</td><td>${r.next||''}</td><td><button class="btn s" data-a="open" data-v="${r.inv.id}">Open</button></td></tr>`}).join('')||'<tr><td colspan="12" class="mu">No matching invoices.</td></tr>'}</tbody></table></div>
+ ${sel.slice(0,F.limit).map(r=>{const c=r.inv.currency;return`<tr class="${r.status==='Overdue'?'rov':r.status==='Due Soon'?'rsoon':''}"><td>${esc(r.inv.invoiceNo||'—')}</td><td>${esc(r.inv.customer)}<br><small class="mu">${esc(r.inv.email||r.inv.phone)}</small></td><td>${r.inv.dueDate||'<span class="mu">missing</span>'}</td><td>${c}</td><td class="n">${$f(r.inv.total,c)}</td><td class="n">${$f(r.paid,c)}</td><td class="n">${$f(r.bal,c)}</td><td class="n">${r.open&&r.daysOver?r.daysOver:''}</td><td>${badge(r.status)}${r.partial&&r.status!=='Partially Paid'?' <small class="mu">part-paid</small>':''}${r.flags.length?' ⚠':''}</td><td title="${esc(r.pr.why.join(', '))}">${r.pr.lvl}</td><td>${r.next||''}</td><td><button class="btn s" data-a="open" data-v="${r.inv.id}">Open</button></td></tr>`}).join('')||'<tr><td colspan="12" class="mu">No matching invoices.</td></tr>'}</tbody></table></div>
  ${sel.length>F.limit?'<button class="btn" data-a="more">Show more</button>':''}`}
 function vRem(rs){
  const op=rs.filter(r=>r.open||r.paid>0).sort((a,b)=>b.pr.s-a.pr.s);if(!op.length)return'<div class="card mu">No invoices to remind about yet.</div>';
@@ -109,14 +121,14 @@ function vAdd(){return`<div class="dg"><div class="row"><h1>Add invoice</h1><but
 function render(){$('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tb" role="tab" data-a="tab" data-v="${k}" aria-selected="${T===k}">${l}</button>`).join('');
  $('#warn').innerHTML=(STG&&STG.res&&STG.res.good.length&&T!=='imp'?`<div class="msg i">${STG.res.good.length} invoices from <b>${esc(STG.name)}</b> are waiting and are <b>not saved yet</b>. <button class="btn s" data-a="tab" data-v="imp">Review and import</button></div>`:'')+(saveErr?'<div class="msg e">Could not save to this browser (storage full or blocked). Export your data now.</div>':'');
  const rs=rows();$('#main').innerHTML={ov:vOv,inv:vInv,rem:vRem,imp:vImp,set:vSet}[T](rs);
- $('#dlg').innerHTML=OPEN==='new'?vAdd():OPEN?vDetail(rs):'';$('#dlg').hidden=!OPEN}
+ $('#dlg').innerHTML=OPEN==='new'?vAdd():OPEN==='sum'?vSum(rs):OPEN?vDetail(rs):'';$('#dlg').hidden=!OPEN}
 const find=id=>M.inv.find(i=>i.id===id);
 function copy(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Copied'),()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');toast('Copied')}catch(e){toast('Copy failed: select the text manually')}a.remove()})}
 function addContact(id,o){M.con.push({id:PF.uid(),invoiceId:id,date:today(),channel:o.ch,outcome:o.out,tpl:o.tpl||'',created:new Date().toISOString()});
  M.tsk.filter(t=>t.invoiceId===id&&t.status!=='done').forEach(t=>t.status='done');if(o.next)M.tsk.push({id:PF.uid(),invoiceId:id,date:o.next,status:'open'});aud(find(id),'Follow-up logged ('+o.ch+')');save()}
 function dl(blob,n){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 const A={
- tab:v=>{T=v;OPEN=null},flt:v=>{F.st=v;F.q='';T='inv'},more:()=>F.limit+=100,open:v=>OPEN=v,close:()=>OPEN=null,add:()=>OPEN='new',rem:v=>{RM={id:v,tpl:'',dirty:false};RM.tpl=PF.recommend(rows().find(r=>r.inv.id===v))||'upcoming';OPEN=null;T='rem'},
+ tab:v=>{T=v;OPEN=null},flt:v=>{F.st=v;F.q='';F.limit=100;T='inv';OPEN=null},more:()=>F.limit+=100,open:v=>OPEN=v,close:()=>OPEN=null,add:()=>OPEN='new',rem:v=>{RM={id:v,tpl:'',dirty:false};RM.tpl=PF.recommend(rows().find(r=>r.inv.id===v))||'upcoming';OPEN=null;T='rem'},
  pick:()=>$('#fi').click(),restore:()=>$('#fr').click(),
  setbiz:v=>{M.S.business=v;save();STG.res=PF.stageRows(STG.rows,STG.sel,M.S,M.inv);toast('Business set to '+v+'. '+STG.res.good.length+' invoices ready.')},
  setbiz2:()=>{const v=$('#bz').value.trim();if(!v)return toast('Type your business name');A.setbiz(v)},
@@ -142,7 +154,7 @@ const A={
   if(g.paid)M.pay.push({id:PF.uid(),invoiceId:g.inv.id,date:g.lastPay||null,amount:g.paid,currency:g.inv.currency,ref:'Imported: paid amount reported in source file',source:'import',created:new Date().toISOString()});
   if(g.lastFU)M.con.push({id:PF.uid(),invoiceId:g.inv.id,date:g.lastFU,channel:'other',outcome:'Imported: last follow-up date from source file',created:new Date().toISOString()});
   if(g.nextFU&&g.inv.total>g.paid)M.tsk.push({id:PF.uid(),invoiceId:g.inv.id,date:g.nextFU,status:'open'})});
-  M.bat.push({ts:new Date().toISOString(),name:STG.name,n:R.good.length,d:R.dup.length,x:R.bad.length+R.skip.length});save();toast(R.good.length+' invoices imported');STG=null;T='ov'},
+  M.bat.push({ts:new Date().toISOString(),name:STG.name,n:R.good.length,d:R.dup.length,x:R.bad.length+R.skip.length});save();SUM={n:R.good.length,d:R.dup.length,x:R.bad.length+R.skip.length};STG=null;F.st='';F.q='';T='inv';OPEN='sum'},
  xlsx:()=>{if(!window.XLSX)return toast('Excel library did not load. Check your connection.');const S=PF.sheets(M,today()),wb=XLSX.utils.book_new();
   for(const k in S){const ws=XLSX.utils.aoa_to_sheet(S[k]);ws['!cols']=S[k][0].map(()=>({wch:18}));XLSX.utils.book_append_sheet(wb,ws,k)}
   const b=XLSX.write(wb,{bookType:'xlsx',type:'array'});dl(new Blob([b],{type:'application/octet-stream'}),'payment-followup_'+today()+'.xlsx')},

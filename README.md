@@ -12,6 +12,8 @@ Three tools in one page, all running in the browser (no server, files are never 
 - **Invoices → Payments:** after processing, click *Send to Payments →*. The first time you pick which name is your business (saved), then *Import*.
 - **Drop a payment sheet** on the home page or the Payments > Import tab. Amounts like `Rs 5000/-`, `1.234,50`, dates like `5-Mar-2026` and Excel date numbers are understood.
 
+- **After every import** a summary popup shows how many invoices are overdue / due soon, with *Show overdue only*, *Show all invoices* and *Draft reminders*. The Invoices tab has quick chips (All / Overdue / Due soon / Due in 7 days) and overdue rows are highlighted red.
+
 ## Develop
 ```
 node build.js          # re-embeds src/*.html into index.html (edit src/, never the base64 blocks)
