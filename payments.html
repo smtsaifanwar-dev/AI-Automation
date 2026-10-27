@@ -22,8 +22,9 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .dz{border:2px dashed var(--bd);border-radius:12px;padding:18px;text-align:center;cursor:pointer;color:var(--mu);font-weight:600;margin:8px 0}.dz:hover,.dz.on{border-color:var(--pr);color:var(--pr)}
 .ch{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}.ch button{border:1px solid var(--bd);background:var(--cd);color:var(--tx);border-radius:99px;padding:5px 12px;font:inherit;font-weight:600;cursor:pointer}.ch button.on{background:var(--pr);color:#fff;border-color:var(--pr)}.ch button.bad:not(.on){border-color:var(--er);color:var(--er)}
 tr.rov td{background:color-mix(in srgb,var(--er) 11%,transparent)}tr.rov td:first-child{box-shadow:inset 4px 0 var(--er)}tr.rsoon td{background:color-mix(in srgb,var(--wa) 12%,transparent)}tr.rsoon td:first-child{box-shadow:inset 4px 0 var(--wa)}
-</style></head><body><main>
-<div class="top"><h1>Payment Follow-up</h1><span class="mu">Reminder drafts only. Nothing is sent, charged or uploaded.</span><span class="sp"></span><button class="btn p" id="an">Analyze Payments</button></div>
+.emb .bk{display:none}.bk{text-decoration:none;color:var(--mu)}
+</style></head><body><main><script>if(parent!==window)document.documentElement.classList.add("emb")</script>
+<div class="top"><a class="btn s bk" href="index.html">← BizPilot</a><h1>Payment Follow-up</h1><span class="mu">Reminder drafts only. Nothing is sent, charged or uploaded.</span><span class="sp"></span><button class="btn p" id="an">Analyze Payments</button></div>
 <div id="warn"></div><div class="tabs" id="tabs" role="tablist"></div><div id="main"></div>
 <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden><input type="file" id="fr" accept=".json,application/json" hidden>
 </main><div id="dlg" hidden></div><div id="toast" role="status" aria-live="polite"></div>
@@ -223,7 +224,7 @@ function vSum(rs){const S=SUM||{n:0,d:0,x:0},ov=rs.filter(r=>r.status==='Overdue
  ${soon.length?`<div class="msg"><b>${soon.length} due soon</b> (within ${M.S.dueSoonDays} days)</div>`:''}
  <div class="row">${ov.length?'<button class="btn p" data-a="flt" data-v="Overdue">Show overdue only</button>':''}<button class="btn ${ov.length?'':'p'}" data-a="flt" data-v="">Show all invoices</button>${ov.length?`<button class="btn" data-a="rem" data-v="${ov[0].inv.id}">Draft reminders</button>`:''}</div></div>`}
 function vOv(rs){
- if(!M.inv.length)return`<div class="card"><b>No invoices yet.</b><p class="mu">Import a payment sheet or add an invoice to start.</p><button class="btn p" data-a="tab" data-v="imp">Import invoices</button> <button class="btn" data-a="add">Add invoice</button></div>`;
+ if(!M.inv.length)return`<div class="card" style="text-align:center;padding:26px 16px"><b style="font-size:18px">Start by adding your unpaid invoices</b><p class="mu">Drop a payment sheet below. Overdue invoices and ready-to-send reminders appear right after.</p><div class="dz" data-a="pick" tabindex="0" role="button" style="padding:34px 18px;font-size:16px">Drop Excel / CSV here or click to choose</div><button class="btn" data-a="add">Or add one invoice by hand</button></div>`;
  const T=PF.totals(rs),c=k=>rs.filter(r=>r.status===k).length,k=(l,v,f)=>`<button data-a="flt" data-v="${f}"><span class="mu">${l}</span><b>${v}</b></button>`;
  const fu=M.tsk.filter(t=>t.status!=='done').sort((a,b)=>a.date<b.date?-1:1),due=fu.filter(t=>t.date<=today());
  const ex=rs.filter(r=>r.flags.length);
