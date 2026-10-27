@@ -7,8 +7,13 @@ function parseMoney(s,cur){
  if(s==null||String(s).trim()==='')return{v:null};
  let t=String(s).trim(),neg=false;
  if(/^\(.*\)$/.test(t)){neg=true;t=t.slice(1,-1)}
- t=t.replace(/^(rs\.?|inr|usd|eur|gbp)\s*/i,'').replace(/[₹$€£,\s]/g,'');
+ t=t.replace(/^(rs\.?|inr|usd|eur|gbp)\s*/i,'').replace(/(\/-|only|\.-)\s*$/i,'').replace(/[₹$€£\s]/g,'');
  if(t[0]==='-'){neg=!neg;t=t.slice(1)}
+ /* decimal comma (1.234,50 or 12,50) vs thousands comma (1,23,456.78 or 1,234) */
+ const lc=t.lastIndexOf(','),ld=t.lastIndexOf('.');
+ if(lc>-1&&ld>-1&&lc>ld)t=t.replace(/\./g,'').replace(',','.');
+ else if(lc>-1&&ld===-1&&(t.match(/,/g)||[]).length===1&&/^\d+,\d{1,2}$/.test(t))t=t.replace(',','.');
+ else t=t.replace(/,/g,'');
  if(!/^\d+(\.\d+)?$/.test(t))return{v:null,err:'Not a valid amount'};
  const[i,f='']=t.split('.'),e=ex(cur);let n=BigInt(i+f.padEnd(e,'0').slice(0,e)),rounded=false;
  if(f.length>e){rounded=/[1-9]/.test(f.slice(e));if(+f[e]>=5)n+=1n}
@@ -18,8 +23,13 @@ function parseMoney(s,cur){
 function plain(v,c){if(v==null)return'';const e=ex(c),s=String(Math.abs(v)).padStart(e+1,'0');return(v<0?'-':'')+(e?s.slice(0,-e)+'.'+s.slice(-e):s)}
 function fmt(v,c){if(v==null)return'–';const p=plain(v,c),neg=p[0]==='-',[i,f]=p.replace('-','').split('.');return(neg?'-':'')+BigInt(i).toLocaleString('en-IN')+(f?'.'+f:'')}
 const iso=(y,m,d)=>{if(y<100)y+=2000;const t=new Date(Date.UTC(y,m-1,d));return t.getUTCFullYear()===y&&t.getUTCMonth()===m-1&&t.getUTCDate()===d?`${y}-${pad(m)}-${pad(d)}`:null};
+const MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,sept:9,oct:10,nov:11,dec:12};
+const mon=w=>MON[String(w).slice(0,4).toLowerCase()]||MON[String(w).slice(0,3).toLowerCase()];
 function parseDate(s,order){
  s=String(s??'').trim();if(!s)return{iso:null};let m;
+ if(/^\d{5}(\.\d+)?$/.test(s)&&+s>=20000&&+s<=80000){const d=new Date(Date.UTC(1899,11,30)+Math.floor(+s)*864e5);return{iso:d.toISOString().slice(0,10)}}
+ if(m=s.match(/^(\d{1,2})(?:st|nd|rd|th)?[\s\/.,-]+([A-Za-z]{3,9})\.?[\s\/.,-]+(\d{2}|\d{4})$/)){const mo=mon(m[2]);if(mo)return{iso:iso(+m[3],mo,+m[1])}}
+ if(m=s.match(/^([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{2}|\d{4})$/)){const mo=mon(m[1]);if(mo)return{iso:iso(+m[3],mo,+m[2])}}
  if(m=s.match(/^(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})(?:[ T].*)?$/))return{iso:iso(+m[1],+m[2],+m[3])};
  if(m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2}|\d{4})$/)){let a=+m[1],b=+m[2],d=a,mo=b,amb=a<=12&&b<=12&&a!==b;
   if(order==='MDY'){d=b;mo=a}if(mo>12&&d<=12)[d,mo]=[mo,d];return{iso:iso(+m[3],mo,d),amb}}
@@ -41,8 +51,8 @@ function classify(inv,pays,today,S){
  if(!inv.customer)fl.push('Missing customer');
  if(inv.repOut!=null&&inv.repOut!==bal)fl.push(`Source outstanding ${fmt(inv.repOut,c)} differs from calculated ${fmt(bal,c)}`);
  const rs=(inv.repStatus||'').toLowerCase();
- if(/paid/.test(rs)&&!/un|part/.test(rs)&&bal>0)fl.push('Source says paid but a balance remains');
- if(/^(unpaid|pending|overdue)/.test(rs)&&bal<=0)fl.push('Source says unpaid but balance is zero');
+ if(/paid/.test(rs)&&!/\bnot\b|\bnon\b|un|part/.test(rs)&&bal>0)fl.push('Source says paid but a balance remains');
+ if(/^(unpaid|not\s*paid|pending|overdue)/.test(rs)&&bal<=0)fl.push('Source says unpaid but balance is zero');
  const daysTo=inv.dueDate?daysBetween(today,inv.dueDate):null,daysOver=daysTo!=null&&daysTo<0?-daysTo:0;
  let status;
  if(bal<0){status='Overpaid';fl.push('Payments exceed invoice total (kept as recorded)')}
@@ -108,10 +118,14 @@ function autoMap(h){const map={},amb={};
  for(const k in used)if(used[k].length>1)used[k].forEach(f=>{delete map[f];amb[f]=[k]});return{map,amb}}
 const dk=i=>i.invoiceNo?nk(i.invoiceNo)+'|'+nk(i.customer)+'|'+i.currency:'x|'+nk(i.customer)+'|'+i.invoiceDate+'|'+i.total+'|'+i.currency;
 function inferOrder(v,def){let a=0,b=0;v.forEach(x=>{const m=String(x||'').match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-]\d{2,4}$/);if(m){if(+m[1]>12)a=1;if(+m[2]>12)b=1}});return b&&!a?'MDY':a&&!b?'DMY':def}
+/* Names that could be the user's own business: most frequent supplier/customer names in the file. */
+function candidates(rows,map){const c={};['supplier','customer'].forEach(f=>{if(!map[f])return;rows.forEach(r=>{const v=String(r[map[f]]??'').trim();if(v)c[v]=(c[v]||0)+1})});
+ return Object.entries(c).sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1)).slice(0,6).map(([name,n])=>({name,n}))}
 function stageRows(rows,map,S,existing){
  const g=(r,f)=>map[f]?r[map[f]]:undefined,res={good:[],dup:[],bad:[],skip:[]},seen=new Map(existing.map(i=>[dk(i),'an already-saved invoice']));
  const ord={};['invoiceDate','dueDate'].forEach(f=>ord[f]=inferOrder(rows.map(r=>g(r,f)),S.order));
  const me=nk(S.business),str=(r,f)=>String(g(r,f)??'').trim();
+ if(map.supplier&&!me){res.needBiz=candidates(rows,map);return res}
  rows.forEach((r,idx)=>{const n=idx+2,cust=str(r,'customer');
   if(map.supplier){const sup=nk(g(r,'supplier')),cn=nk(cust);
    if(!me){res.skip.push({n,why:'Set your business name in Settings first, so customer invoices can be told apart from vendor bills'});return}
@@ -150,6 +164,6 @@ function sheets(M,today){
   'Summary':[['Currency','Open invoices','Outstanding','Overdue amount','Due in 7 days'],...Object.entries(T).map(([c,t])=>[c,t.n,num(t.out,c),num(t.over,c),num(t.due7,c)]),['As of',today]]};
 }
 const csv=a=>'\uFEFF'+a.map(r=>r.map(v=>{v=v==null?'':String(v);return/[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')).join('\r\n');
-const API={parseMoney,fmt,plain,parseDate,todayISO,daysBetween,addDays,classify,priority,rowsOf,totals,TPL,recommend,draft,autoMap,stageRows,sheets,csv,S1,SP,uid,nk};
+const API={candidates,parseMoney,fmt,plain,parseDate,todayISO,daysBetween,addDays,classify,priority,rowsOf,totals,TPL,recommend,draft,autoMap,stageRows,sheets,csv,S1,SP,uid,nk};
 if(typeof module!=='undefined')module.exports=API;else g.PF=API;
 })(typeof globalThis!=='undefined'?globalThis:window);

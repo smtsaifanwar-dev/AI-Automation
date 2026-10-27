@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CleanSheet – One-Click Excel Data Cleaning</title>
+<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; script-src 'unsafe-inline' https://cdn.sheetjs.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a5cff'/%3E%3Cpath d='M9 16.5l5 5 9-11' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--tx:#0f1b33;--mu:#5b6a85;--bd:#e3e8f1;--pr:#0a5cff;--prt:#fff;--wa:#fff4d6;--er:#fde4e2;--sh:0 1px 2px rgba(15,27,51,.05),0 10px 28px rgba(15,27,51,.07)}
+@media(prefers-color-scheme:dark){:root{--bg:#0a1020;--card:#121a2e;--tx:#e9eefb;--mu:#93a1bf;--bd:#223052;--pr:#4d8bff;--prt:#06101f;--wa:#4a3d12;--er:#4b2220;--sh:none}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,Segoe UI,Roboto,sans-serif}
+main{max-width:980px;margin:0 auto;padding:16px}h1{font-size:22px;margin:8px 0 2px}p.s{color:var(--mu);margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:14px}
+#drop{border:2px dashed var(--bd);text-align:center;padding:28px 12px;cursor:pointer}#drop.on{border-color:var(--pr)}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-bottom:1px solid var(--bd)}.opt:last-child{border:0}
+.opt input{margin-top:4px;width:18px;height:18px}.opt b{display:block}.opt small{color:var(--mu)}
+.bg{margin-left:auto;font-size:12px;border-radius:99px;padding:2px 9px;background:var(--wa);white-space:nowrap}
+button.p{background:var(--pr);color:var(--prt);border:0;border-radius:8px;padding:12px 22px;font-size:16px;font-weight:600;cursor:pointer;width:100%}
+button.p:disabled{opacity:.5;cursor:not-allowed}button.g{background:none;border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:5px 10px;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--pr);outline-offset:2px}
+.chips label{display:inline-block;border:1px solid var(--bd);border-radius:6px;padding:3px 8px;margin:3px;font-size:13px}
+select,input[type=text]{padding:6px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx)}
+.tw{overflow:auto;max-height:380px;border:1px solid var(--bd);border-radius:8px}table{border-collapse:collapse;font-size:13px;width:100%}
+th,td{border-bottom:1px solid var(--bd);padding:4px 8px;white-space:nowrap;text-align:left}th{position:sticky;top:0;background:var(--card)}td.f{background:var(--wa)}
+.ow{border-bottom:1px solid var(--bd)}.ow:last-child{border:0}.or{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.ow .opt{border:0;flex:1;min-width:230px}.dtb{white-space:nowrap;font-size:13px}.dp{margin:0 0 10px 34px}.dp td,.dp th{font-size:12px}.dp td{white-space:pre}.dh{font-weight:600;font-size:13px;margin:8px 0 4px}.msg{padding:10px;border-radius:8px;background:var(--er);margin-bottom:10px}.hid{display:none}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.stat div{border:1px solid var(--bd);border-radius:8px;padding:8px}.stat b{font-size:20px;display:block}
+.roles{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:8px}.roles label{display:flex;flex-direction:column;font-size:13px;gap:2px}.roles span{overflow-wrap:anywhere}summary{cursor:pointer}
+body{background:radial-gradient(900px 420px at 85% -8%,color-mix(in srgb,var(--pr) 16%,transparent),transparent),var(--bg);font-family:Inter,system-ui,"Segoe UI",Roboto,sans-serif}
+.nav{display:flex;align-items:center;gap:10px;padding:6px 0 10px}.brand{display:flex;gap:10px;align-items:center;font-weight:700;font-size:18px;letter-spacing:-.01em}.brand svg{width:34px;height:34px}.pill{margin-left:auto;font-size:12px;padding:5px 12px;border-radius:99px;border:1px solid var(--bd);background:var(--card);color:var(--mu)}
+.hero{text-align:center;padding:20px 0 10px;animation:up .7s both}h1{font-size:clamp(28px,5.5vw,44px);letter-spacing:-.03em;line-height:1.1;margin:0 0 10px}h1 span{background:linear-gradient(90deg,var(--pr),#12b886,var(--pr));background-size:200%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sh 4s linear infinite}
+.hero p.s{max-width:560px;margin:0 auto 14px}.steps{display:flex;justify-content:center;gap:8px;list-style:none;padding:0;margin:0 0 18px;flex-wrap:wrap}.steps li{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mu);padding:6px 13px;border:1px solid var(--bd);border-radius:99px;background:var(--card)}.steps i{font-style:normal;width:20px;height:20px;border-radius:50%;background:var(--pr);color:var(--prt);display:grid;place-items:center;font-size:12px;font-weight:700}
+.card{box-shadow:var(--sh);border-radius:16px;animation:up .6s both;padding:18px}
+#drop{border-radius:20px;padding:46px 16px;transition:.25s}#drop:hover,#drop.on{transform:translateY(-3px);border-color:var(--pr);box-shadow:0 14px 40px color-mix(in srgb,var(--pr) 22%,transparent)}#drop svg{width:50px;height:50px;color:var(--pr);animation:fl 2.6s ease-in-out infinite}#drop b{font-size:19px;display:block;margin-top:8px}
+button.p{background:linear-gradient(135deg,var(--pr),#12b886);border-radius:14px;padding:16px;font-size:17px;box-shadow:0 10px 26px color-mix(in srgb,var(--pr) 30%,transparent);transition:.2s}button.p:not(:disabled):hover{transform:translateY(-2px)}
+.opt{transition:background .2s;border-radius:10px}.opt:hover{background:color-mix(in srgb,var(--pr) 7%,transparent)}.opt input{accent-color:var(--pr)}button.g{border-radius:8px;transition:.2s}button.g:hover{border-color:var(--pr)}
+.bg{background:color-mix(in srgb,var(--pr) 12%,transparent);color:var(--pr);font-weight:600}.bar{height:5px;border-radius:9px;background:var(--bd);overflow:hidden;margin-bottom:10px}.bar i{display:block;height:100%;width:40%;background:linear-gradient(90deg,var(--pr),#12b886);border-radius:9px;animation:ld 1s ease-in-out infinite}
+.stat div{border-radius:16px;text-align:center;background:var(--card);animation:up .6s both}.stat div:nth-child(2){animation-delay:.1s}.stat div:nth-child(3){animation-delay:.2s}.stat div:nth-child(4){animation-delay:.3s}.stat b{font-size:32px;color:var(--pr)}#res{animation:up .6s both}.foot{text-align:center;font-size:12px;color:var(--mu);padding:8px 0 24px}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}@keyframes sh{to{background-position:200%}}@keyframes fl{50%{transform:translateY(-7px)}}@keyframes ld{0%{margin-left:-40%}100%{margin-left:100%}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.seg{display:flex;gap:6px;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:5px;margin-bottom:14px;box-shadow:var(--sh)}.seg button{flex:1;border:0;background:none;color:var(--mu);font:inherit;font-weight:600;padding:11px;border-radius:10px;cursor:pointer;transition:.2s}.seg button small{display:block;font-weight:400;font-size:12px}.seg button.on{background:var(--pr);color:var(--prt)}
+.stg{display:grid;grid-template-columns:minmax(290px,350px) 1fr;gap:14px;align-items:start}.stg .card{margin-bottom:0}@media(max-width:820px){.stg{grid-template-columns:1fr}}
+.stp{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--bd);border-radius:12px;margin:6px 0;background:var(--card);cursor:pointer}.stp.sug{border-color:var(--pr);box-shadow:0 0 0 3px color-mix(in srgb,var(--pr) 16%,transparent);animation:pl 2s ease-in-out infinite}.stp.dn{background:color-mix(in srgb,#12b886 9%,var(--card));cursor:default}.stp small{color:var(--mu)}.stp .g{margin-left:auto;white-space:nowrap}.stp input{margin-top:4px;width:18px;height:18px;accent-color:var(--pr)}.tg{font-size:11px;font-weight:700;color:var(--pr);text-transform:uppercase;letter-spacing:.04em}td.ch2{background:color-mix(in srgb,#12b886 30%,transparent)}
+@keyframes pl{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--pr) 7%,transparent)}}
+.adv.top{border:1px solid var(--bd);border-radius:16px;background:var(--card);box-shadow:var(--sh);padding:4px 10px 12px;margin-bottom:14px}.adv.top>summary{font-size:16px;color:var(--tx);padding:14px 8px}.adv.top>summary small{color:var(--mu);font-weight:400}.rd{border:1px solid var(--bd);border-radius:12px;margin:6px 0;background:var(--card)}.rd>summary{display:flex;gap:10px;align-items:center;padding:10px 14px;cursor:pointer}.rd>summary .bg{margin-left:auto}.rd[open]>summary{border-bottom:1px solid var(--bd)}.rd>:not(summary){margin:8px 14px}.ch{display:inline-flex;gap:6px;align-items:center;border-radius:99px;padding:6px 13px;margin:3px 5px 3px 0;font-size:13px;border:1px solid var(--bd)}.ch.ok{background:color-mix(in srgb,#12b886 14%,transparent)}.ch.wn{background:var(--wa)}.sh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;font-size:18px}.sh small{color:var(--mu)}
+.adv{margin-bottom:14px}.adv>summary{cursor:pointer;padding:12px 6px;font-weight:600;color:var(--mu)}#go{margin:2px 0 16px}
+.or{display:grid!important;grid-template-columns:1fr 112px;gap:8px;align-items:center}.ow .opt{min-width:0}.dtb{width:100%}.bg{min-width:78px;text-align:center}
+.chips label{display:inline-flex;gap:6px;align-items:center;border-radius:99px;padding:5px 12px;cursor:pointer;transition:.2s}.chips label:has(input:checked){background:color-mix(in srgb,var(--pr) 14%,transparent);border-color:var(--pr)}.chips input{accent-color:var(--pr)}
+#cfg select,#cfg input[type=text]{font:inherit;padding:8px 10px;border-radius:10px}#sts{width:100%;flex:1 1 100%}
+.bar2{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px;margin-bottom:12px;background:color-mix(in srgb,var(--card) 92%,transparent);backdrop-filter:blur(8px);border:1px solid var(--bd);border-radius:14px;box-shadow:var(--sh)}
+.bar2 .t{flex:1 1 230px;font-size:13px;color:var(--mu)}.bar2 .t b{color:var(--tx);font-size:16px}
+.b2{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;padding:9px 14px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}.b2.pr{background:linear-gradient(135deg,var(--pr),#12b886);color:#fff;border:0}.b2.wn{background:var(--wa)}.b2:disabled{opacity:.45;cursor:not-allowed}
+.lay{display:grid;grid-template-columns:minmax(280px,330px) 1fr;gap:12px;align-items:start}@media(max-width:820px){.lay{grid-template-columns:1fr}}.lay .card{margin:0 0 12px;padding:14px}
+.as,.pd{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--bd);border-radius:10px;margin:5px 0;cursor:pointer;background:var(--card)}.as.on{border-color:var(--pr);background:color-mix(in srgb,var(--pr) 8%,var(--card))}
+.as>div,.pd>div{flex:1;min-width:0}.as small,.pd small{display:block;color:var(--mu);font-size:12px}
+.as .x{border:0;background:none;color:var(--mu);font-size:16px;cursor:pointer;border-radius:6px;padding:2px 7px}.as .x:hover{background:var(--er);color:#c92a2a}
+.pd.sel{border-color:var(--pr);box-shadow:0 0 0 3px color-mix(in srgb,var(--pr) 16%,transparent)}.pd .b2{padding:4px 10px}.dim{opacity:.5;pointer-events:none}
+.gt{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mu);margin:12px 0 2px}
+td .o{text-decoration:line-through;color:var(--mu);margin-right:6px}td.ch2,td.pc{background:color-mix(in srgb,#12b886 28%,transparent)}td.pf{background:var(--wa);outline:2px dashed #e0a800;outline-offset:-2px}td.pc{outline:2px dashed #12b886;outline-offset:-2px}
+.wb{font-size:11px;background:var(--wa);border-radius:99px;padding:0 6px;margin-left:4px}
+.pb{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;border-radius:10px;background:color-mix(in srgb,var(--pr) 10%,transparent);margin:8px 0;font-size:13px}.pb span{flex:1}.pb .b2{padding:5px 12px}
+.is{display:flex;gap:8px;align-items:center;padding:7px 4px;border-bottom:1px solid var(--bd);font-size:13px}.is>span{flex:1;min-width:0;overflow-wrap:anywhere}.is small{color:var(--mu)}.is .b2{padding:4px 10px}
+tr.fl td{animation:fl2 1.6s}@keyframes fl2{from{outline:3px solid var(--pr);outline-offset:-3px}}
+#toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;pointer-events:none;background:#0f1b33;color:#fff;padding:10px 16px;border-radius:12px;transition:.25s;z-index:50;font-size:14px}#toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}#toast button{margin-left:10px;border:0;background:none;color:#7fb0ff;font-weight:700;cursor:pointer}
+#ed{position:fixed;z-index:40;width:290px;background:var(--card);border:1px solid var(--bd);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.28);padding:12px;display:none}#ed.on{display:block}.eh{display:flex;justify-content:space-between;align-items:center}.eh button{border:0;background:none;cursor:pointer;color:var(--mu);font-size:16px}.ei{margin:6px 0 0;font-size:12px;color:var(--mu)}#ed input{width:100%;margin:8px 0}.er{display:flex;gap:6px;flex-wrap:wrap}.er .b2{padding:6px 12px}td[data-r].f,td[data-r].pf{cursor:pointer}.hid{display:none!important}main{max-width:1280px}.lay>*,.lay .card,.stg>*{min-width:0}.tw{max-width:100%;overflow:auto}html,body{overflow-x:hidden}@media(min-width:821px){.lay{grid-template-columns:minmax(210px,250px) 1fr}}
+.lay>div:first-child .card{padding:10px}.lay>div:first-child .sh{font-size:13px;gap:6px}.lay>div:first-child .sh small{font-size:10.5px}
+.as,.pd{padding:5px 8px;margin:3px 0;border-radius:8px;gap:6px}.as b,.pd b{font-size:12.5px;font-weight:600;line-height:1.25}.as small,.pd small{font-size:10.5px;line-height:1.3}
+.as>span:first-child{font-size:11px}.pd small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pd .bg{font-size:10.5px;min-width:0;padding:1px 7px}.pd .b2{padding:2px 8px;font-size:11.5px}.as .x{font-size:13px;padding:1px 6px}.gt{font-size:9.5px;margin:8px 0 1px}
+.lay>div:first-child summary{font-size:12.5px}
+td.f{background:color-mix(in srgb,#f5b301 13%,transparent)}.ch.wn{background:color-mix(in srgb,#f5b301 14%,transparent)}.wb{background:color-mix(in srgb,var(--mu) 15%,transparent);color:var(--mu);font-weight:600}
+td.dupc{box-shadow:inset 3px 0 0 #f5b301}.dp2{font-size:10px;color:var(--mu);border:1px solid var(--bd);border-radius:99px;padding:0 6px;margin-right:6px;white-space:nowrap}
+td.pf{background:color-mix(in srgb,#f5b301 13%,transparent);outline:1.5px dashed #e0a800}
+th.hc{cursor:pointer}th.hc:hover{background:color-mix(in srgb,var(--pr) 9%,var(--card))}.cv{color:var(--mu);margin:0 3px 0 5px;font-size:10px}.cg{border-top:1px solid var(--bd);padding:8px 0 2px;font-size:13px}.cg .cgi{width:auto;flex:1;min-width:0;margin:0}#ed.col{width:360px;max-width:calc(100vw - 16px);max-height:78vh;overflow:auto}#ed select{width:100%;margin:4px 0}
+.wb{background:#e03131;color:#fff;font-weight:700;font-size:11px;min-width:18px;text-align:center;padding:0 6px;border-radius:99px;margin-left:6px;display:inline-block;line-height:17px}.rd2{color:#e03131}
+@media(prefers-color-scheme:dark){.wb{background:#ff6b6b;color:#2b0a0a}.rd2{color:#ff8787}}
+.cg select{width:auto;flex:1;min-width:0;margin:0}.cg .bki{width:auto;flex:1;min-width:0;margin:0}
+/* ===== UX polish: compact header, hideable steps panel, taller table ===== */
+.nav{padding:2px 0 6px}
+#work>.card:first-child{padding:10px 14px;margin-bottom:10px}
+#work>.card:first-child summary{font-size:13px}
+.bar2{margin-bottom:10px;padding:8px 12px}
+.lay.nosb{grid-template-columns:1fr}.lay.nosb>div:first-child{display:none}
+#pvw .tw{max-height:max(340px,calc(100vh - 270px))!important}
+.b2.on{border-color:var(--pr);color:var(--pr)}
+.is .b2{white-space:nowrap}
+.sh .hs{margin-left:auto;padding:1px 9px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--mu);cursor:pointer;font-size:15px;line-height:1.3}
+.sh .hs:hover{color:var(--tx);border-color:var(--pr)}
+.qc{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 8px}
+.qk{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:99px;padding:3px 10px;font:inherit;font-size:12px;cursor:pointer}.qk b{color:var(--mu);font-weight:600;margin-left:5px}.qk:hover{border-color:var(--pr);background:color-mix(in srgb,var(--pr) 8%,var(--card))}
+.vr{display:grid;grid-template-columns:minmax(70px,.9fr) 1.4fr auto;gap:6px;align-items:center;margin-top:6px}.vr .vv{overflow-wrap:anywhere;font-size:12.5px}.vr .vv small{color:var(--mu)}
+#ed .cg .cgv{margin:0;min-width:0;width:100%}.vr .b2{padding:6px 12px}
+.lgd{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0}
+.lgd .hs{margin-left:auto;padding:1px 9px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--mu);cursor:pointer;font-size:13px}.lgd .hs:hover{color:var(--tx);border-color:var(--pr)}
+.sh .tl{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}.tl .b2{padding:5px 10px;font-size:13px}
+</style></head><body><main>
+<header class="nav"><div class="brand"><svg viewBox="0 0 32 32"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a5cff"/><stop offset="1" stop-color="#12b886"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><path d="M9 16.5l5 5 9-11" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>CleanSheet</div><span class="pill">🔒 Runs in your browser · original file never changed</span></header>
+<section class="hero"><h1>Clean any Excel file in <span>one click</span></h1>
+<p class="s">Fix spaces, dates, duplicates, phones and emails in seconds. Every change is logged, and your original file is never touched.</p>
+<ol class="steps"><li><i>1</i>Upload</li><li><i>2</i>Review</li><li><i>3</i>Download</li></ol></section>
+<div id="err" class="msg hid" role="alert"></div>
+<div class="card" id="drop" tabindex="0" role="button" aria-label="Upload Excel or CSV file">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><b>Drop your Excel / CSV file here, or click to browse</b><br><small>.xlsx · .xls · .csv</small>
+<input id="fi" type="file" accept=".xlsx,.xls,.csv" class="hid"></div>
+<div id="work" class="hid">
+<div class="card"><div class="row"><b id="fn"></b><span id="info" class="s" style="margin:0"></span>
+<span class="row" style="margin-left:auto"><button type="button" class="g" data-a="chfile">📁 Change file</button> Sheet: <select id="sh"></select></span></div></div>
+<div class="seg hid" id="modes" role="tablist"><button type="button" class="on" data-m="q">⚡ Quick clean<small>one click, review if you like</small></button><button type="button" data-m="s">🧭 Step by step<small>execute, preview, undo, repeat</small></button></div>
+<div class="card"><details><summary><b>Column check</b> <small style="color:var(--mu)">(I guessed each column's type - change only if I got one wrong)</small></summary><div id="roles" class="roles"></div></details></div>
+<div id="qm" class="hid"><div id="sum" class="card"></div><div id="rv"></div>
+<div class="bar hid" id="bar"><i></i></div><button class="p" id="go">✨ Clean my file &amp; Download</button>
+<details class="adv"><summary>⚙️ Advanced options <small>(optional – the best settings are already selected)</small></summary><div class="card"><b>Choose what to clean</b> <small style="color:var(--mu)">(items found in your file are pre-ticked)</small><div class="row" style="margin:8px 0"><button type="button" class="g" id="sa">Select all</button><button type="button" class="g" id="sn">Select none</button></div><div id="opts"></div></div>
+<div class="card" id="cfg"><b>Settings for selected options</b>
+<div data-for="1,17"><p><small>Duplicate check columns (none ticked = all columns except ID)</small></p><div id="dupc" class="chips"></div>
+<p class="row"><span>Duplicate mode:</span><select id="dpm"><option value="auto">Auto-detect</option><option value="list">Customer list (same email/phone = possible duplicate)</option><option value="tx">Sales / transactions (exact duplicate rows only)</option></select></p></div>
+<div data-for="10"><p class="row"><span>Split column:</span><select id="spc"></select><small>into first / last name</small></p></div>
+<div data-for="11"><p><small>Merge columns (tick 2 or more)</small></p><div id="mgc" class="chips"></div>
+<p class="row">Separator <input type="text" id="mgs" value=", " size="4" aria-label="Separator"> New name <input type="text" id="mgn" value="merged" size="12" aria-label="New column name"></p>
+</div><div data-for="15"><p class="row">Allowed status values <small>(only checked in "status" columns that mostly use these)</small> <input type="text" id="sts" value="Paid, Pending, Refunded, Unpaid, Partially Paid, Overdue, Disputed, Cancelled, Draft" size="45" aria-label="Allowed payment statuses"></p></div></div>
+</details>
+</div><div id="st"></div><div id="res" class="hid" style="margin-top:14px"></div></div>
+<p class="s">Dates are read as day/month/year (Indian style) unless a column clearly uses month/day. Original file is never changed; removed rows are saved in a separate sheet. Flags are suggestions – please review.</p><div class="foot">© CleanSheet · Your data never leaves this device</div>
+</main>
+<div id="ed" role="dialog" aria-label="Edit cell"></div><div id="toast" role="status" aria-live="polite"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>window.XLSX||document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
+<script>
+const $=s=>document.querySelector(s);let SB=innerWidth<=820,NI=0,OP=false,LG=(()=>{try{return localStorage.getItem('cs_lg')==='0'}catch(e){return false}})();
+const O=[[1,'Detect duplicates','Exact + possible duplicates (flagged, never deleted)'],[2,'Trim spaces','" Jaipur " → "Jaipur"'],[3,'Standardize text','jaipur, JAIPUR → Jaipur'],[4,'Find blank cells','Missing email or amount (flagged)'],[5,'Fix data types','"1500" → number 1500'],[6,'Standardize dates','Mixed date formats → yyyy-mm-dd'],[7,'Validate emails','Invalid email format flagged'],[8,'Validate phone numbers','Not a valid 10-digit Indian mobile flagged'],[9,'Clean column names','"Customer Name " → customer_name'],[10,'Split columns','Full name → first / last (choose column below)'],[11,'Merge columns','City + State (choose columns below)'],[12,'Find inconsistent categories','Delhi, delhi, DELHI → one spelling'],[13,'Detect outliers','Unusually high / low numbers flagged'],[14,'Remove empty rows/columns','Unused worksheet areas'],[15,'Find invalid values','Negative quantity/amount, unknown status flagged'],[16,'Auto-fix phone & email','+91 98765 43210 → 9876543210 · emails to lowercase'],[17,'Remove exact duplicate rows','Identical rows moved to the "Removed Rows" sheet - nothing is lost']];
+let WB,FN,ROWS,HEADS,SCAN={},SCANR=null,ROFF=0,LAST=null,EX=new Set(),AC=new Set(),PL={};
+const PH=/^(n\/?a|nan|nil|null|none|missing|not available|tbd|#n\/a|-+|\?+|\.+)$/i;
+const blank=v=>v===''||v==null||(typeof v==='string'&&(!v.trim()||PH.test(v.trim())));
+const pn=v=>{if(typeof v==='number')return v;let s=String(v).trim(),g=1;if(/^\(.*\)$/.test(s)){g=-1;s=s.slice(1,-1)}s=s.replace(/^(rs\.?|inr)\s*/i,'').replace(/\/-$/,'').replace(/[₹$€£,\s]/g,'');return /^-?\d+(\.\d+)?$/.test(s)?g*+s:NaN};
+const pad=n=>String(n).padStart(2,'0');
+const iso=(y,m,d)=>{if(y<100)y+=2000;const t=new Date(y,m-1,d);return t.getFullYear()===y&&t.getMonth()===m-1&&t.getDate()===d?`${y}-${pad(m)}-${pad(d)}`:null};
+const MON='janfebmaraprmayjunjulaugsepoctnovdec',mn=w=>{const i=MON.indexOf(w.slice(0,3).toLowerCase());return i>=0&&i%3===0?i/3+1:0};
+const fy=y=>y<100?(y<=new Date().getFullYear()%100+5?2000+y:1900+y):y;
+const hm=(h,m)=>h||m?' '+pad(h)+':'+pad(m):'';
+function pd(v,us){if(v instanceof Date){if(isNaN(v))return null;const t=new Date(v.getTime()+60000),d=iso(t.getFullYear(),t.getMonth()+1,t.getDate());return d&&d+hm(t.getHours(),t.getMinutes())}
+ if(typeof v!=='string')return null;let s=v.trim(),tm='',m,d=null;
+ if(m=s.match(/[ T](\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?\s*([ap]m)?z?$/i)){let h=+m[1];if(m[3]){const pm=m[3].toLowerCase()==='pm';if(pm&&h<12)h+=12;if(!pm&&h===12)h=0}tm=hm(h,+m[2]);s=s.slice(0,m.index).trim()}
+ if(m=s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/))d=iso(+m[1],+m[2],+m[3]);
+ else if(m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2}|\d{4})$/)){let a=+m[1],b=+m[2];if(us)[a,b]=[b,a];else if(b>12&&a<=12)[a,b]=[b,a];d=iso(fy(+m[3]),b,a)}
+ else if((m=s.match(/^(\d{1,2})(?:st|nd|rd|th)?[\s\-\/.,]+([a-z]{3,9})\.?[\s\-\/.,]+(\d{2}|\d{4})$/i))&&mn(m[2]))d=iso(fy(+m[3]),mn(m[2]),+m[1]);
+ else if((m=s.match(/^([a-z]{3,9})\.?\s*(\d{1,2})(?:st|nd|rd|th)?[\s,\-\/.]+(\d{2}|\d{4})$/i))&&mn(m[1]))d=iso(fy(+m[3]),mn(m[1]),+m[2]);
+ return d?d+tm:null}
+const ACR=new Set(['USB','LED','LCD','HDMI','SSD','HDD','RAM','CPU','GPU','UPS','PVC','GST','PAN','CCTV','WIFI','LAN','ATM','UPI','OTP','PDF','SMS','AC','TV','PC','UK','USA','UAE','HP','LG','IT','SBI','HDFC','ICICI','PNB','BOB','LLP','OPC','NCR']);
+const STC=new Set(['UP','MP','AP','HP','TN','WB','DL','JK','MH','GJ','RJ','KA','HR','PB','NCR']);
+const tcase=v=>STC.has(v.toUpperCase())?v.toUpperCase():v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b(\d+)([a-z])\b/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b([odl])'([a-z])/gi,(m,a,b)=>a.toUpperCase()+"'"+b.toUpperCase()).replace(/\bMc([a-z])/g,(m,a)=>'Mc'+a.toUpperCase()).replace(/[A-Za-z]+/g,w=>ACR.has(w.toUpperCase())?w.toUpperCase():w);
+const nk=x=>x.toLowerCase().replace(/(\w)-(\w)/g,'$1 $2').replace(/[.,]/g,'').replace(/\s+/g,' ').trim();
+
+const RS={2:'Extra spaces removed',3:'Text case standardized',5:'Text converted to number',6:'Date converted to yyyy-mm-dd',9:'Column name cleaned',12:'Spelling/case unified to most common variant',16:'Phone/email normalized',17:'Exact duplicate row removed'};
+const vis=v=>v===''||v==null?'(blank)':typeof v==='string'?'"'+v+'"':String(v);
+const DEFST=['Paid','Pending','Refunded','Unpaid','Partially Paid','Overdue','Disputed','Cancelled','Draft'];
+function osa(a,b){const d=[];for(let i=0;i<=a.length;i++)d[i]=[i];for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++){d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1])d[i][j]=Math.min(d[i][j],d[i-2][j-2]+1)}return d[a.length][b.length]}
+function mkSummary(o,on,n0,n1){const ap=o.flags.filter(f=>/^Applied/.test(f.Status)).length,nf=o.flags.length-ap,ns=o.flags.filter(f=>f['Suggested correction']!==''&&!/^Applied/.test(f.Status)).length,na=Object.values(o.app).reduce((a,b)=>a+b,0);
+ return[['Overview','Count'],['Rows in original file',n0],['Rows in cleaned file',n1],['Rows removed (empty rows / exact duplicates if selected - all kept in Removed Rows sheet)',o.removed.length],
+ ['Detected issues (unique, see Flags sheet)',nf+ap],['   resolved by suggestions you accepted',ap],['   suggestion available (not applied)',ns],['   unresolved (manual review needed)',nf-ns],
+ ['Applied changes (cell edits, see Applied Changes sheet)',na],[],['Check','Open issues','Suggested corrections (not applied)','Unresolved','Applied changes']]
+ .concat(O.filter(x=>on[x[0]]).map(x=>[x[0]+'. '+x[1],o.det[x[0]]||0,o.sug[x[0]]||0,(o.det[x[0]]||0)-(o.sug[x[0]]||0),o.app[x[0]]||0]))}
+const EM=/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+const ST=['paid','unpaid','pending','partial','partially paid','overdue','active','inactive','open','closed','completed','cancelled','canceled','delivered','draft','approved','rejected','new','disputed','yes','no','shipped','returned','processing','done'];
+function run(rows,heads,on,cfg){
+ let H=[...heads],R=rows.map((x,i)=>{const{__r,...d}=x;return{r:__r??i+2+ROFF,d}}),flags=[],removed=[],changes=[],map={},seenF=new Set();
+ const lab=k=>{const x=O.find(o=>o[0]==k);return x?k+'. '+x[1]:k},nf5=new Set(),det={},sug={},app={},bump=(o,k,n=1)=>o[k]=(o[k]||0)+n,inc=(k,n=1)=>bump(app,k,n);
+ const chg=(k,r,c,o,n,w)=>{bump(app,k);changes.push({Row:r?r.r:'Header',Column:c,'Old value':o,'New value':n,Reason:w||RS[k]||'',Check:lab(k)})};
+ const fl=(r,c,t,k,s)=>{const key=r.r+'|'+c+'|'+t;if(seenF.has(key))return;seenF.add(key);bump(det,k);if(s!=null)bump(sug,k);
+  flags.push({Row:r.r,Column:c,Value:r.d[c]??'',Issue:t,'Suggested correction':s??'',Status:s!=null?'Suggestion only - not applied':'Unresolved - needs manual review',Check:lab(k)})};
+ const vals=c=>R.map(r=>r.d[c]).filter(v=>!blank(v));
+ const ratio=(c,f)=>{const v=vals(c);return v.length?v.filter(f).length/v.length:0};
+ const tk=c=>String(c).toLowerCase().split(/[^a-z0-9\u0900-\u097f]+/).filter(Boolean),hw=(c,re)=>tk(c).some(t=>re.test(t));
+ const RM={text:'text',email:'email',phone:'phone',date:'date',amount:'num',id:'id',ignore:'ignore'},RL={},TY={},DC=new Set();
+ const detect=c=>{if(RL[c])return RM[RL[c]]||'text';const t=tk(c),last=t[t.length-1]||'',dgt=v=>String(v).replace(/\D/g,'').length,at=v=>String(v).includes('@');
+  if(hw(c,/^(email|emails|mail|emailid)$/)&&!hw(c,/^(verified|status|sent|count|date|subject)$/)&&ratio(c,at)>=.3||ratio(c,at)>=.6)return'email';
+  if(hw(c,/^(phone|mobile|mob|contact|whatsapp|cell|tel|telephone|ph)$/)&&!hw(c,/^(person|name|date|by|mode|address|time)$/)&&ratio(c,v=>dgt(v)>=7)>=.5||ratio(c,v=>/^(\+?91|0)?[\s-]?[6-9]\d{4}[\s-]?\d{5}$/.test(String(v).trim()))>=.6)return'phone';
+  if(hw(c,/^(url|link|website|web)$/))return'other';
+  if(/^(id|ids|no|nos|number|num|code|sku|ref|reference|uid)$/.test(last)||hw(c,/^(gst|gstin|pan|ifsc|pin|pincode|zip|aadhaar|aadhar|barcode|hsn|sno|sr)$/))return'id';
+  if(ratio(c,v=>pd(v)!==null)>=.8&&ratio(c,v=>!isNaN(pn(v)))<.8)return'date';
+  if(ratio(c,v=>/^\d{12,}$/.test(String(v).trim()))>=.5||vals(c).some(v=>/^0\d+$/.test(String(v).trim())))return'id';
+  if(ratio(c,v=>!isNaN(pn(v)))>=.8)return'num';
+  return ratio(c,v=>typeof v==='string'&&/[a-z\u0900-\u097f]/i.test(v))>=.6?'text':'other'};
+ const ty=c=>TY[c]||(TY[c]=detect(c)),numC=c=>ty(c)==='num',dateC=c=>ty(c)==='date',emC=c=>ty(c)==='email',phC=c=>ty(c)==='phone',txtC=c=>ty(c)==='text';
+ const colUS=c=>{let a=0,b=0;vals(c).forEach(v=>{const m=typeof v==='string'&&v.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.]\d{2,4}/);if(m){if(+m[1]>12)a=1;if(+m[2]>12)b=1}});return b&&!a};
+ const uq=h=>{const v=vals(h);return v.length>0&&new Set(v.map(String)).size>=v.length*.95};
+ const cell=f=>R.forEach(r=>H.forEach(h=>f(r,h,r.d[h])));
+ if(on[9]){const seen={},nh=H.map(h=>{let b=String(h).trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097f]+/g,'_').replace(/^_+|_+$/g,'')||'column',n=b,i=2;while(seen[n])n=b+'_'+i++;seen[n]=1;if(n!==h)chg(9,null,h,h,n);map[h]=n;return n});
+  R.forEach(r=>{const d={};H.forEach((h,i)=>d[nh[i]]=r.d[h]);r.d=d});H=nh}
+ const nm=c=>map[c]||c;Object.keys(cfg.roles||{}).forEach(k=>RL[nm(k)]=cfg.roles[k]);H.forEach(h=>ty(h));
+ if(on[14]){R=R.filter(r=>{if(H.some(h=>!blank(r.d[h])))return true;removed.push({'Removed because':'Empty row','Original row':r.r});inc(14);return false});const k=H.filter(h=>R.some(r=>!blank(r.d[h])));inc(14,H.length-k.length);H=k}
+ if(on[2])cell((r,h,v)=>{if(typeof v==='string'){const t=v.replace(/[\u00a0\u200b]/g,' ').replace(/\s+/g,' ').trim();if(t!==v){const w=[];if(/^\s/.test(v))w.push('leading space');if(/\s$/.test(v))w.push('trailing space');if(/\s{2,}/.test(v.trim()))w.push('double space');if(/[\u00a0\u200b]/.test(v))w.push('hidden character');chg(2,r,h,v,t,t===''?'Cell had only spaces - becomes blank':'Removed: '+w.join(' + '));r.d[h]=t}}});
+ if(on[16]){H.filter(emC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const t=v.trim().toLowerCase();if(t!==v){chg(16,r,h,v,t,'Email lowercased');r.d[h]=t}}}));
+  H.filter(phC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;let d=String(v).replace(/[\s\-().]/g,'').replace(/^\+/,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');if(/^[6-9]\d{9}$/.test(d)&&d!==String(v)){chg(16,r,h,v,d,'Phone normalized to 10 digits');r.d[h]=d}}))}
+ if(on[3])H.filter(h=>txtC(h)&&!hw(h,/^(notes?|remarks?|comments?|description|desc)$/)).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&(v===v.toLowerCase()||v===v.toUpperCase())){const p=tcase(v);if(p!==v){chg(3,r,h,v,p);r.d[h]=p}}}));
+ if(on[5])H.filter(numC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const n=pn(v);if(!isNaN(n)){chg(5,r,h,v,n);r.d[h]=n}else{nf5.add(r.r+'|'+h);const W={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,fifteen:15,twenty:20}[String(v).trim().toLowerCase()];if(W!==undefined){chg(5,r,h,v,W,'Number written in words converted');r.d[h]=W}else fl(r,h,'Cannot convert to number (not changed)',5)}}}));
+ if(on[5])H.filter(h=>ty(h)==='id').forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&String(Math.abs(v)).length>=12){chg(5,r,h,v,String(v),'Long ID kept as text (Excel would show 1.23E+11)');r.d[h]=String(v)}}));
+ if(on[6])H.filter(dateC).forEach(h=>{const us=colUS(h);DC.add(h);R.forEach(r=>{const v=r.d[h];if(blank(v))return;const d=pd(v,us);if(d){if(v instanceof Date)r.d[h]=d;else if(d!==v){chg(6,r,h,v,d);r.d[h]=d}}else fl(r,h,'Invalid, impossible or incomplete date (not changed)',6)})});
+ if(on[10]&&cfg.split&&H.includes(nm(cfg.split))){const c=nm(cfg.split),a=c+'_first',b=c+'_last';H.splice(H.indexOf(c)+1,0,a,b);
+  R.forEach(r=>{const p=String(r.d[c]??'').trim().split(/\s+/);r.d[a]=p[0]||'';r.d[b]=p.slice(1).join(' ');inc(10)})}
+ if(on[11]&&cfg.merge&&cfg.merge.length>1){const cs=cfg.merge.map(nm).filter(c=>H.includes(c)),n=cfg.mname||'merged';
+  if(cs.length>1){H.push(n);R.forEach(r=>{r.d[n]=cs.map(c=>r.d[c]).filter(v=>!blank(v)).join(cfg.sep??', ');inc(11)})}}
+ if(on[12])H.filter(h=>ty(h)==='text').forEach(h=>{const v=vals(h).filter(x=>typeof x==='string');if(!v.length||v.length<vals(h).length*.9)return;
+  const g={};v.forEach(x=>{const k=nk(x);(g[k]=g[k]||{})[x]=(g[k][x]||0)+1});
+  const ks=Object.keys(g);if(ks.length>60||v.reduce((a,x)=>a+x.length,0)/v.length>30)return;
+  const best={};ks.forEach(k=>{const e=Object.entries(g[k]);if(e.length>1)best[k]=e.sort((a,b)=>b[1]-a[1])[0][0]});
+  R.forEach(r=>{const x=r.d[h];if(typeof x==='string'){const k=nk(x);if(best[k]&&best[k]!==x){chg(12,r,h,x,best[k]);r.d[h]=best[k]}}})});
+ if(on[4])R.forEach(r=>H.forEach(h=>{const v=r.d[h];if(blank(v)&&ty(h)!=='ignore'&&!hw(h,/^(notes?|remarks?|comments?|description|desc|alt|alternate|optional)$/))fl(r,h,typeof v==='string'&&v.trim()?'Placeholder instead of a real value':'Blank cell',4)}));
+ if(on[7])H.filter(emC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(!blank(v)&&!EM.test(String(v).trim())){const m=String(v).trim().match(/^([^\s@]+)\.(gmail\.com|yahoo\.com|yahoo\.in|outlook\.com|hotmail\.com|rediffmail\.com)$/i);fl(r,h,'Invalid email',7,m?m[1]+'@'+m[2].toLowerCase():undefined)}}));
+ if(on[8])H.filter(phC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const raw=String(v),nz=raw.replace(/[\s\-().]/g,'');let d=nz.replace(/^\+/,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');
+  if(!/^[6-9]\d{9}$/.test(d))fl(r,h,'Invalid phone (need 10-digit Indian mobile)',8);else if(nz!==raw)fl(r,h,'Phone contains spaces/hyphens',8,nz)}));
+ if(on[13])H.filter(h=>ty(h)==='num').forEach(h=>{const n=R.map(r=>r.d[h]).filter(v=>typeof v==='number');if(n.length<8||n.length<vals(h).length*.8)return;
+  const s=[...n].sort((a,b)=>a-b),q=p=>s[Math.floor((s.length-1)*p)],i=q(.75)-q(.25),lo=q(.25)-3*i,hi=q(.75)+3*i;if(!i)return;
+  R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&(v>hi||v<lo))fl(r,h,v>hi?'Unusually high value':'Unusually low value',13)})});
+ if(on[15])H.forEach(h=>{const q=/qty|quantity/i.test(h);
+  if(ty(h)==='num'&&hw(h,/^(qty|quantity|amount|amt|price|sales|rate|total|stock|cost|mrp|value|revenue)$/))R.forEach(r=>{const v=r.d[h];if(blank(v))return;const n=pn(v);
+   if(isNaN(n)){if(!nf5.has(r.r+'|'+h))fl(r,h,'Non-numeric value (not changed)',15)}else if(n<0)fl(r,h,'Negative value (not changed)',15);else if(n===0&&q)fl(r,h,'Zero quantity',15);else if(n===0&&/cost/i.test(h))fl(r,h,'Zero cost price - please verify',15)});
+  if(/cost/i.test(h)&&/price|rate|amount|^cost/i.test(h)){const sc=H.find(x=>x!==h&&/unit|selling|sale|mrp/i.test(x)&&/price|rate/i.test(x));
+   if(sc)R.forEach(r=>{const c=pn(r.d[h]),u=pn(r.d[sc]);if(blank(r.d[h])||blank(r.d[sc])||isNaN(c)||isNaN(u))return;if(c>u)fl(r,h,`Cost price is higher than selling price (${u}) - possible loss, please verify`,15)})}
+  if(/status/i.test(h)){const ok=cfg.statuses&&cfg.statuses.length?cfg.statuses:DEFST,al=ok.map(x=>x.toLowerCase());if(ratio(h,v=>al.includes(String(v).trim().toLowerCase()))<.4)return;
+   R.forEach(r=>{const v=r.d[h];if(blank(v))return;const k=String(v).trim().toLowerCase();if(al.includes(k))return;let b=99,c=[];
+    ok.forEach(x=>{const e=osa(k,x.toLowerCase());if(e<b){b=e;c=[x]}else if(e===b)c.push(x)});
+    fl(r,h,'Status not in allowed list',15,c.length===1&&b<=(k.length>5?2:1)?c[0]:undefined)})}});
+ if(on[1]||on[17]){const sel=cfg.dup&&cfg.dup.length,ks=sel?cfg.dup.map(nm).filter(c=>H.includes(c)):H.filter(h=>!/(^|[_ ])id$|^(sr|sno)/i.test(h.trim())&&ty(h)!=='ignore'&&!(ty(h)==='id'&&uq(h)));
+  const em=H.find(emC),ph=H.find(phC),nz=v=>String(v??'').trim().toLowerCase(),dg=v=>{let d=String(v??'').replace(/\D/g,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');return d.length>=10?d:''};
+  const cnt=new Map(),kk=r=>[em?nz(r.d[em]):'',ph?dg(r.d[ph]):''];R.forEach(r=>kk(r).forEach(x=>x&&cnt.set(x,(cnt.get(x)||0)+1)));const tx=cfg.dmode==='tx'||(cfg.dmode!=='list'&&R.length>=100&&R.filter(r=>kk(r).some(x=>x&&cnt.get(x)>1)).length>R.length*.25);
+  const ex=new Map(),ema=new Map(),pha=new Map(),W='(whole row)',nmc=H.find(h=>/name/i.test(h)&&!/product|item|file|sheet|company|brand|category/i.test(h)),nn=r=>nmc?nz(r.d[nmc]).replace(/[^a-z0-9\u0900-\u097f ]/g,'').replace(/\s+/g,' ').trim():'',sm=(a,b)=>!nmc||!a||!b||a===b||osa(a,b)<=Math.max(1,Math.floor(Math.min(a.length,b.length)*.2)),mt=(m,key,r)=>{const a=key&&m.get(key);return a?a.find(x=>sm(nn(r),x.n)):null},ad=(m,key,r)=>{if(!key)return;const a=m.get(key)||[];a.push({r:r.r,n:nn(r)});m.set(key,a)};
+  R.forEach(r=>{if(!ks.some(c=>!blank(r.d[c])))return;const k=JSON.stringify(ks.map(c=>nz(r.d[c]))),e=em?nz(r.d[em]):'',p=ph?dg(r.d[ph]):'',q1=!tx&&e?mt(ema,e,r):null,q2=!tx&&p?mt(pha,p,r):null;
+   if(ex.has(k))fl(r,W,`Exact duplicate of row ${ex.get(k)} (${sel?'selected columns':'all columns except ID'})`,1);
+   else if(q1)fl(r,W,`Possible duplicate: same email${nmc?' and similar name':''} as row ${q1.r}`,1);
+   else if(q2)fl(r,W,`Possible duplicate: same phone${nmc?' and similar name':''} as row ${q2.r} - check if same customer`,1);
+   if(!ex.has(k))ex.set(k,r.r);ad(ema,e,r);ad(pha,p,r)})}
+ if(on[17]){const ds=new Map(flags.filter(f=>/^Exact duplicate/.test(f.Issue)).map(f=>[f.Row,f.Issue]));R=R.filter(r=>{if(!ds.has(r.r))return true;removed.push({'Removed because':ds.get(r.r),'Original row':r.r});inc(17);return false})}
+ const st={};[det,app].forEach(o=>Object.keys(o).forEach(k=>bump(st,k,o[k])));
+ return{R,H,st,det,sug,app,flags,removed,changes,ty:TY,map,dc:[...DC]}}
+function cu(e){const n=+e.textContent,t0=performance.now(),f=t=>{const p=Math.min(1,(t-t0)/900);e.textContent=Math.round(n*(1-Math.pow(1-p,3)));p<1&&requestAnimationFrame(f)};requestAnimationFrame(f)}
+function sv(w,nm){const bin=XLSX.write(w,{bookType:'xlsx',type:'array',cellDates:false}),fb=()=>{try{XLSX.writeFile(w,nm,{cellDates:false})}catch(x){const u=URL.createObjectURL(new Blob([bin],{type:'application/octet-stream'})),a=document.createElement('a');a.href=u;a.download=nm;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},1500)}};
+ if(!window.claude||!claude.use)return fb();claude.use('downloads').then(d=>d?d.save({filename:nm,data:bin}):fb()).catch(e=>{if(!e||e.code!=='declined')fb()})}
+function sy(){let any=0;document.querySelectorAll('#cfg [data-for]').forEach(d=>{const on=d.dataset.for.split(',').some(k=>{const c=document.querySelector('[data-o="'+k+'"]');return c&&c.checked});d.classList.toggle('hid',!on);any|=on});$('#cfg').classList.toggle('hid',!any)}
+function sm(){if(!SCANR)return;const ck=[...document.querySelectorAll('[data-o]:checked')].map(c=>+c.dataset.o),A=SCANR.app,D=SCANR.det,
+ FX={2:'extra spaces',3:'capitalisation',5:'text → numbers',6:'dates made uniform',9:'column names',12:'spelling variants',14:'empty rows/columns',16:'phone & email formats',17:'duplicate rows moved aside'},
+ RV={1:'possible duplicates',4:'blank cells',5:'values that are not numbers',6:'invalid dates',7:'invalid emails',8:'invalid phone numbers',13:'unusual numbers',15:'suspicious values'},
+ f=ck.filter(k=>FX[k]&&A[k]),r=ck.filter(k=>RV[k]&&D[k]),nf=f.reduce((a,k)=>a+A[k],0),nr=r.reduce((a,k)=>a+D[k],0);
+ $('#sum').innerHTML=`<div class="sh"><b>${nf+nr?'Here is what we found in your file':'Your file looks clean!'}</b><small>${ROWS.length} rows · ${HEADS.length} columns${ROFF?' · header on row '+(ROFF+1):''}</small></div>${f.length?`<p class="dh">✅ Will be fixed automatically (${nf})</p><div>${f.map(k=>`<span class="ch ok"><b>${A[k]}</b> ${FX[k]}</span>`).join('')}</div>`:''}${r.length?`<p class="dh">👀 Please check these yourself – we only flag them, never change them (${nr})</p><div>${r.map(k=>`<span class="ch wn"><b>${D[k]}</b> ${RV[k]}</span>`).join('')}</div>`:''}<p class="s" style="margin:12px 0 0">Check the list below – untick any change you don’t want – then press the big button.</p>`;$('#rv').innerHTML=rv(ck)}
+function rv(ck){const op=new Set([...document.querySelectorAll('#rv details[open]')].map(d=>d.dataset.k)),had=!!document.querySelector('#rv details');PL={};const inv={};Object.entries(SCANR.map||{}).forEach(([a,b])=>inv[b]=a);const oc=c=>inv[c]||c,idv=r=>{const v=ROWS[r-2-ROFF]&&ROWS[r-2-ROFF][HEADS[0]];return v==null?'':String(v)};
+ const bl=ck.map(k=>{const L=O.find(o=>o[0]==k),lb=L[0]+'. '+L[1],rows=[];
+  if([2,3,5,6,12,16].includes(k))SCANR.changes.filter(c=>c.Check===lb&&c.Row!=='Header').forEach(c=>{const key=c.Row+'|'+oc(c.Column)+'|'+k;rows.push({key,r:c.Row,c:oc(c.Column),t:vis(c['Old value'])+' → '+vis(c['New value']),w:c.Reason||RS[k]||'',on:!EX.has(key)})});
+  SCANR.flags.filter(f=>f.Check===lb).forEach(f=>{const sg=f['Suggested correction']!=='',key=(sg?'s':'')+f.Row+'|'+oc(f.Column)+'|'+k;rows.push({key:sg?key:'',r:f.Row,c:oc(f.Column),t:vis(f.Value)+(sg?' → '+f['Suggested correction']:''),w:f.Issue+(sg?' (suggestion – tick to apply)':''),on:sg&&AC.has(key)})});
+  PL[k]=rows.filter(x=>x.key);rows.sort((a,b)=>a.r-b.r);return rows.length?{k,L,rows}:null}).filter(Boolean);
+ if(!bl.length)return'';const n=bl.reduce((a,b)=>a+b.rows.length,0);
+ return`<details class="adv top" data-k="top"${!had||op.has('top')?' open':''}><summary>🔍 Review every change <small>(${n} items – fixes are ticked by default; untick any you don’t want)</small></summary>${bl.map(b=>`<details class="rd" data-k="${b.k}"${(had?op.has(''+b.k):b.rows.length<=8)?' open':''}><summary><b>${b.k}. ${b.L[1]}</b><span class="bg">${b.rows.length}</span></summary><div class="row" style="margin:8px 14px 0"><button type="button" class="g" data-bulk="${b.k}:1">Tick all</button><button type="button" class="g" data-bulk="${b.k}:0">Untick all</button></div><div class="tw" style="max-height:300px;margin:8px 14px 12px"><table><thead><tr><th></th><th>Row</th><th>${esc(HEADS[0])}</th><th>Column</th><th>Value / change</th><th>Why</th></tr></thead><tbody>${b.rows.slice(0,300).map(x=>`<tr><td>${x.key?`<input type="checkbox" data-pk="${esc(x.key)}"${x.on?' checked':''} aria-label="Apply this change">`:'👀'}</td><td>${x.r}</td><td>${esc(idv(x.r))}</td><td>${esc(x.c)}</td><td>${esc(x.t)}</td><td>${esc(x.w)}</td></tr>`).join('')}</tbody></table></div>${b.rows.length>300?`<small style="margin:0 14px 10px;display:block">Showing first 300 – “Tick all / Untick all” covers every item.</small>`:''}</details>`).join('')}<p class="s" style="margin:6px 4px 0"><small>👀 = needs your own review (cannot be fixed automatically). Suggestions stay unticked until you accept them.</small></p></details>`}
+function pk(o){if(!EX.size&&!AC.size)return;const inv={};Object.entries(o.map||{}).forEach(([a,b])=>inv[b]=a);const key=(r,c,k)=>r+'|'+(inv[c]||c)+'|'+k,by=new Map(o.R.map(r=>[r.r,r]));
+ o.changes=o.changes.filter(c=>{if(c.Row==='Header')return true;const k=parseInt(c.Check);if(!EX.has(key(c.Row,c.Column,k)))return true;const r=by.get(c.Row);if(r)r.d[c.Column]=c['Old value'];o.app[k]--;return false});
+ o.flags.forEach(f=>{const k=parseInt(f.Check);if(f['Suggested correction']===''||!AC.has('s'+key(f.Row,f.Column,k)))return;const r=by.get(f.Row);if(!r)return;const ov=r.d[f.Column];let v=f['Suggested correction'];if(/^-?\d+(\.\d+)?$/.test(String(v))&&(typeof ov==='number'||o.ty[f.Column]==='num'))v=+v;r.d[f.Column]=v;o.changes.push({Row:f.Row,Column:f.Column,'Old value':ov,'New value':v,Reason:'Suggestion accepted by you ('+f.Issue+')',Check:f.Check});o.app[k]=(o.app[k]||0)+1;o.sug[k]=(o.sug[k]||0)-1;o.det[k]=(o.det[k]||0)-1;f.Status='Applied - accepted by you'})}
+let STEPS=[],SK=[],PK2=new Set(),MODE='q',PEND=[];
+const SEQ=[14,2,3,12,5,6,16,1,17,4,7,8,15,13,9],FL=[1,4,7,8,13,15],onOf=a=>{const o={};a.forEach(k=>o[k]=1);return o};
+function st(){const box=$('#st');if(!ROWS||!ROWS.length){box.innerHTML='';return}
+ const cf=rl=>({roles:rl,dmode:$('#dpm').value,dup:[],split:'',merge:[],statuses:$('#sts').value.split(',').map(x=>x.trim()).filter(Boolean)}),r0=getRoles(),
+ CUR=STEPS.length?run(ROWS,HEADS,onOf(STEPS),cf(r0)):null,rows=CUR?CUR.R.map(r=>({...r.d,__r:r.r})):ROWS.map((d,i)=>({...d,__r:i+2+ROFF})),hd=CUR?CUR.H:HEADS,rl={};
+ Object.entries(r0).forEach(([k,v])=>rl[(CUR&&CUR.map&&CUR.map[k])||k]=v);
+ const SC=run(rows,hd,onOf(O.map(o=>o[0])),cf(rl)),nm=k=>O.find(o=>o[0]==k),fd=k=>SC.st[k]||0,pend=SEQ.filter(k=>!STEPS.includes(k)),act=pend.filter(k=>fd(k)>0),sug=act[0];PEND=act;
+ PK2=new Set([...PK2].filter(k=>act.includes(k)));if(!PK2.size&&sug)PK2.add(sug);
+ const RR=CUR?CUR.R:ROWS.map((d,i)=>({r:i+2+ROFF,d})),gk=new Set(CUR?CUR.changes.filter(c=>SK.includes(parseInt(c.Check))).map(c=>c.Row+'|'+c.Column):[]),fk=new Set(CUR?CUR.flags.map(f=>f.Row+'|'+f.Column):[]),
+ dn=STEPS.map(k=>`<div class="stp dn"><span>✅</span><span><strong>${nm(k)[1]}</strong><br><small>${CUR.st[k]||0} ${FL.includes(k)?'flagged':'fixed'}</small></span><button type="button" class="g" data-u="${k}">↶ Undo</button></div>`).join(''),
+ pd=act.map(k=>`<label class="stp${k===sug?' sug':''}"><input type="checkbox" data-sk="${k}"${PK2.has(k)?' checked':''}><span>${k===sug?'<span class="tg">Suggested next</span><br>':''}<strong>${nm(k)[1]}</strong><br><small>${nm(k)[2]} · ${fd(k)} ${FL.includes(k)?'to flag':'to fix'}</small></span></label>`).join(''),z=pend.length-act.length;
+ box.innerHTML=`<div class="stg"><div class="card"><div class="sh"><b>Cleaning steps</b><small>Tick → Execute → review → repeat</small></div>${dn?`<p class="dh">✅ Applied (${STEPS.length})</p>${dn}`:''}<p class="dh">${act.length?'▶ Available next':'🎉 No more issues found'}</p>${pd}${z?`<p class="s"><small>✓ ${z} other check${z>1?'s':''} found nothing to fix</small></p>`:''}${act.length?`<button type="button" class="p" id="sx" style="margin-top:8px"${PK2.size?'':' disabled'}>▶ Execute selected</button><button type="button" class="g" id="sall" style="margin-top:8px;width:100%">Execute all remaining</button>`:''}${STEPS.length?`<button type="button" class="g" id="srs" style="margin-top:8px;width:100%">↺ Reset all steps</button>`:''}<button type="button" class="p" id="sdl" style="margin-top:12px"${STEPS.length?'':' disabled'}>⬇ Download cleaned file</button></div>
+ <div class="card"><div class="sh"><b>Live preview</b><small>${RR.length} rows · ${CUR?CUR.changes.length:0} changes applied · ${CUR?CUR.flags.length:0} flagged</small></div><p style="margin:6px 0"><span class="ch ok">green = changed by last step</span><span class="ch wn">yellow = please double-check · click to fix</span></p><div class="tw" style="max-height:460px"><table><thead><tr>${hd.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${RR.slice(0,100).map(r=>`<tr>${hd.map(h=>`<td class="${gk.has(r.r+'|'+h)?'ch2':fk.has(r.r+'|'+h)?'f':''}">${esc(r.d[h])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${RR.length>100?`<small>Showing first 100 rows – the download has all ${RR.length}.</small>`:''}</div></div>`}
+function dls(){if(!STEPS.length)return err('Execute at least one step first.');const c=[...document.querySelectorAll('[data-o]')],pv=c.map(x=>x.checked);c.forEach(x=>x.checked=STEPS.includes(+x.dataset.o));try{go()}finally{c.forEach((x,i)=>x.checked=pv[i])}}
+function err(m){const e=$('#err');e.textContent=m;e.classList.toggle('hid',!m)}
+function load(f){err('');if(!f)return;if(f.size>25e6)return err('File is larger than 25 MB. Please split it and try again.');
+ if(!/\.(xlsx|xls|csv)$/i.test(f.name))return err('Unsupported file. Please upload .xlsx, .xls or .csv.');
+ if(typeof XLSX==='undefined')return err('Excel library could not load. Check your internet connection and refresh.');
+ const rd=new FileReader();rd.onerror=()=>err('Could not read the file.');
+ rd.onload=e=>{try{WB=XLSX.read(e.target.result,{type:'array',cellDates:true,codepage:65001});FN=f.name;$('#fn').textContent=f.name;
+  $('#sh').innerHTML=WB.SheetNames.map(n=>`<option>${esc(n)}</option>`).join('');$('#work').classList.remove('hid');$('#res').classList.add('hid');sheet()}
+  catch(x){err('This file looks corrupted or is not a valid spreadsheet. Nothing was changed.')}};rd.readAsArrayBuffer(f)}
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function dtl(k,X){X=X||SCANR;if(!X)return{n:0,h:''};const L=O.find(o=>o[0]==k)||[k,''],lb=L[0]+'. '+L[1];
+ const id=r=>{if(r==='Header')return'';const v=ROWS[r-2-ROFF]&&ROWS[r-2-ROFF][HEADS[0]];return v==null?'':String(v)};
+ const nt=t=>String(t).replace(/row (\d+)/g,(m,n)=>'row '+n+(id(+n)?' ('+id(+n)+')':''));
+ const F=X.flags.filter(f=>f.Check===lb).map(f=>[f.Row,f.Column,vis(f.Value),nt(f.Issue)+(f['Suggested correction']!==''?' → suggested: '+f['Suggested correction']:'')]);
+ const C=X.changes.filter(c=>c.Check===lb).map(c=>[c.Row,c.Column,vis(c['Old value'])+' → '+vis(c['New value']),c.Reason||'Will be changed']);
+ X.removed.filter(x=>k==14?/^Empty/.test(x['Removed because']):k==17&&!/^Empty/.test(x['Removed because'])).forEach(x=>C.push([x['Original row'],'(whole row)','',x['Removed because']+(X===SCANR?' - will be removed':' - removed (kept in Removed Rows sheet)')]));
+ const srt=a=>a.sort((x,y)=>(+x[0]||0)-(+y[0]||0));
+ const tb=(t,a)=>a.length?`<p class="dh">${t} (${a.length})</p><div class="tw" style="max-height:240px"><table><thead><tr><th>Row</th><th>${esc(HEADS[0])}</th><th>Column</th><th>Value</th><th>What's wrong / why</th></tr></thead><tbody>${srt(a).slice(0,300).map(x=>`<tr><td>${esc(x[0])}</td><td>${esc(id(x[0]))}</td><td>${esc(x[1])}</td><td>${esc(x[2])}</td><td>${esc(x[3])}</td></tr>`).join('')}</tbody></table></div>${a.length>300?`<small>+${a.length-300} more – all are in the downloaded file.</small>`:''}`:'';
+ return{n:F.length+C.length,h:tb('⚑ Needs your review – not changed',F)+tb(X===SCANR?'✎ Will be changed':'✔ Changed automatically',C)}}
+function getRoles(){const r={};document.querySelectorAll('[data-rh]').forEach(x=>{if(x.value)r[x.dataset.rh]=x.value});return r}
+function scanUI(){const prev={};document.querySelectorAll('[data-o]').forEach(c=>prev[c.dataset.o]=c.checked);const all={};O.forEach(o=>all[o[0]]=1);SCANR=run(ROWS,HEADS,all,{roles:getRoles()});SCAN=SCANR.st;
+ $('#opts').innerHTML=O.map(o=>{const n=SCAN[o[0]]||0,ck=prev[o[0]]!==undefined?prev[o[0]]:n>0&&![9,10,11,17].includes(o[0]),d=dtl(o[0]);return`<div class="ow"><div class="or"><label class="opt"><input type="checkbox" data-o="${o[0]}" ${ck?'checked':''}><span><b>${o[0]}. ${o[1]}</b><small>${o[2]}</small></span>${[10,11].includes(o[0])?'':`<span class="bg">${n} found</span>`}</label>${d.n?`<button type="button" class="g dtb" data-k="${o[0]}" aria-expanded="false" aria-controls="dp${o[0]}">Details (${d.n}) ▾</button>`:''}</div>${d.n?`<div class="dp hid" id="dp${o[0]}">${d.h}</div>`:''}</div>`}).join('');}
+const TL={email:'Email',phone:'Phone',date:'Date',num:'Number',id:'ID / code',text:'Text',other:'Other'},RV=[['text','Text / name'],['email','Email'],['phone','Phone'],['date','Date'],['amount','Number / amount'],['id','ID / code (keep as is)'],['ignore','Ignore (skip)']];
+function mkRoles(){const mp=SCANR.map||{};$('#roles').innerHTML=HEADS.map(h=>`<label><span>${esc(h)}</span><select data-rh="${esc(h)}"><option value="">Auto: ${TL[SCANR.ty[mp[h]||h]]||'Empty'}</option>${RV.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('')}</select></label>`).join('')}
+function sheet(){const a0=XLSX.utils.sheet_to_json(WB.Sheets[$('#sh').value],{header:1,defval:'',raw:true}),nb=r=>r.filter(v=>!blank(v)).length,w0=Math.max(0,...a0.slice(0,25).map(nb));
+ ROFF=Math.max(0,a0.slice(0,25).findIndex(r=>w0>1&&nb(r)>=Math.ceil(w0*.7)&&r.filter(v=>typeof v==='string'&&!blank(v)).length>=Math.ceil(w0*.6)));const a=a0.slice(ROFF);
+ if(a.length<2){ROWS=[];HEADS=[];$('#info').textContent='Sheet has no data rows.';$('#opts').innerHTML='';return}
+ const seen={};HEADS=a[0].map((h,i)=>{let b=String(h).trim()||'Column '+(i+1),n=b,k=2;while(seen[n])n=b+'_'+k++;seen[n]=1;return n});
+ ROWS=a.slice(1).map(r=>{const d={};HEADS.forEach((h,i)=>d[h]=r[i]??'');return d});
+ $('#info').textContent=`${ROWS.length} rows · ${HEADS.length} columns`+(ROFF?` · header found on row ${ROFF+1}`:'');
+ $('#res').classList.add('hid');$('#opts').innerHTML='';$('#roles').innerHTML='';scanUI();mkRoles();
+ const ch=n=>HEADS.map(h=>`<label><input type="checkbox" name="${n}" value="${esc(h)}"> ${esc(h)}</label>`).join('');
+ $('#dupc').innerHTML=ch('dup');$('#mgc').innerHTML=ch('mg');$('#spc').innerHTML='<option value="">— none —</option>'+HEADS.map(h=>`<option>${esc(h)}</option>`).join('');EX.clear();AC.clear();STEPS=[];SK=[];PK2=new Set();sy();sm();if(MODE==='s')st()}
+function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forEach(c=>{if(c.checked)on[c.dataset.o]=1});
+ if(!Object.keys(on).length)return err('Please tick at least one option.');
+ const g=n=>[...document.querySelectorAll(`[name=${n}]:checked`)].map(c=>c.value);
+ const cfg={roles:getRoles(),dmode:$('#dpm').value,dup:g('dup'),split:$('#spc').value,merge:g('mg'),sep:$('#mgs').value,mname:$('#mgn').value.trim(),statuses:$('#sts').value.split(',').map(x=>x.trim()).filter(Boolean)};
+ if(on[10]&&!cfg.split)return err('Option 10 needs a column: choose "Split column" in settings.');
+ if(on[11]&&cfg.merge.length<2)return err('Option 11 needs at least 2 columns ticked under "Merge columns".');
+ const o=run(ROWS,HEADS,on,cfg);pk(o);const clean=o.R.map(r=>{const d={};o.H.forEach(h=>d[h]=r.d[h]);return d});
+ o.flags.sort((x,y)=>x.Row-y.Row);
+ const w=XLSX.utils.book_new(),add=(n,d,h)=>XLSX.utils.book_append_sheet(w,XLSX.utils.json_to_sheet(d,h?{header:h}:{}),n);
+ add('Cleaned',clean,o.H);{const ws=w.Sheets['Cleaned'];if(ws&&ws['!ref']){const rg=XLSX.utils.decode_range(ws['!ref']);ws['!cols']=o.H.map(h=>({wch:Math.min(40,Math.max(String(h).length,...clean.slice(0,300).map(r=>String(r[h]??'').length))+2)}));
+ o.dc.forEach(h=>{const c=o.H.indexOf(h);if(c<0)return;for(let r=1;r<=rg.e.r;r++){const x=ws[XLSX.utils.encode_cell({r,c})],m=x&&x.t==='s'&&x.v.match(/^(\d{4})-(\d\d)-(\d\d)(?: (\d\d):(\d\d))?$/);if(m&&iso(+m[1],+m[2],+m[3])){x.t='n';x.v=(Date.UTC(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0))-Date.UTC(1899,11,30))/864e5;x.z=m[4]?'yyyy-mm-dd hh:mm':'yyyy-mm-dd';delete x.w}}})}}add('Removed Rows',o.removed.length?o.removed:[{Info:'No rows removed'}]);add('Flags',o.flags.length?o.flags:[{Info:'No issues flagged'}]);
+ add('Applied Changes',o.changes.length?o.changes:[{Info:'No cell changes applied'}]);XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(mkSummary(o,on,ROWS.length,clean.length)),'Summary');WB.SheetNames.filter(n=>n!==$('#sh').value).forEach(n=>{try{XLSX.utils.book_append_sheet(w,WB.Sheets[n],('Original - '+n).slice(0,31))}catch(e){}});
+ LAST=[w,FN.replace(/\.\w+$/,'')+'_cleaned.xlsx'];sv(LAST[0],LAST[1])
+ const fm=new Set(o.flags.map(f=>f.Row+'|'+f.Column)),rr=o.R.slice(0,100),rd=O.filter(x=>on[x[0]]).map(x=>[x,dtl(x[0],o)]).filter(a=>a[1].n),rp=rd.length?`<p class="dh">📋 Detailed report – click any item to see exactly which rows and cells</p>`+rd.map(a=>`<details class="rd"><summary><b>${a[0][0]}. ${a[0][1]}</b><span class="bg">${a[1].n}</span></summary>${a[1].h}</details>`).join(''):'';
+ $('#res').innerHTML=`<div class="stat"><div><b class="cu">${ROWS.length}</b>rows before</div><div><b class="cu">${clean.length}</b>rows after</div><div><b class="cu">${o.removed.length}</b>rows removed</div><div><b class="cu">${o.flags.length}</b>cells flagged</div></div>
+ <p><b>✅ Done!</b> Your cleaned file is saving as ${esc(FN.replace(/\.\w+$/,''))}_cleaned.xlsx . Open the “Cleaned” sheet for your clean data and “Flags” for items to check by hand. <button type="button" class="g" id="dl">⬇ Download again</button></p>
+ ${rp}<p style="margin-top:14px"><small>Preview of first ${rr.length} rows – yellow cells are flagged for your review.</small></p><div class="tw"><table><thead><tr>${o.H.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rr.map(r=>`<tr>${o.H.map(h=>`<td class="${fm.has(r.r+'|'+h)?'f':''}">${esc(r.d[h])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+ toast('⬇ Cleaned file downloaded')}
+ catch(x){err('Processing failed, so no file was created. Your original file is untouched. ('+x.message+')')}}
+const dz=$('#drop'),fi=$('#fi');dz.onclick=()=>fi.click();dz.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fi.click()}};
+fi.onchange=()=>{load(fi.files[0]);fi.value=''};dz.ondragover=e=>{e.preventDefault();dz.classList.add('on')};dz.ondragleave=()=>dz.classList.remove('on');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('on');load(e.dataTransfer.files[0])};$('#opts').addEventListener('click',e=>{const b=e.target.closest('.dtb');if(!b)return;const open=$('#dp'+b.dataset.k).classList.toggle('hid')===false;b.setAttribute('aria-expanded',open);b.textContent=b.textContent.replace(/[▾▴]/,open?'▴':'▾')});$('#sh').onchange=sheet;$('#rv').addEventListener('change',e=>{const k=e.target.dataset.pk;if(!k)return;if(k[0]==='s')e.target.checked?AC.add(k):AC.delete(k);else e.target.checked?EX.delete(k):EX.add(k)});$('#rv').addEventListener('click',e=>{const b=e.target.closest('[data-bulk]');if(!b)return;const [k,v]=b.dataset.bulk.split(':');(PL[k]||[]).forEach(x=>{if(x.key[0]==='s')v==='1'?AC.add(x.key):AC.delete(x.key);else v==='1'?EX.delete(x.key):EX.add(x.key)});sm()});$('#roles').addEventListener('change',()=>{scanUI();sy();sm();if(MODE==='s')st()});
+$('#modes').addEventListener('click',e=>{const b=e.target.closest('[data-m]');if(!b)return;MODE=b.dataset.m;document.querySelectorAll('#modes button').forEach(x=>x.classList.toggle('on',x===b));$('#qm').classList.toggle('hid',MODE==='s');$('#st').classList.toggle('hid',MODE!=='s');if(MODE==='s')st()});
+$('#st').addEventListener('change',e=>{const k=+e.target.dataset.sk;if(!k)return;e.target.checked?PK2.add(k):PK2.delete(k);const x=$('#sx');if(x)x.disabled=!PK2.size});
+$('#st').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const w=f=>{b.disabled=true;b.textContent='Working…';setTimeout(f,30)};
+ if(b.id==='sx'&&PK2.size)w(()=>{const a=SEQ.filter(k=>PK2.has(k));STEPS.push(...a);SK=a;PK2=new Set();st()});
+ else if(b.id==='sall'&&PEND.length)w(()=>{STEPS.push(...PEND);SK=[...PEND];PK2=new Set();st()});
+ else if(b.dataset.u)w(()=>{STEPS=STEPS.filter(k=>k!==+b.dataset.u);SK=[];PK2=new Set();st()});
+ else if(b.id==='srs')w(()=>{STEPS=[];SK=[];PK2=new Set();st()});
+ else if(b.id==='sdl')dls()});$('#opts').addEventListener('change',()=>{sy();sm()});$('#res').addEventListener('click',e=>{if(e.target.id==='dl'&&LAST)sv(LAST[0],LAST[1])});$('#sa').onclick=()=>{document.querySelectorAll('[data-o]').forEach(c=>c.checked=true);sy();sm()};$('#sn').onclick=()=>{document.querySelectorAll('[data-o]').forEach(c=>c.checked=false);sy();sm()};$('#go').onclick=()=>{const b=$('#go');b.disabled=true;b.textContent='Cleaning your data...';$('#bar').classList.remove('hid');setTimeout(()=>{try{go()}finally{b.disabled=false;b.innerHTML='✨ Clean my file &amp; Download';$('#bar').classList.add('hid')}},450)};
+/* ===== New UI layer (Power Query style) – engine above is unchanged ===== */
+MODE='s';
+const FIXK=[14,2,3,12,5,6,16],FLGK=[1,4,7,8,13,15];let BN=true,HIST=[],VIEW=-1,PREVK=0,DATA={},PC={};
+const nmk=k=>O.find(o=>o[0]==k)[1],cfg2=rl=>({roles:rl,dmode:$('#dpm').value,dup:[],split:'',merge:[],statuses:$('#sts').value.split(',').map(x=>x.trim()).filter(Boolean)});
+const sv2=x=>{const s=x==null||x===''?'∅':String(x);return s.length>40?s.slice(0,40)+'…':s};
+function toast(m,u){const t=$('#toast');t.innerHTML=esc(m)+(u?'<button type="button" data-a="undo">Undo</button>':'');t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),6000)}
+sm=function(){};
+const _sheet=sheet;sheet=function(){HIST=[];VIEW=-1;PREVK=0;PC={};MAN.clear();IGN.clear();document.querySelector('.hero').classList.add('hid');$('#drop').classList.add('hid');_sheet();if(ROWS&&ROWS.length)autoRun()};
+function exec(keys,label){const a=SEQ.filter(k=>keys.includes(k)&&!STEPS.includes(k));if(!a.length)return;HIST.push([...STEPS]);STEPS.push(...a);SK=a;VIEW=-1;PREVK=0;st();toast('✓ '+(label||a.map(nmk).join(', '))+' done',1)}
+function undo(){if(!HIST.length)return;STEPS=HIST.pop();SK=[];VIEW=-1;PREVK=0;st();toast('↶ Undone')}
+function selMark(){document.querySelectorAll('.pd').forEach(x=>x.classList.toggle('sel',+x.dataset.p===PREVK))}
+function setPrev(k){if(VIEW!==-1||k===PREVK)return;PREVK=k;selMark();drawTable()}
+st=function(){const box=$('#st');if(!ROWS||!ROWS.length){box.innerHTML='';return}PC={};
+ const up=VIEW===-2?[]:VIEW<0?STEPS:STEPS.slice(0,VIEW+1),r0=getRoles(),CUR=up.length?run(ROWS,HEADS,onOf(up),cfg2(r0)):null;if(CUR&&VIEW===-1)pk(CUR);
+ const RR=CUR?CUR.R.map(r=>({r:r.r,d:r.d})):ROWS.map((d,i)=>({r:i+2+ROFF,d})),hd=CUR?CUR.H:HEADS,rl={};Object.entries(r0).forEach(([k,v])=>rl[(CUR&&CUR.map&&CUR.map[k])||k]=v);
+ const SC=run(RR.map(r=>({...r.d,__r:r.r})),hd,onOf(O.map(o=>o[0])),cfg2(rl)),fd=k=>SC.st[k]||0,act=SEQ.filter(k=>!STEPS.includes(k)&&fd(k)>0),
+ safe=act.filter(k=>FIXK.includes(k)),flg=act.filter(k=>FLGK.includes(k)),opt=act.filter(k=>!FIXK.includes(k)&&!FLGK.includes(k)),sum=a=>a.reduce((s,k)=>s+fd(k),0),fl=CUR?CUR.flags:[],open=fl.filter(f=>!/^Applied/.test(f.Status)).length;
+ DATA={CUR,RR,hd,fl,r0,act,safe,flg};
+ const last=STEPS.length-1,on=i=>VIEW===-2?false:VIEW<0?i===last:i===VIEW,
+ ap=`<div class="as${VIEW===-2?' on':''}" data-a="view" data-i="-2"><span>📄</span><div><b>Source</b><small>${ROWS.length} rows · ${HEADS.length} columns</small></div></div>`+STEPS.map((k,i)=>`<div class="as${on(i)?' on':''}" data-a="view" data-i="${i}"><span>✅</span><div><b>${esc(nmk(k))}</b><small>${(CUR&&CUR.st[k])||0} ${FLGK.includes(k)?'to check':'changed'}</small></div><button type="button" class="x" data-a="rm" data-k="${k}" title="Remove this step" aria-label="Remove step ${esc(nmk(k))}">✕</button></div>`).join(''),
+ grp=(t,a)=>a.length?`<div class="gt">${t}</div>`+a.map(k=>`<div class="pd" data-p="${k}"><div><b>${esc(nmk(k))}</b><small>${esc(O.find(o=>o[0]==k)[2])}</small></div><span class="bg">${fd(k)}</span><button type="button" class="b2" data-a="run" data-k="${k}">▶ Run</button></div>`).join(''):'',
+ inv={};Object.entries((CUR&&CUR.map)||{}).forEach(([a,b])=>inv[b]=a);const ak=f=>'s'+f.Row+'|'+(inv[f.Column]||f.Column)+'|'+parseInt(f.Check),
+ sg=VIEW===-1?fl.filter(f=>f['Suggested correction']!==''):[],ns=sg.filter(f=>!AC.has(ak(f))).length,
+ idv=r=>{const x=ROWS[r-2-ROFF];return x&&x[HEADS[0]]!=null?String(x[HEADS[0]]):''},
+ iss=[...fl].sort((a,b)=>a.Row-b.Row).slice(0,80).map(f=>{const s=f['Suggested correction'],acc=s!==''&&AC.has(ak(f)),i=idv(f.Row);return`<div class="is"><span><b>Row ${f.Row}</b>${i?' ('+esc(i)+')':''} · ${esc(f.Column)}<br><small>${esc(f.Issue)} · ${esc(vis(f.Value))}${s!==''?' → <b>'+esc(s)+'</b>':''}</small></span><button type="button" class="b2" data-a="go" data-r="${f.Row}" title="Show in table">📍 Show</button>${s!==''&&VIEW===-1?(acc?`<button type="button" class="b2" data-a="rej" data-x="${esc(ak(f))}">↶ Undo</button>`:`<button type="button" class="b2 pr" data-a="acc" data-x="${esc(ak(f))}">Accept</button>`):''}</div>`}).join('');
+ box.innerHTML=`<div class="bar2" role="toolbar"><button type="button" class="b2${SB?' on':''}" data-a="sb" aria-pressed="${SB}" title="Show or hide the steps panel">${SB?'☰ Show steps':'◧ Hide steps'}</button><div class="t">${STEPS.length?`<b>✓ ${CUR?CUR.changes.length:0} fixes applied automatically</b><br>${open?`<b class="rd2">${open}</b> cells need a quick look (yellow)`:'Nothing left to review'}`:(act.length?`<b>${sum(act)}</b> issues found`:'<b>Your file looks clean</b>')}</div>
+ ${!STEPS.length&&act.length?'<button type="button" class="b2 pr" data-a="auto">✨ Auto-clean</button>':''}${ns?`<button type="button" class="b2 wn" data-a="accall">✔ Accept ${ns} suggestion${ns>1?'s':''}</button>`:''}${bkn(fl)?`<button type="button" class="b2 wn" data-a="blanks">✏️ Fill blank cells (${bkn(fl)})</button>`:''}${open?'<button type="button" class="b2" data-a="nxt" title="Jump to the next yellow cell">Next issue ▸</button>':''}<button type="button" class="b2" data-a="undo"${HIST.length?'':' disabled'} title="Undo (Ctrl+Z)">↶</button><button type="button" class="b2" data-a="reset"${STEPS.length?'':' disabled'} title="Reset everything">↺</button><button type="button" class="b2 pr" data-a="dl"${STEPS.length?'':' disabled'} style="padding:12px 24px;font-size:15px">⬇ Download cleaned file</button></div>
+ <div class="lay${SB?' nosb':''}"><div><div class="card"><div class="sh"><b>Applied steps</b><small>click = view · ✕ = remove</small><button type="button" class="hs" data-a="sb" title="Hide this panel" aria-label="Hide steps panel">‹</button></div>${ap}</div>
+ <details class="card${VIEW!==-1?' dim':''}"><summary style="cursor:pointer"><b>More checks (${act.length})</b> <small style="color:var(--mu)">optional · tap an item to preview</small></summary>${act.length?grp('✨ Safe fixes',safe)+grp('🚩 Flag for review',flg)+grp('Optional',opt)+(act.length>1?'<button type="button" class="b2" data-a="all" style="width:100%;margin-top:10px">Run everything</button>':''):'<p class="s">🎉 No more issues found</p>'}</details></div>
+ <div><div class="card" id="pvw"></div>${fl.length?`<div class="card"><div class="sh"><b>Issues</b><small>${fl.length} found${ns?' · '+ns+' have a suggested fix':''}</small>${ns?'<button type="button" class="b2 pr" data-a="accall" style="margin-left:auto">Accept all suggestions</button>':''}</div>${iss}${fl.length>80?'<small>Showing first 80 – all are in the download’s Flags sheet.</small>':''}</div>`:''}</div></div>`;
+ drawTable();selMark()}
+function drawTable(){const D=DATA,el=$('#pvw');if(!el||!D.hd)return;let hd=D.hd,RR=D.RR,pv='',pre=PREVK&&VIEW===-1,chg=D.CUR&&VIEW===-1?D.CUR.changes.filter(c=>SK.includes(parseInt(c.Check))||/^(Suggestion|Edited)/.test(c.Reason)):[],flg=D.fl;
+ if(pre){const key=STEPS.join()+'|'+PREVK,P=PC[key]||(PC[key]=run(ROWS,HEADS,onOf([...STEPS,PREVK]),cfg2(D.r0)));hd=P.H;RR=P.R;chg=P.changes.filter(c=>parseInt(c.Check)===PREVK);flg=P.flags.filter(f=>parseInt(f.Check)===PREVK);
+  const rem=[14,17].includes(PREVK)?P.removed.length-(D.CUR?D.CUR.removed.length:0):0;
+  pv=`<div class="pb"><span>👁 <b>Preview – not applied yet:</b> ${esc(nmk(PREVK))} → ${chg.length} cell changes${flg.length?', '+flg.length+' flagged':''}${rem>0?', '+rem+' rows moved aside':''}</span><button type="button" class="b2 pr" data-a="run" data-k="${PREVK}">Apply</button><button type="button" class="b2" data-a="unprev">✕ Close</button></div>`}
+ else if(VIEW!==-1)pv=`<div class="pb"><span>🕘 Viewing ${VIEW===-2?'the original data':'data after “'+esc(nmk(STEPS[VIEW]))+'”'} (read-only)</span><button type="button" class="b2 pr" data-a="latest">Back to latest</button></div>`;
+ const cm=new Map(),fm=new Map(),rf=new Set(),rx=new Set(),cc={};chg.forEach(c=>cm.set(c.Row+'|'+c.Column,c));flg.forEach(f=>{if(/^Applied/.test(f.Status))return;if(f.Column==='(whole row)'){rf.add(f.Row);if(/^Exact/.test(f.Issue))rx.add(f.Row)}else{fm.set(f.Row+'|'+f.Column,f.Issue);cc[f.Column]=(cc[f.Column]||0)+1}});
+ const TOT=RR.length;if(OP){const pr=new Set([...rf]),dupcols=rf.size>0;fm.forEach((v,k)=>pr.add(+k.slice(0,k.indexOf('|'))));hd=hd.filter((h,i)=>i===0||cc[h]||(dupcols&&/name|email|phone|mobile/i.test(h)));RR=RR.filter(r=>pr.has(r.r))}
+ const td=(r,h)=>{const k=r.r+'|'+h,c=cm.get(k),v=r.d[h];if(c)return`<td class="${pre?'pc':'ch2'}" title="${esc(c.Reason||'')}"><span class="o">${esc(sv2(c['Old value']))}</span>${esc(sv2(v))}</td>`;
+  return fm.has(k)?`<td class="${pre?'pf':'f'}" title="${esc(fm.get(k))}">${esc(v)}</td>`:rf.has(r.r)&&h===hd[0]?`<td class="dupc" title="${rx.has(r.r)?'Exact duplicate of another row':'Possible duplicate of another row – please check'}"><span class="dp2">${rx.has(r.r)?'duplicate':'possible duplicate'}</span>${esc(v)}</td>`:`<td>${esc(v)}</td>`};
+ el.innerHTML=`<div class="sh"><b>Live preview</b><small>${OP?RR.length+' of '+TOT+' rows (problems only)':RR.length+' rows'} · ${D.CUR?D.CUR.changes.length:0} fixes applied · ${D.fl.filter(f=>!/^Applied/.test(f.Status)).length} to check</small><span class="tl">${LG?'<button type="button" class="b2" data-a="lg" title="Show the colour guide">ℹ Colour guide</button>':''}<button type="button" class="b2${OP?' on':''}" data-a="op" aria-pressed="${OP}" title="Show only rows and columns that need attention">🔍 Only problems</button></span></div>${BN&&VIEW===-1&&!pre?'<div class="pb"><span>💡 <b>Nothing was deleted.</b> Yellow cells are just things worth a second look – click one to correct it, or choose “Looks fine”.</span><button type="button" class="b2" data-a="tip">Got it</button></div>':''}${pv}${LG?'':'<p class="lgd"><span class="ch ok">green = fixed for you (old value struck through)</span><span class="ch wn">yellow = please double-check · click to fix</span><button type="button" class="hs" data-a="lg" title="Hide this guide" aria-label="Hide colour guide">✕ Got it</button></p>'}${OP&&!RR.length?'<p class="s" style="padding:22px;text-align:center">🎉 No problem cells left – everything looks fine.</p>':''}<div class="tw${OP&&!RR.length?' hid':''}" style="max-height:460px"><table><thead><tr>${hd.map(h=>`<th class="hc" data-col="${esc(h)}" title="Click to check or fix this column">${esc(h)}<span class="cv">▾</span>${cc[h]?`<span class="wb" title="${cc[h]} cell(s) to check">${cc[h]}</span>`:''}</th>`).join('')}</tr></thead><tbody>${RR.slice(0,200).map(r=>`<tr id="r${r.r}">${hd.map(h=>td(r,h).replace('<td ',`<td data-r="${r.r}" data-c="${esc(h)}" `)).join('')}</tr>`).join('')}</tbody></table></div>${RR.length>200?`<small>Showing first 200 rows – the download has all ${RR.length}.</small>`:''}`}
+$('#st').addEventListener('mouseover',e=>{const p=e.target.closest('.pd');if(p&&!e.target.closest('button'))setPrev(+p.dataset.p)});
+$('#st').addEventListener('click',e=>{const p=e.target.closest('.pd');if(p&&!e.target.closest('button'))setPrev(+p.dataset.p)});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,k=+b.dataset.k,w=f=>{b.disabled=true;b.textContent='Working…';setTimeout(f,25)};
+ if(a==='run')w(()=>exec([k]));else if(a==='all')w(()=>exec(DATA.act,'Everything'));else if(a==='safe')w(()=>exec(DATA.safe,'Safe fixes'));else if(a==='flag')w(()=>exec(DATA.flg,'Issues flagged'));
+ else if(a==='undo')undo();else if(a==='blanks')openBlanks();else if(a==='tip'){BN=false;drawTable()}else if(a==='unprev'){PREVK=0;selMark();drawTable()}else if(a==='latest'){VIEW=-1;st()}
+ else if(a==='rm'){HIST.push([...STEPS]);STEPS=STEPS.filter(x=>x!==k);SK=[];VIEW=-1;PREVK=0;st();toast('Removed “'+nmk(k)+'”',1)}
+ else if(a==='reset'){HIST.push([...STEPS]);STEPS=[];SK=[];VIEW=-1;PREVK=0;AC.clear();MAN.clear();IGN.clear();st();toast('All steps reset',1)}
+ else if(a==='view'){const i=+b.dataset.i;VIEW=i===STEPS.length-1?-1:i;PREVK=0;st()}
+ else if(a==='acc'){AC.add(b.dataset.x);st()}else if(a==='rej'){AC.delete(b.dataset.x);st()}
+ else if(a==='accall'){const inv={};Object.entries((DATA.CUR&&DATA.CUR.map)||{}).forEach(([x,y])=>inv[y]=x);DATA.fl.filter(f=>f['Suggested correction']!=='').forEach(f=>AC.add('s'+f.Row+'|'+(inv[f.Column]||f.Column)+'|'+parseInt(f.Check)));st();toast('✓ All suggestions accepted',1)}
+ else if(a==='go'){const r=document.getElementById('r'+b.dataset.r);if(!r)return toast('Row '+b.dataset.r+' is beyond the rows shown – it is in the download');r.scrollIntoView({block:'center',behavior:'smooth'});r.classList.remove('fl');void r.offsetWidth;r.classList.add('fl')}
+ else if(a==='dl')w(()=>{try{dls()}finally{st()}});else if(a==='chfile')$('#fi').click()});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)&&HIST.length){e.preventDefault();undo()}});
+function autoRun(){let p=0;for(let i=0;i<3;i++){const a=(DATA.act||[]).filter(k=>k!==17&&k!==9&&!STEPS.includes(k));if(!a.length)break;if(!p){HIST.push([...STEPS]);p=1}STEPS.push(...SEQ.filter(k=>a.includes(k)));SK=[...STEPS];VIEW=-1;PREVK=0;st()}if(p)toast('✨ Auto-cleaned – check the yellow cells, then download',1)}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a="auto"]');if(b)autoRun()});
+$('#sh').onchange=()=>sheet();
+(()=>{const fc=$('#fn').closest('.card'),cc=$('#roles').closest('.card'),d=cc.querySelector('details');d.querySelector('summary').innerHTML='⚙ Column types <small style="color:var(--mu)">(auto-detected – change only if wrong)</small>';d.style.marginTop='8px';fc.appendChild(d);cc.remove()})();
+
+/* ===== manual fix of flagged cells ===== */
+const MAN=new Map(),IGN=new Set();let EDK='',EDV='',EDG=[],COLG=[],COLH='',COLO='';
+const _pk=pk;pk=function(o){_pk(o);if(!MAN.size&&!IGN.size)return;const by=new Map(o.R.map(r=>[r.r,r]));
+ MAN.forEach((v,k)=>{const i=k.indexOf('|'),r=+k.slice(0,i),c=k.slice(i+1),row=by.get(r);if(!row||!o.H.includes(c))return;const old=row.d[c];if(String(old)===String(v))return;row.d[c]=v;o.changes.push({Row:r,Column:c,'Old value':old,'New value':v,Reason:'Edited by you',Check:'0. Manual edit'});o.app[0]=(o.app[0]||0)+1});
+ o.flags=o.flags.filter(f=>{const k=f.Row+'|'+f.Column;return!(MAN.has(k)||IGN.has(k))})};
+function closeEd(){$('#ed').classList.remove('on');EDK=''}
+function openEd(td){if(VIEW!==-1||PREVK)return;const r=+td.dataset.r,c=td.dataset.c,k=r+'|'+c,f=DATA.fl.find(x=>x.Row===r&&x.Column===c),row=DATA.RR.find(x=>x.r===r);if(!row)return;
+ const cur=row.d[c],sg=f&&f['Suggested correction']!==''?f['Suggested correction']:'',ed=$('#ed');EDK=k;EDV=String(cur);const n=DATA.RR.filter(x=>String(x.d[c])===EDV).length,gk=[...new Set(DATA.fl.filter(x=>x.Column===c).map(x=>x.Row))],n2=gk.length;EDG=gk;
+ ed.innerHTML=`<div class="eh"><b>Row ${r} · ${esc(c)}</b><button type="button" data-e="x" aria-label="Close">✕</button></div>${f?`<p class="ei">⚠ ${esc(f.Issue)}${sg!==''?' – suggestion filled in':''}</p>`:''}<input id="edi" type="text" value="${esc(sg!==''?sg:cur)}" aria-label="New value"><div class="er"><button type="button" class="b2 pr" data-e="ok">Save</button>${n>1?`<button type="button" class="b2 pr" data-e="okall" title="Same value in this column">Save for all ${n}</button>`:''}${f?'<button type="button" class="b2" data-e="ig">Looks fine</button>':''}${f&&n>1?`<button type="button" class="b2" data-e="igall">Fine for all ${n}</button>`:''}${MAN.has(k)||IGN.has(k)?'<button type="button" class="b2" data-e="rv">Revert</button>':''}</div>${n<=1?'<p class="ei" style="margin-top:8px">Only this cell has this value. To fix many cells at once, click the column name.</p>':''}`;
+ const b=td.getBoundingClientRect();ed.style.left=Math.max(8,Math.min(b.left,innerWidth-304))+'px';ed.style.top=Math.max(8,Math.min(b.bottom+6,innerHeight-200))+'px';ed.classList.remove('col');ed.classList.add('on');const i=$('#edi');i.focus();i.select()}
+$('#st').addEventListener('click',e=>{const td=e.target.closest('td[data-r].f');if(td)openEd(td)});
+$('#st').addEventListener('dblclick',e=>{const td=e.target.closest('td[data-r]');if(td)openEd(td)});
+$('#ed').addEventListener('click',e=>{const b=e.target.closest('[data-e]');if(!b)return;const a=b.dataset.e,k=EDK;if(a==='bka'){blanksApply();return}if(a==='qk'){const t=(LASTI&&document.contains(LASTI))?LASTI:document.querySelector('#ed .cgi');if(t){t.value=b.dataset.v;t.focus()}return}if(['grp','abs','gig','vrep'].includes(a)){colAct(a,+b.dataset.i,+b.dataset.j);return}
+ if(a==='ok'||a==='okall'||a==='okcol'){let v=$('#edi').value;const c=k.slice(k.indexOf('|')+1),t=DATA.CUR&&DATA.CUR.ty&&DATA.CUR.ty[c];if(t==='num'&&v.trim()!==''&&!isNaN(+v))v=+v;const ks=a==='okall'?DATA.RR.filter(x=>String(x.d[c])===EDV).map(x=>x.r+'|'+c):a==='okcol'?EDG.map(r=>r+'|'+c):[k];ks.forEach(q=>{MAN.set(q,v);IGN.delete(q)});toast('✓ '+ks.length+' cell'+(ks.length>1?'s':'')+' updated')}
+ else if(a==='ig'||a==='igall'){const c=k.slice(k.indexOf('|')+1),ks=a==='igall'?DATA.RR.filter(x=>String(x.d[c])===EDV).map(x=>x.r+'|'+c):[k];ks.forEach(q=>{IGN.add(q);MAN.delete(q)});toast('Marked '+ks.length+' as fine')}else if(a==='rv'){MAN.delete(k);IGN.delete(k);toast('Reverted')}
+ closeEd();if(a!=='x')st()});
+$('#ed').addEventListener('keydown',e=>{const ok=$('#ed [data-e="ok"]');if(e.key==='Enter'&&ok)ok.click();if(e.key==='Escape')closeEd()});
+document.addEventListener('mousedown',e=>{if(EDK&&!e.target.closest('#ed')&&!e.target.closest('td[data-r]'))closeEd()});
+
+/* ===== column menu: data type + problems grouped by kind ===== */
+let LASTI=null;
+function openCol(h,th){if(VIEW!==-1||PREVK)return;const D=DATA,inv={};Object.entries((D.CUR&&D.CUR.map)||{}).forEach(([a,b])=>inv[b]=a);COLH=h;COLO=inv[h]||h;LASTI=null;
+ const sel=[...document.querySelectorAll('[data-rh]')].find(x=>x.dataset.rh===COLO),eng=(D.CUR&&D.CUR.ty&&D.CUR.ty[h])||'text',cur=(sel&&sel.value)||({num:'amount',other:'text'}[eng]||eng),g={};
+ const FC=D.fl.filter(f=>f.Column===h);
+ FC.forEach(f=>{const t=f.Issue.replace(/\s*\(.*?\)\s*/g,'').trim();(g[t]=g[t]||[]).push(f)});
+ const RM=new Map(D.RR.map(y=>[y.r,y])),bad=new Set(FC.map(f=>f.Row));
+ COLG=Object.entries(g).map(([t,fs])=>{const rows=[...new Set(fs.map(f=>f.Row))],vm=new Map();rows.forEach(r=>{const rw=RM.get(r),v=rw?rw.d[h]:'',k=blank(v)?'(blank)':String(v);if(!vm.has(k))vm.set(k,[]);vm.get(k).push(r)});
+  return{t,rows,neg:/^Negative/.test(t),vals:[...vm.entries()].map(([v,rs])=>({v,rows:rs})).sort((a,b)=>b.rows.length-a.rows.length)}});
+ const cm={};D.RR.forEach(y=>{if(bad.has(y.r))return;const v=y.d[h];if(blank(v))return;const k=String(v).trim();cm[k]=(cm[k]||0)+1});
+ const cv=Object.entries(cm).sort((a,b)=>b[1]-a[1]),common=cv.length&&cv.length<=25?cv.slice(0,8):[];
+ const ed=$('#ed');EDK='col';
+ const cmn=common.length&&COLG.length?`<datalist id="cdl">${common.map(([v])=>`<option value="${esc(v)}"></option>`).join('')}</datalist><div class="ei" style="margin-top:8px"><b>Common values in this column</b> <small>(tap one to fill the box)</small></div><div class="qc">${common.map(([v,n])=>`<button type="button" class="qk" data-e="qk" data-v="${esc(v)}">${esc(v)}<b>${n}</b></button>`).join('')}</div>`:'';
+ const grp=COLG.map((x,i)=>{const n=x.rows.length,bl=/^(Blank|Placeholder)/.test(x.t),by=x.vals.length>1&&!bl?`<div class="ei" style="margin-top:8px">Or fix one value at a time:</div>`+x.vals.slice(0,8).map((y,j)=>`<div class="vr"><span class="vv">${esc(y.v)} <small>×${y.rows.length}</small></span><input class="cgv" list="cdl" type="text" data-i="${i}" data-j="${j}" placeholder="replace with…" aria-label="New value for ${esc(y.v)}"><button type="button" class="b2 pr" data-e="vrep" data-i="${i}" data-j="${j}">Apply</button></div>`).join('')+(x.vals.length>8?`<div class="ei">…and ${x.vals.length-8} more values – use the box above to fix them all together.</div>`:''):'';
+  return`<div class="cg"><b>${esc(x.t)}</b> · ${n} cell${n>1?'s':''}<div class="er" style="margin-top:6px"><input class="cgi" list="cdl" type="text" data-i="${i}" placeholder="${bl?'Fill all '+n+' with…':'Replace all '+n+' with…'}" aria-label="New value for all these cells"><button type="button" class="b2 pr" data-e="grp" data-i="${i}">Apply to ${n}</button></div>${by}<div class="er" style="margin-top:8px">${x.neg?`<button type="button" class="b2" data-e="abs" data-i="${i}">Make positive</button>`:''}<button type="button" class="b2" data-e="gig" data-i="${i}">Looks fine</button></div></div>`}).join('');
+ ed.innerHTML=`<div class="eh"><b>${esc(h)}</b><button type="button" data-e="x" aria-label="Close">✕</button></div><label class="ei" for="cts">Data type of this column</label><select id="cts">${RV.map(x=>`<option value="${x[0]}"${x[0]===cur?' selected':''}>${x[1]}</option>`).join('')}</select><p class="ei">Changing it re-checks the whole column.</p>${COLG.length?`<div class="ei" style="margin-top:8px"><b>Problems in this column</b></div>`+cmn+grp:'<p class="ei">✓ No problems found in this column.</p>'}`;
+ const b=th.getBoundingClientRect();ed.classList.add('col','on');ed.style.left=Math.max(8,Math.min(b.left,innerWidth-374))+'px';ed.style.top=Math.max(8,Math.min(b.bottom+6,innerHeight-ed.offsetHeight-8))+'px'}
+function colAct(a,i,j){const x=COLG[i],h=COLH;if(!x)return;
+ const num=v0=>{const t=DATA.CUR&&DATA.CUR.ty&&DATA.CUR.ty[h];return t==='num'&&!isNaN(+v0)?+v0:v0};
+ if(a==='gig'){x.rows.forEach(r=>{IGN.add(r+'|'+h);MAN.delete(r+'|'+h)});toast('Marked '+x.rows.length+' as fine')}
+ else if(a==='abs'){let n=0;x.rows.forEach(r=>{const row=DATA.RR.find(y=>y.r===r),v=row?pn(row.d[h]):NaN;if(!isNaN(v)){MAN.set(r+'|'+h,Math.abs(v));IGN.delete(r+'|'+h);n++}});toast('✓ '+n+' made positive')}
+ else if(a==='vrep'){const y=x.vals[j],inp=document.querySelector('#ed .cgv[data-i="'+i+'"][data-j="'+j+'"]'),v0=inp?inp.value.trim():'';if(!y)return;if(!v0){if(inp)inp.focus();return toast('Type a value first')}
+  const v=num(v0);y.rows.forEach(r=>{MAN.set(r+'|'+h,v);IGN.delete(r+'|'+h)});toast('✓ '+y.rows.length+' cell'+(y.rows.length>1?'s':'')+' changed to “'+v0+'”')}
+ else{const inp=document.querySelector('#ed .cgi[data-i="'+i+'"]'),v0=inp?inp.value.trim():'';if(!v0){if(inp)inp.focus();return toast('Type a value first')}
+  const v=num(v0);x.rows.forEach(r=>{MAN.set(r+'|'+h,v);IGN.delete(r+'|'+h)});toast('✓ '+x.rows.length+' cell'+(x.rows.length>1?'s':'')+' updated')}
+ closeEd();st();
+ setTimeout(()=>{const t2=[...document.querySelectorAll('th.hc')].find(z=>z.dataset.col===h);if(t2&&DATA.fl.some(f=>f.Column===h))openCol(h,t2)},60)}
+$('#st').addEventListener('click',e=>{const th=e.target.closest('th.hc');if(th)openCol(th.dataset.col,th)});
+$('#ed').addEventListener('change',e=>{if(e.target.id!=='cts')return;const sel=[...document.querySelectorAll('[data-rh]')].find(x=>x.dataset.rh===COLO);if(!sel)return;sel.value=e.target.value;sel.dispatchEvent(new Event('change',{bubbles:true}));closeEd();autoRun();toast('✓ Column type changed – column re-checked')});
+
+/* ===== fill blanks in all columns at once ===== */
+const bkn=fl=>fl.filter(f=>/^(Blank|Placeholder)/.test(f.Issue)&&f.Column!=='(whole row)'&&!/^Applied/.test(f.Status)).length;let BKG=[];
+function openBlanks(){if(VIEW!==-1||PREVK)return;const D=DATA,g={};
+ D.fl.filter(f=>/^(Blank|Placeholder)/.test(f.Issue)&&f.Column!=='(whole row)').forEach(f=>(g[f.Column]=g[f.Column]||new Set()).add(f.Row));
+ BKG=Object.entries(g).map(([c,rs])=>{const vals=D.RR.map(r=>r.d[c]).filter(v=>!blank(v)),cnt={};vals.forEach(v=>{const k=String(v);cnt[k]=(cnt[k]||0)+1});const mode=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0],nums=vals.map(pn).filter(v=>!isNaN(v)).sort((a,b)=>a-b),isn=nums.length>0&&nums.length>=vals.length*.8;return{c,rows:[...rs],mode:mode?mode[0]:null,med:isn?nums[Math.floor((nums.length-1)/2)]:null}});
+ if(!BKG.length)return toast('No blank cells to fill');
+ const ed=$('#ed');EDK='col';
+ ed.innerHTML=`<div class="eh"><b>Fill blank cells</b><button type="button" data-e="x" aria-label="Close">✕</button></div><p class="ei">Choose what to do for each column. “Keep blank” leaves it untouched. Tip: don’t invent emails, phone numbers or dates – keep those blank.</p>${BKG.map((x,i)=>`<div class="cg"><b>${esc(x.c)}</b> · ${x.rows.length} blank<div class="er" style="margin-top:6px"><select data-bc="${i}" aria-label="Action for ${esc(x.c)}"><option value="keep">Keep blank</option><option value="val">Fill with…</option>${x.mode!==null?`<option value="mode">Most common (${esc(sv2(x.mode))})</option>`:''}${x.med!==null?`<option value="med">Median (${x.med})</option>`:''}</select><input class="bki" type="text" data-bc="${i}" placeholder="value" aria-label="Fill value for ${esc(x.c)}"></div></div>`).join('')}<div class="er" style="margin-top:10px"><button type="button" class="b2 pr" data-e="bka">Apply</button><button type="button" class="b2" data-e="x">Cancel</button></div>`;
+ ed.classList.add('col','on');ed.style.left=Math.max(8,(innerWidth-344)/2)+'px';ed.style.top='10vh'}
+function blanksApply(){let n=0;BKG.forEach((x,i)=>{const sel=document.querySelector('#ed select[data-bc="'+i+'"]'),inp=document.querySelector('#ed .bki[data-bc="'+i+'"]');if(!sel||sel.value==='keep')return;
+  let v=sel.value==='mode'?x.mode:sel.value==='med'?x.med:inp.value.trim();if(v===null||v===undefined||v==='')return;const t=DATA.CUR&&DATA.CUR.ty&&DATA.CUR.ty[x.c];if(typeof v==='string'&&t==='num'&&!isNaN(+v))v=+v;
+  x.rows.forEach(r=>{MAN.set(r+'|'+x.c,v);IGN.delete(r+'|'+x.c);n++})});closeEd();st();toast(n?'✓ '+n+' blank cells filled':'Nothing changed – all columns kept blank')}
+$('#ed').addEventListener('focusin',e=>{if(e.target.matches&&e.target.matches('.cgi,.cgv'))LASTI=e.target});
+$('#ed').addEventListener('input',e=>{if(e.target.classList.contains('bki')){const s=document.querySelector('#ed select[data-bc="'+e.target.dataset.bc+'"]');if(s)s.value='val'}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a="sb"],[data-a="nxt"]');if(!b)return;
+ if(b.dataset.a==='sb'){SB=!SB;const l=$('.lay');if(l)l.classList.toggle('nosb',SB);
+  document.querySelectorAll('button.b2[data-a="sb"]').forEach(x=>{x.textContent=SB?'☰ Show steps':'◧ Hide steps';x.classList.toggle('on',SB);x.setAttribute('aria-pressed',SB)})}
+ else{const c=[...document.querySelectorAll('#pvw td.f,#pvw td.dupc')];if(!c.length)return toast('Nothing left to check');
+  const t=c[NI%c.length];NI++;t.scrollIntoView({block:'center',inline:'center',behavior:'smooth'});
+  const tr=t.closest('tr');if(tr){tr.classList.remove('fl');void tr.offsetWidth;tr.classList.add('fl')}toast('Issue '+(((NI-1)%c.length)+1)+' of '+c.length)}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a="lg"],[data-a="op"]');if(!b)return;
+ if(b.dataset.a==='lg'){LG=!LG;try{localStorage.setItem('cs_lg',LG?'0':'1')}catch(x){}}else OP=!OP;
+ drawTable()});
+</script></body></html>

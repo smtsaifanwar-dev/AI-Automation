@@ -19,10 +19,11 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0}.fl{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}.fl label{display:flex;flex-direction:column;font-size:12px;color:var(--mu);gap:2px}.fl input,.fl select{color:var(--tx)}
 #dlg{position:fixed;inset:0;background:rgba(0,0,0,.5);overflow:auto;padding:10px;z-index:9}#dlg[hidden]{display:none}.dg{max-width:900px;margin:0 auto;background:var(--bg);border-radius:14px;padding:14px}
 #toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#0f1b33;color:#fff;padding:9px 15px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:20}#toast.on{opacity:1}
+.dz{border:2px dashed var(--bd);border-radius:12px;padding:18px;text-align:center;cursor:pointer;color:var(--mu);font-weight:600;margin:8px 0}.dz:hover,.dz.on{border-color:var(--pr);color:var(--pr)}
 </style></head><body><main>
 <div class="top"><h1>Payment Follow-up</h1><span class="mu">Reminder drafts only. Nothing is sent, charged or uploaded.</span><span class="sp"></span><button class="btn p" id="an">Analyze Payments</button></div>
 <div id="warn"></div><div class="tabs" id="tabs" role="tablist"></div><div id="main"></div>
-<input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden>
+<input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden><input type="file" id="fr" accept=".json,application/json" hidden>
 </main><div id="dlg" hidden></div><div id="toast" role="status" aria-live="polite"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>window.XLSX||document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
@@ -77,13 +78,16 @@ const waNum=p=>{let d=String(p||'').replace(/[^\d+]/g,'');if(!d)return'';if(d[0]
 const wa=r=>{const n=waNum(r.inv.phone);return n?`<a class="btn" target="_blank" rel="noopener" href="https://wa.me/${n}?text=${encodeURIComponent(RM.body)}">Open WhatsApp</a>`:'<span class="mu">No valid phone for WhatsApp</span>'};
 const mail=r=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.inv.email||'')?`<a class="btn" href="mailto:${encodeURIComponent(r.inv.email)}?subject=${encodeURIComponent(RM.subject)}&body=${encodeURIComponent(RM.body)}">Open email app</a>`:'<span class="mu">No valid email</span>';
 function vImp(rs){const S=STG;
- return`<div class="card"><b>1. Import a payment sheet</b><p class="mu">Excel or CSV. From the Invoices tool, import its downloaded Excel/CSV: columns are recognised, and only invoices where <b>you are the supplier</b> become receivables (set your business name in Settings).</p>
- <button class="btn" data-a="pick">Choose file</button> ${S?`<b>${esc(S.name)}</b> · ${S.rows.length} rows`:''}
+ return`<div class="card"><b>1. Import a payment sheet</b><p class="mu">Excel or CSV. Columns are recognised automatically. If the file lists suppliers, you pick your own business name once and only invoices where <b>you are the supplier</b> become receivables.</p>
+ <div class="dz" data-a="pick" tabindex="0" role="button">Drop a file here or click to choose · .xlsx · .xls · .csv</div> ${S?`<b>${esc(S.name)}</b> · ${S.rows.length} rows`:''}
+ ${S&&S.res&&S.res.needBiz?`<div class="card"><b>Which one is your business?</b><p class="mu">This file lists suppliers. Pick your own name so only customers who owe <i>you</i> are imported. It is saved for next time.</p><div class="row">${S.res.needBiz.map(c=>`<button class="btn" data-a="setbiz" data-v="${esc(c.name)}">${esc(c.name)} <span class="mu">(${c.n})</span></button>`).join('')}</div><div class="row"><input id="bz" style="min-width:240px" placeholder="Or type your business name"><button class="btn p" data-a="setbiz2">Use this name</button></div></div>`:''}
  ${S?`<h3>Column mapping</h3><div class="fl">${Object.keys(S.am.map).concat(Object.keys(S.am.amb).filter(f=>!S.am.map[f]),['invoiceNo','customer','total','dueDate'].filter(f=>!S.am.map[f]&&!S.am.amb[f])).filter((f,i,a)=>a.indexOf(f)===i).map(f=>`<label>${f}${S.am.amb[f]?' — choose':''}<select data-map="${f}"><option value="">(none)</option>${S.heads.map(h=>`<option ${S.sel[f]===h?'selected':''}>${esc(h)}</option>`).join('')}</select></label>`).join('')}</div><p class="mu">Your file is checked automatically. Review the result below, then click <b>Import</b>. Nothing is saved until you do.</p>`:''}</div>
- ${S&&S.res?`<div class="card"><b>2. Review</b><div class="row"><span class="st Paid">${S.res.good.length} ready</span><span class="st">${S.res.dup.length} duplicates (skipped)</span><span class="st Overdue">${S.res.bad.length} invalid</span><span class="st">${S.res.skip.length} not receivables</span></div>
+ 
+ ${S&&!S.res?'<div class="msg e">No amount column found. Pick the Total (or Outstanding) column above and the file will be checked automatically.</div>':''}
+ ${S&&S.res&&!S.res.needBiz?`<div class="card"><b>2. Review</b><div class="row"><span class="st Paid">${S.res.good.length} ready</span><span class="st">${S.res.dup.length} duplicates (skipped)</span><span class="st Overdue">${S.res.bad.length} invalid</span><span class="st">${S.res.skip.length} not receivables</span></div>
  ${[...S.res.bad.map(x=>['e',x]),...S.res.skip.map(x=>['',x]),...S.res.dup.map(x=>['',x]),...S.res.good.filter(g=>g.warn.length).map(g=>['i',{n:g.n,why:g.warn.join('; ')}])].slice(0,60).map(([c,x])=>`<div class="msg ${c}">Row ${x.n}: ${esc(x.why)}</div>`).join('')}
  <button class="btn p" data-a="commit" style="font-size:15px" ${S.res.good.length?'':'disabled'}>Import ${S.res.good.length} invoices</button> <span class="mu">Valid rows are kept even if others fail. Duplicates are never overwritten.</span></div>`:''}
- <div class="card"><b>Export</b><div class="row"><button class="btn p" data-a="xlsx">Excel (all sheets)</button><button class="btn" data-a="csv" data-v="Outstanding Invoices">CSV outstanding</button><button class="btn" data-a="csv" data-v="Payment History">CSV payments</button><button class="btn" data-a="csv" data-v="Follow-up History">CSV follow-ups</button><button class="btn" data-a="csv" data-v="Reminder Drafts">CSV reminder drafts</button></div><p class="mu">Text starting with = + - @ is prefixed with an apostrophe to block spreadsheet formula injection. Excel may drop leading zeros when opening a CSV by double-click; the Excel export keeps them.</p></div>
+ <div class="card"><b>Export</b><div class="row"><button class="btn p" data-a="xlsx">Excel (all sheets)</button><button class="btn" data-a="csv" data-v="Outstanding Invoices">CSV outstanding</button><button class="btn" data-a="csv" data-v="Payment History">CSV payments</button><button class="btn" data-a="csv" data-v="Follow-up History">CSV follow-ups</button><button class="btn" data-a="csv" data-v="Reminder Drafts">CSV reminder drafts</button></div><div class="row"><b>Backup</b><button class="btn" data-a="backup">Download backup (JSON)</button><button class="btn" data-a="restore">Restore from backup</button></div><p class="mu">Text starting with = + - @ is prefixed with an apostrophe to block spreadsheet formula injection. Excel may drop leading zeros when opening a CSV by double-click; the Excel export keeps them.</p></div>
  <div class="card mu"><b>Import history</b> ${M.bat.slice(-5).reverse().map(b=>`<div>${b.ts.slice(0,16).replace('T',' ')} · ${esc(b.name)} · ${b.n} imported, ${b.d} duplicates, ${b.x} rejected</div>`).join('')||'none'}</div>`}
 function vSet(){const S=M.S,f=(k,l,t='text')=>`<label>${l}<input data-set="${k}" type="${t}" value="${esc(S[k])}"></label>`;
  return`<div class="card"><div class="fl">${f('business','Your business name (needed to separate receivables from vendor bills)')}${f('sender','Sender name on reminders')}${f('cur','Default currency (ISO)')}${f('tz','Business timezone')}${f('dueSoonDays','Due-soon window (days)','number')}${f('cc','Default phone country code (for WhatsApp)')}<label>Ambiguous dates<select data-set="order"><option value="DMY" ${S.order==='DMY'?'selected':''}>Day/Month/Year</option><option value="MDY" ${S.order==='MDY'?'selected':''}>Month/Day/Year</option></select></label></div>
@@ -113,7 +117,10 @@ function addContact(id,o){M.con.push({id:PF.uid(),invoiceId:id,date:today(),chan
 function dl(blob,n){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 const A={
  tab:v=>{T=v;OPEN=null},flt:v=>{F.st=v;F.q='';T='inv'},more:()=>F.limit+=100,open:v=>OPEN=v,close:()=>OPEN=null,add:()=>OPEN='new',rem:v=>{RM={id:v,tpl:'',dirty:false};RM.tpl=PF.recommend(rows().find(r=>r.inv.id===v))||'upcoming';OPEN=null;T='rem'},
- pick:()=>$('#fi').click(),
+ pick:()=>$('#fi').click(),restore:()=>$('#fr').click(),
+ setbiz:v=>{M.S.business=v;save();STG.res=PF.stageRows(STG.rows,STG.sel,M.S,M.inv);toast('Business set to '+v+'. '+STG.res.good.length+' invoices ready.')},
+ setbiz2:()=>{const v=$('#bz').value.trim();if(!v)return toast('Type your business name');A.setbiz(v)},
+ backup:()=>dl(new Blob([JSON.stringify(M)],{type:'application/json'}),'payment-followup-backup_'+today()+'.json'),
  cps:()=>copy(RM.subject),cpb:()=>copy(RM.body),
  sent:()=>{const r=rows().find(x=>x.inv.id===RM.id);addContact(RM.id,{ch:$('#rc').value,out:'Reminder sent externally (reported by user). '+$('#ro').value,tpl:RM.tpl,next:$('#rn').value});RM.dirty=false;toast('Logged as sent (self-reported)')},
  snz:v=>{const t=M.tsk.find(x=>x.id===v);t.date=PF.addDays(today(),3);t.status='snoozed';save()},done:v=>{M.tsk.find(x=>x.id===v).status='done';save()},
@@ -152,14 +159,26 @@ document.addEventListener('input',e=>{if(e.target.id==='rs'){RM.subject=e.target
  if(e.target.id==='pa'){const i=find(OPEN),r=rows().find(x=>x.inv.id===OPEN),m=PF.parseMoney(e.target.value,i.currency);$('#pv').textContent=m.v>0?`Resulting outstanding: ${i.currency} ${$f(r.bal-m.v,i.currency)}${m.v>r.bal?' (overpayment)':''}`:''}});
 const cs=c=>{if(!c||c.v==null)return'';if(c.t==='n'){if(c.z&&XLSX.SSF.is_date(c.z)){const d=XLSX.SSF.parse_date_code(c.v);return`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`}return/^0\d+$/.test(c.w||'')?c.w:String(c.v)}if(c.t==='d')return c.v.toISOString().slice(0,10);return String(c.v).trim()};
 function aoa(ws){const r=XLSX.utils.decode_range(ws['!ref']||'A1'),o=[];for(let R=r.s.r;R<=r.e.r;R++){const row=[];for(let C=r.s.c;C<=r.e.c;C++)row.push(cs(ws[XLSX.utils.encode_cell({r:R,c:C})]));o.push(row)}return o}
+function build(name,a){const h=a.findIndex(r=>r.filter(Boolean).length>=2);if(h<0||a.length<h+2)throw Error('No data rows found.');
+ const seen={},heads=a[h].map((x,i)=>{let b=x||'Column '+(i+1),n=b,k=2;while(seen[n])n=b+'_'+k++;seen[n]=1;return n}),data=a.slice(h+1).filter(r=>r.some(Boolean)).map(r=>Object.fromEntries(heads.map((k,i)=>[k,r[i]??''])));
+ const am=PF.autoMap(heads),G={name,heads,rows:data,am,sel:{...am.map},res:null};if(G.sel.total||G.sel.outstanding)G.res=PF.stageRows(G.rows,G.sel,M.S,M.inv);return G}
+function staged(){T='imp';toast(!STG.res?'Pick the amount column below':STG.res.needBiz?'Choose which name is your business':STG.res.good.length+' invoices ready. Click Import.')}
 async function readFile(f){if(!f)return;T='imp';STG=null;
  try{if(!window.XLSX)throw Error('Excel library did not load. Check your connection.');if(f.size>25e6)throw Error('File is larger than 25 MB.');
   let wb;if(/\.csv$/i.test(f.name))wb=XLSX.read(new TextDecoder().decode(await f.arrayBuffer()).replace(/^\uFEFF/,''),{type:'string',raw:true});else if(/\.xlsx?$/i.test(f.name))wb=XLSX.read(await f.arrayBuffer(),{type:'array'});else throw Error('Use .xlsx, .xls or .csv');
-  const a=aoa(wb.Sheets[wb.SheetNames[0]]),h=a.findIndex(r=>r.filter(Boolean).length>=2);if(h<0||a.length<h+2)throw Error('No data rows found.');
-  const seen={},heads=a[h].map((x,i)=>{let b=x||'Column '+(i+1),n=b,k=2;while(seen[n])n=b+'_'+k++;seen[n]=1;return n}),data=a.slice(h+1).filter(r=>r.some(Boolean)).map(r=>Object.fromEntries(heads.map((k,i)=>[k,r[i]??''])));
-  const am=PF.autoMap(heads);STG={name:f.name,heads,rows:data,am,sel:{...am.map},res:null};if(STG.sel.total||STG.sel.outstanding){STG.res=PF.stageRows(STG.rows,STG.sel,M.S,M.inv);toast('Checked. Review below, then click Import')}}catch(e){toast(e.message);T='imp'}render()}
+  STG=build(f.name,aoa(wb.Sheets[wb.SheetNames[0]]));staged()}catch(e){toast(e.message);T='imp'}render()}
+/* Called by the launcher when the Invoices tool sends its results straight over (no download/upload needed). */
+window.receiveRows=(name,a)=>{try{STG=build(name,a);staged()}catch(e){STG=null;T='imp';toast(e.message)}render()};
 $('#an').onclick=()=>{if(STG&&T==='imp'){STG.res=PF.stageRows(STG.rows,STG.sel,M.S,M.inv);if(!STG.sel.total&&!STG.sel.outstanding)toast('Map a Total or Outstanding column first')}
  else{const rs=rows();T='ov';toast(`${rs.length} invoices analyzed, ${rs.filter(r=>r.flags.length).length} need review`)}render()};
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&OPEN){OPEN=null;render()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&OPEN){OPEN=null;render()}if((e.key==='Enter'||e.key===' ')&&e.target.classList&&e.target.classList.contains('dz')){e.preventDefault();e.target.click()}});
+/* drop a sheet anywhere in this tool */
+['dragover','dragenter'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();const z=e.target.closest&&e.target.closest('.dz');if(z)z.classList.add('on')}));
+document.addEventListener('dragleave',e=>{const z=e.target.closest&&e.target.closest('.dz');if(z)z.classList.remove('on')});
+document.addEventListener('drop',e=>{e.preventDefault();document.querySelectorAll('.dz.on').forEach(z=>z.classList.remove('on'));const f=e.dataTransfer&&e.dataTransfer.files[0];if(f)readFile(f)});
+document.addEventListener('change',async e=>{if(e.target.id!=='fr')return;const f=e.target.files[0];e.target.value='';if(!f)return;
+ try{const j=JSON.parse(await f.text());if(!j||j.v!==1||!['inv','pay','con','tsk'].every(k=>Array.isArray(j[k])))throw Error('This is not a valid backup file.');
+  if(!confirm('Replace ALL current data ('+M.inv.length+' invoices) with this backup ('+j.inv.length+' invoices)?'))return;
+  M={v:1,S:{...DEF,...j.S},inv:j.inv,pay:j.pay,con:j.con,tsk:j.tsk,bat:j.bat||[]};save();toast('Backup restored')}catch(x){toast(x.message)}render()});
 render();
 </script></body></html>
