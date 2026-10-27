@@ -127,7 +127,7 @@ const O=[[1,'Detect duplicates','Exact + possible duplicates (flagged, never del
 let WB,FN,ROWS,HEADS,SCAN={},SCANR=null,ROFF=0,LAST=null,EX=new Set(),AC=new Set(),PL={};
 const PH=/^(n\/?a|nan|nil|null|none|missing|not available|tbd|#n\/a|-+|\?+|\.+)$/i;
 const blank=v=>v===''||v==null||(typeof v==='string'&&(!v.trim()||PH.test(v.trim())));
-const pn=v=>{if(typeof v==='number')return v;let s=String(v).trim(),g=1;if(/^\(.*\)$/.test(s)){g=-1;s=s.slice(1,-1)}s=s.replace(/^(rs\.?|inr)\s*/i,'').replace(/\/-$/,'').replace(/[₹$€£,\s]/g,'');return /^-?\d+(\.\d+)?$/.test(s)?g*+s:NaN};
+const pn=v=>{if(typeof v==='number')return v;let s=String(v).trim(),g=1;if(/^\(.*\)$/.test(s)){g=-1;s=s.slice(1,-1)}s=s.replace(/^(rs\.?|inr)\s*/i,'').replace(/\/-$/,'').replace(/[₹$€£\s]/g,'');const lc=s.lastIndexOf(','),ld=s.lastIndexOf('.');if(lc>-1&&ld>-1&&lc>ld)s=s.replace(/\./g,'').replace(',','.');else if(lc>-1&&ld<0&&/^-?\d+,\d{1,2}$/.test(s))s=s.replace(',','.');else s=s.replace(/,/g,'');return /^-?\d+(\.\d+)?$/.test(s)?g*+s:NaN};
 const pad=n=>String(n).padStart(2,'0');
 const iso=(y,m,d)=>{if(y<100)y+=2000;const t=new Date(y,m-1,d);return t.getFullYear()===y&&t.getMonth()===m-1&&t.getDate()===d?`${y}-${pad(m)}-${pad(d)}`:null};
 const MON='janfebmaraprmayjunjulaugsepoctnovdec',mn=w=>{const i=MON.indexOf(w.slice(0,3).toLowerCase());return i>=0&&i%3===0?i/3+1:0};

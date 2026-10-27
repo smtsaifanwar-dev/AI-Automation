@@ -15,7 +15,11 @@ const LINES=[line(40,'Tax Invoice'),line(90,'Sold By: Acme Traders Pvt Ltd'),lin
  await pg.goto('file://'+path.resolve('index.html'));
  await t('home shows 3 tools',async()=>{assert.equal(await pg.locator('.card').count(),3)});
  // ---- Invoices: scan -> OCR (stub) -> record
- await pg.click('.tab[data-t=invoice]');const inv=pg.frames().find(f=>f!==pg.mainFrame());await inv.waitForSelector('#fi',{state:'attached'});
+ await pg.click('.tab[data-t=clean]');const cl=await pg.frameLocator('iframe[title="Excel cleaner"]').owner().elementHandle().then(h=>h.contentFrame());await cl.waitForSelector('#fi',{state:'attached'});
+ await t('clean tool: Indian + European amounts read correctly',async()=>{const r=await cl.evaluate(()=>{const on={};O.forEach(o=>on[o[0]]=1);const A=['Rs 5,000/-','1.234,50','2.500,00','99,5','1,23,456.78','(300)'];
+  const o=run(A.map(a=>({Amount:a})),['Amount'],on,{roles:{Amount:'amount'},dmode:'auto',dup:[],split:'',merge:[],sep:', ',mname:'m',statuses:[]});return o.R.map(x=>Object.values(x.d)[0])});
+  assert.deepEqual(r,[5000,1234.5,2500,99.5,123456.78,-300])});
+ await pg.click('.tab[data-t=invoice]');const inv=await pg.frameLocator('iframe[title="Invoice processor"]').owner().elementHandle().then(h=>h.contentFrame());await inv.waitForSelector('#fi',{state:'attached'});
  await inv.evaluate(L=>{window.Tesseract={createWorker:async()=>({recognize:async()=>({data:{lines:L}})})}},LINES);
  await inv.setInputFiles('#fi',{name:'scan.png',mimeType:'image/png',buffer:PNG});
  await inv.click('#go');await inv.waitForFunction(()=>!busy,null,{timeout:15000});
@@ -24,7 +28,7 @@ const LINES=[line(40,'Tax Invoice'),line(90,'Sold By: Acme Traders Pvt Ltd'),lin
  await t('"Send to Payments" is visible inside BizPilot',async()=>{assert(await inv.locator('#xp').isVisible())});
  // ---- Send to Payments -> business chooser -> import
  await inv.click('#xp');const pay=pg.frames().find(f=>f.url()==='about:srcdoc'&&f!==inv&&f.name()!==undefined&&f!==pg.mainFrame()&&true,{});
- const P=pg.frames().filter(f=>f!==pg.mainFrame()).pop();await P.waitForSelector('#main');
+ const P=await pg.frameLocator('iframe[title="Payment follow-up"]').owner().elementHandle().then(h=>h.contentFrame());await P.waitForSelector('#main');
  await t('payments opens with the file staged and asks "which one is your business?"',async()=>{await P.waitForSelector('text=Which one is your business?',{timeout:5000})});
  await t('one click on a name stages the invoice',async()=>{await P.click('button[data-a=setbiz]:has-text("Acme Traders")');await P.waitForSelector('button[data-a=commit]:not([disabled])',{timeout:5000})});
  await t('import puts it in Overview',async()=>{await P.click('button[data-a=commit]');await P.waitForSelector('text=Outstanding');const n=await P.evaluate(()=>M.inv.length);assert.equal(n,1);assert.equal(await P.evaluate(()=>M.S.business),'Acme Traders Pvt Ltd')});
