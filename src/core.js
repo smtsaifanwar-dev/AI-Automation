@@ -101,7 +101,7 @@ const AL={invoiceNo:'invoicenumber invoiceno billnumber billno invno invoice',cu
  email:'customeremail email emailid clientemail',phone:'customerphone phone mobile mobileno phoneno contact',company:'company customercompany',
  invoiceDate:'invoicedate billdate invoicedateiso',dueDate:'duedate paymentdue duedateiso',total:'invoiceamount total grandtotal grandtotalreported amount',
  paid:'amountpaid paidamount paid',outstanding:'outstanding balancedue balance outstandingbalance',currency:'currency cur',status:'paymentstatus status',
- notes:'notes remarks',supplier:'supplier seller vendor suppliername'};
+ notes:'notes remarks',lastPay:'lastpaymentdate',lastFU:'lastfollowupdate',nextFU:'nextfollowupdate',supplier:'supplier seller vendor suppliername'};
 function autoMap(h){const map={},amb={};
  for(const f in AL){const set=AL[f].split(' '),c=h.filter(x=>set.includes(nk(x)));if(c.length===1)map[f]=c[0];else if(c.length>1)amb[f]=c}
  const used={};for(const f in map)(used[map[f]]=used[map[f]]||[]).push(f);
@@ -130,7 +130,7 @@ function stageRows(rows,map,S,existing){
    currency:cur,total,repPaid:pd.v,repOut:ou.v,repStatus:str(r,'status'),hold:null,prio:null,notes:str(r,'notes'),created:new Date().toISOString(),src:'import',audit:[]};
   if(/cancel/i.test(inv.repStatus)){inv.hold='cancelled';warn.push('Source status is cancelled')}
   const k=dk(inv),w=seen.get(k);if(w){res.dup.push({n,why:`${inv.invoiceNo||'(no number)'} ${inv.customer}: duplicate of ${w}`});return}
-  seen.set(k,'row '+n);res.good.push({n,inv,paid:pd.v>0?pd.v:0,warn})});
+  seen.set(k,'row '+n);res.good.push({n,inv,paid:pd.v>0?pd.v:0,warn,lastPay:D('lastPay'),lastFU:D('lastFU'),nextFU:D('nextFU')})});
  return res;
 }
 /* ---- export ---- */

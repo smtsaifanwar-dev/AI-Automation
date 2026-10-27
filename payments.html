@@ -129,7 +129,7 @@ const AL={invoiceNo:'invoicenumber invoiceno billnumber billno invno invoice',cu
  email:'customeremail email emailid clientemail',phone:'customerphone phone mobile mobileno phoneno contact',company:'company customercompany',
  invoiceDate:'invoicedate billdate invoicedateiso',dueDate:'duedate paymentdue duedateiso',total:'invoiceamount total grandtotal grandtotalreported amount',
  paid:'amountpaid paidamount paid',outstanding:'outstanding balancedue balance outstandingbalance',currency:'currency cur',status:'paymentstatus status',
- notes:'notes remarks',supplier:'supplier seller vendor suppliername'};
+ notes:'notes remarks',lastPay:'lastpaymentdate',lastFU:'lastfollowupdate',nextFU:'nextfollowupdate',supplier:'supplier seller vendor suppliername'};
 function autoMap(h){const map={},amb={};
  for(const f in AL){const set=AL[f].split(' '),c=h.filter(x=>set.includes(nk(x)));if(c.length===1)map[f]=c[0];else if(c.length>1)amb[f]=c}
  const used={};for(const f in map)(used[map[f]]=used[map[f]]||[]).push(f);
@@ -158,7 +158,7 @@ function stageRows(rows,map,S,existing){
    currency:cur,total,repPaid:pd.v,repOut:ou.v,repStatus:str(r,'status'),hold:null,prio:null,notes:str(r,'notes'),created:new Date().toISOString(),src:'import',audit:[]};
   if(/cancel/i.test(inv.repStatus)){inv.hold='cancelled';warn.push('Source status is cancelled')}
   const k=dk(inv),w=seen.get(k);if(w){res.dup.push({n,why:`${inv.invoiceNo||'(no number)'} ${inv.customer}: duplicate of ${w}`});return}
-  seen.set(k,'row '+n);res.good.push({n,inv,paid:pd.v>0?pd.v:0,warn})});
+  seen.set(k,'row '+n);res.good.push({n,inv,paid:pd.v>0?pd.v:0,warn,lastPay:D('lastPay'),lastFU:D('lastFU'),nextFU:D('nextFU')})});
  return res;
 }
 /* ---- export ---- */
@@ -213,7 +213,7 @@ function vInv(rs){
  return`<div class="row"><input id="q" placeholder="Search invoice, customer, contact" value="${esc(F.q)}"><select id="fs">${[['','All statuses'],['Unpaid'],['Partially Paid'],['partial','Partly paid (incl. overdue)'],['Overdue'],['Due Soon'],['due7','Due in 7 days'],['Paid'],['Overpaid'],['Hold','Disputed / on hold'],['Cancelled'],['fu','Follow-up due'],['flag','Has flags']].map(([v,l])=>`<option value="${v}" ${F.st===v?'selected':''}>${l||v}</option>`).join('')}</select>
  <select id="fc"><option value="">All currencies</option>${cur.map(c=>`<option ${F.cur===c?'selected':''}>${c}</option>`).join('')}</select><button class="btn" data-a="add">+ Add invoice</button><span class="mu">${sel.length} shown</span></div>
  <div class="tw"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Due</th><th>Cur</th><th class="n">Total</th><th class="n">Paid</th><th class="n">Outstanding</th><th class="n">Days over</th><th>Status</th><th>Priority</th><th>Next F/U</th><th></th></tr></thead><tbody>
- ${sel.slice(0,F.limit).map(r=>{const c=r.inv.currency;return`<tr><td>${esc(r.inv.invoiceNo||'—')}</td><td>${esc(r.inv.customer)}<br><small class="mu">${esc(r.inv.email||r.inv.phone)}</small></td><td>${r.inv.dueDate||'<span class="mu">missing</span>'}</td><td>${c}</td><td class="n">${$f(r.inv.total,c)}</td><td class="n">${$f(r.paid,c)}</td><td class="n">${$f(r.bal,c)}</td><td class="n">${r.daysOver||''}</td><td>${badge(r.status)}${r.partial&&r.status!=='Partially Paid'?' <small class="mu">part-paid</small>':''}${r.flags.length?' ⚠':''}</td><td title="${esc(r.pr.why.join(', '))}">${r.pr.lvl}</td><td>${r.next||''}</td><td><button class="btn s" data-a="open" data-v="${r.inv.id}">Open</button></td></tr>`}).join('')||'<tr><td colspan="12" class="mu">No matching invoices.</td></tr>'}</tbody></table></div>
+ ${sel.slice(0,F.limit).map(r=>{const c=r.inv.currency;return`<tr><td>${esc(r.inv.invoiceNo||'—')}</td><td>${esc(r.inv.customer)}<br><small class="mu">${esc(r.inv.email||r.inv.phone)}</small></td><td>${r.inv.dueDate||'<span class="mu">missing</span>'}</td><td>${c}</td><td class="n">${$f(r.inv.total,c)}</td><td class="n">${$f(r.paid,c)}</td><td class="n">${$f(r.bal,c)}</td><td class="n">${r.open&&r.daysOver?r.daysOver:''}</td><td>${badge(r.status)}${r.partial&&r.status!=='Partially Paid'?' <small class="mu">part-paid</small>':''}${r.flags.length?' ⚠':''}</td><td title="${esc(r.pr.why.join(', '))}">${r.pr.lvl}</td><td>${r.next||''}</td><td><button class="btn s" data-a="open" data-v="${r.inv.id}">Open</button></td></tr>`}).join('')||'<tr><td colspan="12" class="mu">No matching invoices.</td></tr>'}</tbody></table></div>
  ${sel.length>F.limit?'<button class="btn" data-a="more">Show more</button>':''}`}
 function vRem(rs){
  const op=rs.filter(r=>r.open||r.paid>0).sort((a,b)=>b.pr.s-a.pr.s);if(!op.length)return'<div class="card mu">No invoices to remind about yet.</div>';
@@ -234,10 +234,10 @@ const mail=r=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.inv.email||'')?`<a class="btn"
 function vImp(rs){const S=STG;
  return`<div class="card"><b>1. Import a payment sheet</b><p class="mu">Excel or CSV. From the Invoices tool, import its downloaded Excel/CSV: columns are recognised, and only invoices where <b>you are the supplier</b> become receivables (set your business name in Settings).</p>
  <button class="btn" data-a="pick">Choose file</button> ${S?`<b>${esc(S.name)}</b> · ${S.rows.length} rows`:''}
- ${S?`<h3>Column mapping</h3><div class="fl">${Object.keys(S.am.map).concat(Object.keys(S.am.amb).filter(f=>!S.am.map[f]),['invoiceNo','customer','total','dueDate'].filter(f=>!S.am.map[f]&&!S.am.amb[f])).filter((f,i,a)=>a.indexOf(f)===i).map(f=>`<label>${f}${S.am.amb[f]?' — choose':''}<select data-map="${f}"><option value="">(none)</option>${S.heads.map(h=>`<option ${S.sel[f]===h?'selected':''}>${esc(h)}</option>`).join('')}</select></label>`).join('')}</div><p class="mu">Click <b>Analyze Payments</b> (top right) to validate and preview.</p>`:''}</div>
+ ${S?`<h3>Column mapping</h3><div class="fl">${Object.keys(S.am.map).concat(Object.keys(S.am.amb).filter(f=>!S.am.map[f]),['invoiceNo','customer','total','dueDate'].filter(f=>!S.am.map[f]&&!S.am.amb[f])).filter((f,i,a)=>a.indexOf(f)===i).map(f=>`<label>${f}${S.am.amb[f]?' — choose':''}<select data-map="${f}"><option value="">(none)</option>${S.heads.map(h=>`<option ${S.sel[f]===h?'selected':''}>${esc(h)}</option>`).join('')}</select></label>`).join('')}</div><p class="mu">Your file is checked automatically. Review the result below, then click <b>Import</b>. Nothing is saved until you do.</p>`:''}</div>
  ${S&&S.res?`<div class="card"><b>2. Review</b><div class="row"><span class="st Paid">${S.res.good.length} ready</span><span class="st">${S.res.dup.length} duplicates (skipped)</span><span class="st Overdue">${S.res.bad.length} invalid</span><span class="st">${S.res.skip.length} not receivables</span></div>
  ${[...S.res.bad.map(x=>['e',x]),...S.res.skip.map(x=>['',x]),...S.res.dup.map(x=>['',x]),...S.res.good.filter(g=>g.warn.length).map(g=>['i',{n:g.n,why:g.warn.join('; ')}])].slice(0,60).map(([c,x])=>`<div class="msg ${c}">Row ${x.n}: ${esc(x.why)}</div>`).join('')}
- <button class="btn p" data-a="commit" ${S.res.good.length?'':'disabled'}>Import ${S.res.good.length} invoices</button> <span class="mu">Valid rows are kept even if others fail. Duplicates are never overwritten.</span></div>`:''}
+ <button class="btn p" data-a="commit" style="font-size:15px" ${S.res.good.length?'':'disabled'}>Import ${S.res.good.length} invoices</button> <span class="mu">Valid rows are kept even if others fail. Duplicates are never overwritten.</span></div>`:''}
  <div class="card"><b>Export</b><div class="row"><button class="btn p" data-a="xlsx">Excel (all sheets)</button><button class="btn" data-a="csv" data-v="Outstanding Invoices">CSV outstanding</button><button class="btn" data-a="csv" data-v="Payment History">CSV payments</button><button class="btn" data-a="csv" data-v="Follow-up History">CSV follow-ups</button><button class="btn" data-a="csv" data-v="Reminder Drafts">CSV reminder drafts</button></div><p class="mu">Text starting with = + - @ is prefixed with an apostrophe to block spreadsheet formula injection. Excel may drop leading zeros when opening a CSV by double-click; the Excel export keeps them.</p></div>
  <div class="card mu"><b>Import history</b> ${M.bat.slice(-5).reverse().map(b=>`<div>${b.ts.slice(0,16).replace('T',' ')} · ${esc(b.name)} · ${b.n} imported, ${b.d} duplicates, ${b.x} rejected</div>`).join('')||'none'}</div>`}
 function vSet(){const S=M.S,f=(k,l,t='text')=>`<label>${l}<input data-set="${k}" type="${t}" value="${esc(S[k])}"></label>`;
@@ -258,7 +258,7 @@ function vDetail(rs){const r=rs.find(x=>x.inv.id===OPEN);if(!r)return'';const i=
  <details class="card"><summary>Audit history</summary>${(i.audit||[]).map(a=>`<div class="mu">${a.ts.slice(0,16).replace('T',' ')} ${esc(a.a)}</div>`).join('')||'none'}</details></div>`}
 function vAdd(){return`<div class="dg"><div class="row"><h1>Add invoice</h1><button class="btn" data-a="close">Close</button></div><div class="card"><div class="fl"><label>Invoice no.<input id="ni"></label><label>Customer *<input id="nc"></label><label>Email<input id="ne"></label><label>Phone<input id="np"></label><label>Invoice date<input type="date" id="nd"></label><label>Due date<input type="date" id="nu"></label><label>Currency<input id="nr" value="${esc(M.S.cur)}"></label><label>Amount *<input id="na" inputmode="decimal"></label></div><button class="btn p" data-a="addsave">Save invoice</button></div></div>`}
 function render(){$('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tb" role="tab" data-a="tab" data-v="${k}" aria-selected="${T===k}">${l}</button>`).join('');
- $('#warn').innerHTML=saveErr?'<div class="msg e">Could not save to this browser (storage full or blocked). Export your data now.</div>':'';
+ $('#warn').innerHTML=(STG&&STG.res&&STG.res.good.length&&T!=='imp'?`<div class="msg i">${STG.res.good.length} invoices from <b>${esc(STG.name)}</b> are waiting and are <b>not saved yet</b>. <button class="btn s" data-a="tab" data-v="imp">Review and import</button></div>`:'')+(saveErr?'<div class="msg e">Could not save to this browser (storage full or blocked). Export your data now.</div>':'');
  const rs=rows();$('#main').innerHTML={ov:vOv,inv:vInv,rem:vRem,imp:vImp,set:vSet}[T](rs);
  $('#dlg').innerHTML=OPEN==='new'?vAdd():OPEN?vDetail(rs):'';$('#dlg').hidden=!OPEN}
 const find=id=>M.inv.find(i=>i.id===id);
@@ -287,7 +287,9 @@ const A={
   const i={id:PF.uid(),invoiceNo:$('#ni').value.trim(),customer:cu,email:$('#ne').value.trim(),phone:$('#np').value.trim(),company:'',invoiceDate:$('#nd').value||null,dueDate:$('#nu').value||null,currency:c,total:m.v,hold:null,prio:null,notes:'',created:new Date().toISOString(),src:'manual',audit:[]};
   aud(i,'Created manually');M.inv.push(i);save();OPEN=null;toast('Invoice added')},
  commit:()=>{const R=STG.res;R.good.forEach(g=>{aud(g.inv,'Imported from '+STG.name+' (row '+g.n+')');M.inv.push(g.inv);
-  if(g.paid)M.pay.push({id:PF.uid(),invoiceId:g.inv.id,date:null,amount:g.paid,currency:g.inv.currency,ref:'Imported: paid amount reported in source file',source:'import',created:new Date().toISOString()})});
+  if(g.paid)M.pay.push({id:PF.uid(),invoiceId:g.inv.id,date:g.lastPay||null,amount:g.paid,currency:g.inv.currency,ref:'Imported: paid amount reported in source file',source:'import',created:new Date().toISOString()});
+  if(g.lastFU)M.con.push({id:PF.uid(),invoiceId:g.inv.id,date:g.lastFU,channel:'other',outcome:'Imported: last follow-up date from source file',created:new Date().toISOString()});
+  if(g.nextFU&&g.inv.total>g.paid)M.tsk.push({id:PF.uid(),invoiceId:g.inv.id,date:g.nextFU,status:'open'})});
   M.bat.push({ts:new Date().toISOString(),name:STG.name,n:R.good.length,d:R.dup.length,x:R.bad.length+R.skip.length});save();toast(R.good.length+' invoices imported');STG=null;T='ov'},
  xlsx:()=>{if(!window.XLSX)return toast('Excel library did not load. Check your connection.');const S=PF.sheets(M,today()),wb=XLSX.utils.book_new();
   for(const k in S){const ws=XLSX.utils.aoa_to_sheet(S[k]);ws['!cols']=S[k][0].map(()=>({wch:18}));XLSX.utils.book_append_sheet(wb,ws,k)}
@@ -300,7 +302,7 @@ document.addEventListener('change',e=>{const t=e.target;
  else if(t.id==='ri'){RM={id:t.value,tpl:'',dirty:false};RM.tpl=PF.recommend(rows().find(r=>r.inv.id===t.value))||'upcoming'}else if(t.id==='rt'){RM.tpl=t.value;RM.dirty=false}
  else if(t.id==='dh'||t.id==='dp'){const i=find(OPEN);if(t.id==='dh'){i.hold=t.value||null;aud(i,'Status override: '+(t.value||'none'))}else{i.prio=t.value||null;aud(i,'Priority set: '+(t.value||'auto'))}save()}
  else if(t.dataset.set){const k=t.dataset.set;M.S[k]=k==='dueSoonDays'?Math.max(0,parseInt(t.value)||0):t.value.trim?t.value.trim():t.value;save();return toast('Saved')}
- else if(t.dataset.map){STG.sel[t.dataset.map]=t.value;STG.res=null}else if(t.id==='fi'){return readFile(t.files[0])}else return;render()});
+ else if(t.dataset.map){STG.sel[t.dataset.map]=t.value;STG.res=(STG.sel.total||STG.sel.outstanding)?PF.stageRows(STG.rows,STG.sel,M.S,M.inv):null}else if(t.id==='fi'){return readFile(t.files[0])}else return;render()});
 document.addEventListener('input',e=>{if(e.target.id==='rs'){RM.subject=e.target.value;RM.dirty=true}if(e.target.id==='rb'){RM.body=e.target.value;RM.dirty=true}
  if(e.target.id==='pa'){const i=find(OPEN),r=rows().find(x=>x.inv.id===OPEN),m=PF.parseMoney(e.target.value,i.currency);$('#pv').textContent=m.v>0?`Resulting outstanding: ${i.currency} ${$f(r.bal-m.v,i.currency)}${m.v>r.bal?' (overpayment)':''}`:''}});
 const cs=c=>{if(!c||c.v==null)return'';if(c.t==='n'){if(c.z&&XLSX.SSF.is_date(c.z)){const d=XLSX.SSF.parse_date_code(c.v);return`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`}return/^0\d+$/.test(c.w||'')?c.w:String(c.v)}if(c.t==='d')return c.v.toISOString().slice(0,10);return String(c.v).trim()};
@@ -310,7 +312,7 @@ async function readFile(f){if(!f)return;T='imp';STG=null;
   let wb;if(/\.csv$/i.test(f.name))wb=XLSX.read(new TextDecoder().decode(await f.arrayBuffer()).replace(/^\uFEFF/,''),{type:'string',raw:true});else if(/\.xlsx?$/i.test(f.name))wb=XLSX.read(await f.arrayBuffer(),{type:'array'});else throw Error('Use .xlsx, .xls or .csv');
   const a=aoa(wb.Sheets[wb.SheetNames[0]]),h=a.findIndex(r=>r.filter(Boolean).length>=2);if(h<0||a.length<h+2)throw Error('No data rows found.');
   const seen={},heads=a[h].map((x,i)=>{let b=x||'Column '+(i+1),n=b,k=2;while(seen[n])n=b+'_'+k++;seen[n]=1;return n}),data=a.slice(h+1).filter(r=>r.some(Boolean)).map(r=>Object.fromEntries(heads.map((k,i)=>[k,r[i]??''])));
-  const am=PF.autoMap(heads);STG={name:f.name,heads,rows:data,am,sel:{...am.map},res:null}}catch(e){toast(e.message);T='imp'}render()}
+  const am=PF.autoMap(heads);STG={name:f.name,heads,rows:data,am,sel:{...am.map},res:null};if(STG.sel.total||STG.sel.outstanding){STG.res=PF.stageRows(STG.rows,STG.sel,M.S,M.inv);toast('Checked. Review below, then click Import')}}catch(e){toast(e.message);T='imp'}render()}
 $('#an').onclick=()=>{if(STG&&T==='imp'){STG.res=PF.stageRows(STG.rows,STG.sel,M.S,M.inv);if(!STG.sel.total&&!STG.sel.outstanding)toast('Map a Total or Outstanding column first')}
  else{const rs=rows();T='ov';toast(`${rs.length} invoices analyzed, ${rs.filter(r=>r.flags.length).length} need review`)}render()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&OPEN){OPEN=null;render()}});
