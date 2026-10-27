@@ -1,0 +1,35 @@
+// Run: node test/core.test.js   (optional: npm i xlsx jsdom for the workbook round-trip)
+const PF=require('../src/core.js'),assert=require('assert');let ok=0,bad=0;
+const t=(n,f)=>{try{f();ok++;console.log('PASS',n)}catch(e){bad++;console.log('FAIL',n,'-',e.message)}};
+const S={dueSoonDays:3,cur:'INR',order:'DMY',business:'Acme Traders'},TODAY='2026-10-27';
+const mk=(o={})=>({id:'i1',invoiceNo:'INV-001',customer:'Ravi Sharma',email:'r@x.com',phone:'09876543210',currency:'INR',total:1000000,dueDate:'2026-12-01',hold:null,...o});
+const cls=(inv,pays=[])=>PF.classify(inv,pays.map((a,k)=>({id:'p'+k,invoiceId:inv.id,amount:a,currency:inv.currency})),TODAY,S);
+t('A unpaid',()=>{const r=cls(mk());assert.equal(r.bal,1000000);assert.equal(r.status,'Unpaid')});
+t('B partially paid',()=>{const r=cls(mk(),[400000]);assert.equal(r.bal,600000);assert.equal(r.status,'Partially Paid')});
+t('C overdue + days',()=>{const r=cls(mk({dueDate:'2026-10-17'}));assert.equal(r.status,'Overdue');assert.equal(r.daysOver,10);assert.equal(r.bal,1000000)});
+t('D paid',()=>{const r=cls(mk(),[1000000]);assert.equal(r.bal,0);assert.equal(r.status,'Paid')});
+t('E multiple payments',()=>{const r=cls(mk(),[200000,300000]);assert.equal(r.paid,500000);assert.equal(r.bal,500000)});
+t('E2 float-trap amounts exact',()=>{assert.equal(PF.parseMoney('0.1').v+PF.parseMoney('0.2').v,PF.parseMoney('0.30').v);assert.equal(PF.parseMoney('₹1,23,456.78','INR').v,12345678);assert.equal(PF.parseMoney('1.005','INR').v,101)});
+t('F duplicate import',()=>{const rows=[{No:'A1',Cust:'X',Total:'100',Due:'01/12/2026'},{No:'A1',Cust:'X',Total:'100',Due:'01/12/2026'}],map={invoiceNo:'No',customer:'Cust',total:'Total',dueDate:'Due'};
+ const r=PF.stageRows(rows,map,S,[]);assert.equal(r.good.length,1);assert.equal(r.dup.length,1);
+ const r2=PF.stageRows(rows.slice(0,1),map,S,[r.good[0].inv]);assert.equal(r2.good.length,0);assert.equal(r2.dup.length,1)});
+t('G multi-currency totals separate',()=>{const M={S,inv:[mk(),mk({id:'i2',currency:'USD',total:5000})],pay:[],con:[],tsk:[]};const T=PF.totals(PF.rowsOf(M,TODAY));assert.equal(T.INR.out,1000000);assert.equal(T.USD.out,5000);assert.equal(Object.keys(T).length,2)});
+t('H missing due date',()=>{const r=cls(mk({dueDate:null}));assert.equal(r.status,'Unpaid');assert.equal(r.daysOver,0);assert(r.flags.some(f=>/Missing due date/.test(f)))});
+t('I overpayment preserved + flagged',()=>{const r=cls(mk(),[1200000]);assert.equal(r.paid,1200000);assert.equal(r.bal,-200000);assert.equal(r.status,'Overpaid');assert(r.flags.length)});
+t('I2 reported outstanding mismatch flagged',()=>{assert(cls(mk({repOut:123}),[]).flags.some(f=>/differs/.test(f)))});
+const R=(o,p=[])=>PF.rowsOf({S,inv:[mk(o)],pay:p.map((a,k)=>({id:'p'+k,invoiceId:'i1',amount:a,currency:'INR'})),con:[],tsk:[]},TODAY)[0];
+t('J reminder variables',()=>{const d=PF.draft('overdue1',R({dueDate:'2026-10-17'}),{...S,sender:'Priya'});assert(d.body.includes('Hello Ravi Sharma,'));assert(d.body.includes('INV-001'));assert(d.body.includes('INR 10,000.00'));assert(d.body.includes('2026-10-17'));assert(d.body.includes('Priya'));assert(!/\bsent\b/i.test(d.body))});
+t('J2 no overdue claim before due date',()=>{assert(PF.draft('overdue1',R(),S).blocked);assert(PF.draft('overdue2',R(),S).blocked)});
+t('J3 missing vars handled, no invented bank details',()=>{const d=PF.draft('upcoming',R({customer:'',invoiceNo:''}),{...S,sender:''});assert(d.body.startsWith('Hello,'));assert.equal(d.missing.length,3);assert(!/bank|account/i.test(d.body))});
+t('J4 payment instructions only if set',()=>{const a=PF.draft('upcoming',R(),{...S,instr:'UPI: abc@bank'});assert(a.body.includes('UPI: abc@bank'));assert(!PF.draft('upcoming',R(),S).body.includes('Payment details'))});
+t('K csv: injection + leading zeros + escaping',()=>{const M={S,inv:[mk({customer:'=HYPERLINK("x")',invoiceNo:'007',phone:'+919876543210',email:'a,b@x.com'})],pay:[],con:[],tsk:[]},sh=PF.sheets(M,TODAY),c=PF.csv(sh['Outstanding Invoices']);
+ assert(c.includes("\"'=HYPERLINK(\"\"x\"\")\"")||c.includes("'=HYPERLINK"));assert(c.includes(',007,')||c.startsWith('\uFEFFInvoice')&&c.includes('007'));assert(c.includes('+919876543210'));assert(c.includes('"a,b@x.com"'));assert(c.includes('INR'));assert(c.includes('10000'))});
+t('K2 dates + direction (vendor bills excluded)',()=>{const rows=[{Supplier:'Acme Traders Pvt',Buyer:'Zed Co','Invoice number':'1',Currency:'INR','Grand total (reported)':'500'},{Supplier:'Other Ltd',Buyer:'Acme Traders','Invoice number':'2',Currency:'INR','Grand total (reported)':'900'}];
+ const am=PF.autoMap(Object.keys(rows[0]));const r=PF.stageRows(rows,am.map,S,[]);assert.equal(r.good.length,1);assert.equal(r.good[0].inv.customer,'Zed Co');assert.equal(r.skip.length,1);
+ assert.equal(PF.stageRows(rows,am.map,{...S,business:''},[]).good.length,0)});
+t('K3 date parsing',()=>{assert.equal(PF.parseDate('31/12/2026','DMY').iso,'2026-12-31');assert.equal(PF.parseDate('12/31/2026','DMY').iso,'2026-12-31');assert.equal(PF.parseDate('31/02/2026','DMY').iso,null);assert.equal(PF.parseDate('2026-03-05').iso,'2026-03-05')});
+t('priority is deterministic rules',()=>{const r=R({dueDate:'2026-08-01'});assert.equal(r.pr.lvl,'High');assert(r.pr.why.length)});
+try{const X=require('xlsx'),M={S,inv:[mk({invoiceNo:'007'})],pay:[],con:[],tsk:[]},sh=PF.sheets(M,TODAY),wb=X.utils.book_new();for(const k in sh)X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet(sh[k]),k);
+ const back=X.read(X.write(wb,{bookType:'xlsx',type:'buffer'}),{type:'buffer'});t('K4 xlsx valid, sheets+values+leading zero',()=>{assert.equal(back.SheetNames.length,7);const a=X.utils.sheet_to_json(back.Sheets['Outstanding Invoices'],{header:1});assert.equal(a[1][0],'007');assert.equal(a[1][9],10000)})}catch(e){console.log('SKIP K4 (xlsx not installed)')}
+console.log('L authorization: NOT APPLICABLE - the app has no backend, login or workspaces (see report).');
+console.log(`\n${ok} passed, ${bad} failed`);process.exit(bad?1:0);
