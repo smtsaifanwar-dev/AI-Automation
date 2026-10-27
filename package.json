@@ -7,7 +7,9 @@
     "build": "node build.js",
     "test": "node test/core.test.js",
     "test:e2e": "node test/e2e.playwright.js",
-    "test:ui": "node test/ui.smoke.js"
+    "test:ui": "node test/ui.smoke.js",
+    "test:audit": "node test/audit.test.js && node test/audit.ui.smoke.js",
+    "audit-server": "node server/audit-server.js"
   },
-  "devDependencies": { "jsdom": "^24.0.0", "playwright": "^1.45.0", "xlsx": "^0.18.5" }
+  "devDependencies": { "jsdom": "^24.0.0", "jspdf": "^2.5.1", "playwright": "^1.45.0", "xlsx": "^0.18.5" }
 }

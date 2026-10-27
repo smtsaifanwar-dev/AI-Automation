@@ -1,0 +1,4 @@
+NEW files (add):      src/audit-core.js  src/audit.src.html  server/audit-server.js  test/audit.test.js  test/audit.ui.smoke.js  AUDIT_SETUP.md
+REPLACE files:        index.html  build.js  package.json  README.md
+Nothing else is touched (src/clean, src/invoice, src/payments, src/core.js and your tests are unchanged).
+After copying:  npm i   then   node build.js   (optional, index.html is already built)

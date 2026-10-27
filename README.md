@@ -1,12 +1,13 @@
 # BizPilot
 
-Three tools in one page, all running in the browser (no server, files are never uploaded):
+Four tools in one page, all running in the browser (no server, files are never uploaded):
 
 | Tool | Source | What it does |
 |---|---|---|
 | Clean Excel | `src/clean.src.html` | Fixes spaces, dates, duplicates, phones, emails; logs every change |
 | Invoices | `src/invoice.src.html` | Reads PDF/JPG/PNG invoices (scans via OCR), checks totals/GST/duplicates, exports Excel/CSV, **Send to Payments** |
 | Payments | `src/payments.src.html` + `src/core.js` | Outstanding/overdue, payments, follow-ups, reminder drafts (copy / WhatsApp / email app), backup & restore |
+| Audit | `src/audit.src.html` + `src/audit-core.js` + `server/audit-server.js` | Website SEO checks with evidence, business-profile checklist, score, PDF/Excel/CSV report. Live crawling needs the small audit server (see `AUDIT_SETUP.md`); without it, paste one page's HTML source |
 
 ## One-click flows
 - **Invoices → Payments:** after processing, click *Send to Payments →*. The first time you pick which name is your business (saved), then *Import*.
@@ -18,6 +19,7 @@ Three tools in one page, all running in the browser (no server, files are never 
 ```
 node build.js          # re-embeds src/*.html into index.html (edit src/, never the base64 blocks)
 npm test               # pure-logic tests (no browser)
+npm run test:audit     # Business Audit engine, SSRF protection, exports, UI (needs: npm i)
 npm run test:e2e       # real Chromium test: scan -> OCR (stubbed engine) -> Send to Payments -> import
 ```
 `index.html` is the only file you need to deploy or double-click.
