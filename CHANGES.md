@@ -32,3 +32,10 @@
 - Column mapping shows readable names (Invoice number, Due date, ...) instead of camelCase keys.
 - "Theme" label next to the colour dots; shorter Settings labels; consistent label sizes.
 - "Missing, please review" warning now has an "Open Settings" button.
+
+# Phase 2b (Payments)
+- Banner now says how many invoices are ready, how many duplicates were skipped and how many need fixing, and that nothing is saved yet.
+- Dates in the invoices table and follow-up list read "17 Oct 2026" (stored values are unchanged).
+- Invoices filter: the dropdown is now "More filters..." and no longer repeats the chips (Overdue / Due soon / Due in 7 days).
+- Column header "Next follow-up"; whole row is clickable (Open button kept for keyboard/screen-reader use).
+- Import: drop zone with icon and a "Try with demo data" button (8 sample invoices, dates relative to today, nothing saved until Import).
