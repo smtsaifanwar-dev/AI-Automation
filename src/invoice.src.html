@@ -2,8 +2,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Invoice Processing – BizPilot AI</title>
 <style>
-:root{color-scheme:light dark;--bg:#f4f6fb;--cd:#fff;--tx:#0f1b33;--mu:#5b6a85;--bd:#e3e8f1;--pr:#0a5cff;--ok:#12b886;--wa:#f5b301;--er:#e03131}
-@media(prefers-color-scheme:dark){:root{--bg:#0a1020;--cd:#121a2e;--tx:#e9eefb;--mu:#93a1bf;--bd:#223052;--pr:#4d8bff;--ok:#38d9a9;--wa:#ffd43b;--er:#ff8787}}
+:root{color-scheme:light dark;--bg:#f4f6fb;--cd:#fff;--tx:#0f1b33;--mu:#5b6a85;--bd:#e3e8f1;--pr:#2563eb;--ok:#12b886;--wa:#f5b301;--er:#e03131}
+@media(prefers-color-scheme:dark){:root{--bg:#0a1020;--cd:#121a2e;--tx:#e9eefb;--mu:#93a1bf;--bd:#223052;--pr:#5b9bff;--ok:#38d9a9;--wa:#ffd43b;--er:#ff8787}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 Inter,system-ui,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
 main{max-width:1100px;margin:0 auto;padding:16px}h1{font-size:22px;margin:0 0 4px;letter-spacing:-.02em}h3{font-size:13px;margin:14px 0 4px;color:var(--mu)}
 .mu{color:var(--mu)}.card{background:var(--cd);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
@@ -22,15 +22,24 @@ input,select{font:inherit;color:var(--tx);background:var(--cd);border:1px solid 
 .fl{display:grid;grid-template-columns:120px 1fr auto;gap:8px;align-items:center;margin:4px 0}.fl input{width:100%;min-width:0}
 .fd{border:1px solid var(--bd);border-radius:10px;padding:8px 10px;margin:6px 0;font-size:13px}.fd.critical{border-left:4px solid var(--er)}.fd.warning{border-left:4px solid var(--wa)}.fd.info{border-left:4px solid var(--pr)}
 .cmp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.cmp div{border:1px solid var(--bd);border-radius:10px;padding:6px 10px}.cmp b{display:block}
+
+.emb .top{display:none}
+#drop{border-radius:16px;padding:34px 14px;transition:border-color .15s,background .15s,transform .15s}#drop:hover,#drop.on{background:color-mix(in srgb,var(--pr) 5%,transparent)}#drop.on{transform:scale(1.01)}
+#drop svg{color:var(--pr);display:block;margin:0 auto 8px}#drop .fmt{display:flex;gap:6px;justify-content:center;margin:8px 0 14px}#drop .fmt i{font-style:normal;font-size:12px;font-weight:600;border:1px solid var(--bd);border-radius:6px;padding:2px 8px;color:var(--mu);background:var(--bg)}
+.btn.p{background:var(--pr)}.btn.p:hover:not(:disabled){filter:brightness(1.08)}
+.stats div.bad{border-color:color-mix(in srgb,var(--er) 45%,var(--bd));background:color-mix(in srgb,var(--er) 7%,transparent)}.stats div.bad b{color:var(--er)}.stats div.wa{border-color:color-mix(in srgb,var(--wa) 55%,var(--bd));background:color-mix(in srgb,var(--wa) 9%,transparent)}.stats div.good b{color:var(--ok)}
+details.note summary{cursor:pointer;color:var(--pr);font-weight:600;list-style:none}details.note summary::-webkit-details-marker{display:none}details.note[open] summary{margin-bottom:6px}
+.fi{border-radius:8px;padding:8px 10px;margin-top:4px;border:1px solid var(--bd);background:var(--bg)}
+.pill{display:inline-flex;align-items:center;gap:6px}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-</style></head><body><main>
-<header class="top"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0a5cff"/><path d="M10 8h9l4 4v12H10z" fill="none" stroke="#fff" stroke-width="2"/><path d="M13 16h7M13 20h7" stroke="#fff" stroke-width="2"/></svg><b>BizPilot AI</b><span class="mu">Invoice Processing</span><span class="pill">🔒 Files stay in your browser</span></header>
+</style><script>try{if(window.parent!==window)document.documentElement.classList.add('emb')}catch(e){}</script></head><body><main>
+<header class="top"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#0a5cff"/><path d="M10 8h9l4 4v12H10z" fill="none" stroke="#fff" stroke-width="2"/><path d="M13 16h7M13 20h7" stroke="#fff" stroke-width="2"/></svg><b>BizPilot AI</b><span class="mu">Invoice Processing</span><span class="pill"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Files stay in your browser</span></header>
 <section class="card"><h1>Invoice Processing</h1><p class="mu" style="margin:0">Upload invoices, get the key details read and checked, then download them as Excel.</p>
-<div id="drop" tabindex="0" role="button" aria-label="Choose invoice files"><b>Drop invoices here</b><span class="mu">PDF, JPG or PNG · up to 15 MB each · 30 files per batch</span><br><br><span class="btn">Browse files</span></div>
+<div id="drop" tabindex="0" role="button" aria-label="Choose invoice files"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><b>Drop invoices here</b><span class="mu">or click to browse · up to 15 MB each · 30 files per batch</span><div class="fmt"><i>PDF</i><i>JPG</i><i>PNG</i></div><span class="btn">Browse files</span></div>
 <input id="fi" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" hidden>
 <div id="msgs" role="alert"></div><div id="fl"></div>
 <div class="row" style="margin-top:10px"><button class="btn p" id="go" disabled>Process invoices</button><button class="btn" id="cancel" hidden>Cancel</button><span id="prog" class="mu" aria-live="polite"></span></div>
-<p class="note">Files are read inside your browser and are not uploaded anywhere. Scanned PDFs and photos are read with OCR: the first time, a small text-recognition engine is downloaded (internet needed), your file itself never leaves this device. OCR is less accurate than text PDFs, so those invoices are always marked Needs Review. A small fingerprint of each processed invoice (supplier, number, date, total) is kept in this browser to spot duplicates in later batches. <button class="lk" id="clrfp">Clear saved fingerprints</button></p></section>
+<details class="note"><summary>How privacy, OCR and duplicate checks work</summary>Files are read inside your browser and are not uploaded anywhere. Scanned PDFs and photos are read with OCR: the first time, a small text-recognition engine is downloaded (internet needed), your file itself never leaves this device. OCR is less accurate than text PDFs, so those invoices are always marked Needs Review. A small fingerprint of each processed invoice (supplier, number, date, total) is kept in this browser to spot duplicates in later batches. <button class="lk" id="clrfp">Clear saved fingerprints</button></details></section>
 <section id="res" hidden><div class="card"><div id="stats" class="stats"></div><div id="cur" class="row" style="margin-bottom:10px"></div>
 <div class="row" style="margin-bottom:10px"><input id="q" type="search" placeholder="Search file, invoice no. or supplier" aria-label="Search results" style="flex:1;min-width:180px"><select id="sf" aria-label="Filter by status"><option value="">All statuses</option><option>Needs Review</option><option>Completed</option><option>Reviewed</option><option>Failed</option></select>
 <button class="btn p" id="xx">Download Excel</button><button class="btn" id="xc">Invoices CSV</button><button class="btn" id="xf">Flags CSV</button><button class="btn p" id="xp" hidden>Send to Payments →</button></div>
@@ -64,7 +73,7 @@ async function add(list){const msg=[];if(busy)return;
   const h=await sha(f);if(files.some(x=>x.h===h)){msg.push(f.name+': this file is already in the list.');continue}
   files.push({id:'inv-'+(++UID),f,t,h})}
  $('#msgs').innerHTML=msg.map(m=>'<p>'+esc(m)+'</p>').join('');drawFiles()}
-function drawFiles(){$('#fl').innerHTML=files.length?'<p class="mu" style="margin:8px 0 2px">'+files.length+' file'+(files.length>1?'s':'')+' · '+kb(files.reduce((a,x)=>a+x.f.size,0))+'</p>'+files.map(x=>'<div class="fi"><span>'+esc(x.f.name)+'</span><span class="mu">'+x.t.toUpperCase()+' · '+kb(x.f.size)+'</span><button class="btn s" data-rm="'+x.id+'" aria-label="Remove '+esc(x.f.name)+'">Remove</button></div>').join(''):'';$('#go').disabled=busy||!files.length}
+function drawFiles(){$('#fl').innerHTML=files.length?'<p class="mu" style="margin:8px 0 2px">'+files.length+' file'+(files.length>1?'s':'')+' · '+kb(files.reduce((a,x)=>a+x.f.size,0))+'</p>'+files.map(x=>'<div class="fi"><span>'+esc(x.f.name)+'</span><span class="mu">'+x.t.toUpperCase()+' · '+kb(x.f.size)+'</span><button class="btn s" data-rm="'+x.id+'" aria-label="Remove '+esc(x.f.name)+'">Remove</button></div>').join(''):'';$('#go').disabled=busy||!files.length;if(!busy)$('#go').textContent=files.length?'Process '+files.length+' invoice'+(files.length>1?'s':''):'Process invoices'}
 
 /* ---------- reading and parsing ---------- */
 async function pdfLines(f){const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await f.arrayBuffer())}).promise,out=[];
@@ -130,7 +139,7 @@ const sc=s=>s==='Completed'||s==='Reviewed'?'ok':s==='Needs Review'?'wa':s==='Fa
 function render(){const ok=recs.filter(r=>!['Failed','Cancelled','Queued','Processing'].includes(r.status)),T={};
  ok.forEach(r=>{const t=num(r.f.total.v);if(t==null||isNaN(t))return;const c=r.f.cur.v||'Unknown currency';T[c]=(T[c]||0)+t});
  const st=[['Files',recs.length],['Processed',ok.length],['Need review',ok.filter(r=>r.status==='Needs Review').length],['Failed',recs.filter(r=>r.status==='Failed').length],['Duplicates',ok.filter(r=>r.dup.t!=='none').length],['Total mismatches',ok.filter(r=>r.fd.some(x=>x.id==='R7')).length],['Missing required',ok.filter(r=>r.fd.some(x=>x.id==='R1')).length]];
- $('#stats').innerHTML=st.map(x=>'<div><b>'+x[1]+'</b><span class="mu">'+x[0]+'</span></div>').join('');
+ $('#stats').innerHTML=st.map(x=>{const k=x[1]>0&&['Failed','Total mismatches','Missing required'].includes(x[0])?'bad':x[1]>0&&['Need review','Duplicates'].includes(x[0])?'wa':x[1]>0&&x[0]==='Processed'?'good':'';return'<div class="'+k+'"><b>'+x[1]+'</b><span class="mu">'+x[0]+'</span></div>'}).join('');
  $('#cur').innerHTML=Object.keys(T).length?'<span class="mu">Extracted totals:</span>'+Object.keys(T).map(c=>'<span class="st">'+esc(c)+' '+fmt(T[c])+'</span>').join('')+'<span class="mu">(includes flagged invoices)</span>':'';
  $('#tb').innerHTML=view().map(r=>{const f=r.f,done=!['Failed','Cancelled','Queued','Processing'].includes(r.status),c=r.fd.filter(x=>x.sev==='critical').length,w=r.fd.filter(x=>x.sev==='warning').length,tx=['cgst','sgst','igst'].some(k=>num(f[k].v)!=null)?['cgst','sgst','igst'].reduce((a,k)=>a+(num(f[k].v)||0),0):null;
   const chk=r.status==='Failed'?'<span title="'+esc(r.err)+'">'+esc(r.err.slice(0,70))+'</span>':!done?'':(c?'<span class="st er">'+c+' critical</span> ':'')+(w?'<span class="st wa">'+w+' warning'+(w>1?'s':'')+'</span>':'')+(!c&&!w?'✓':'');

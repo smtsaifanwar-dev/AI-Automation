@@ -39,3 +39,18 @@
 - Invoices filter: the dropdown is now "More filters..." and no longer repeats the chips (Overdue / Due soon / Due in 7 days).
 - Column header "Next follow-up"; whole row is clickable (Open button kept for keyboard/screen-reader use).
 - Import: drop zone with icon and a "Try with demo data" button (8 sample invoices, dates relative to today, nothing saved until Import).
+
+# Phase 2c
+Payments (small items)
+- Invoice detail popup shows the due date as "30 Oct 2026".
+- The "ready to import" toast is cleared once you import.
+- The empty Overview screen has a "Try with demo data" button.
+Invoices (OCR tool)
+- Duplicate inner header hidden when the tool runs inside BizPilot.
+- Drop zone with icon, file-type chips and a button; the Process button shows the file count.
+- Privacy / OCR / fingerprint text is collapsed behind "How privacy, OCR and duplicate checks work".
+- Summary cards are tinted (amber: needs review / duplicates, red: failed / mismatches, green: processed).
+Audit
+- Website score shown large with a green / amber / red colour; links use the theme blue.
+- Action plan grouped with colour dots, counts and one card per recommendation.
+All tools: one primary blue (#2563eb light, #5b9bff dark).

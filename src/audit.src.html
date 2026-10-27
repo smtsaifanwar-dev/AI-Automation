@@ -2,8 +2,8 @@
 <title>Business Audit – BizPilot AI</title>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https: http://localhost:* http://127.0.0.1:*; script-src 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src data:">
 <style>
-:root{color-scheme:light dark;--bg:#f4f6fb;--cd:#fff;--tx:#0f1b33;--mu:#5b6a85;--bd:#e3e8f1;--pr:#0a5cff;--ok:#12b886;--wa:#f5b301;--er:#e03131}
-@media(prefers-color-scheme:dark){:root{--bg:#0a1020;--cd:#121a2e;--tx:#e9eefb;--mu:#93a1bf;--bd:#223052;--pr:#4d8bff;--ok:#38d9a9;--wa:#ffd43b;--er:#ff8787}}
+:root{color-scheme:light dark;--bg:#f4f6fb;--cd:#fff;--tx:#0f1b33;--mu:#5b6a85;--bd:#e3e8f1;--pr:#2563eb;--ok:#12b886;--wa:#f5b301;--er:#e03131}
+@media(prefers-color-scheme:dark){:root{--bg:#0a1020;--cd:#121a2e;--tx:#e9eefb;--mu:#93a1bf;--bd:#223052;--pr:#5b9bff;--ok:#38d9a9;--wa:#ffd43b;--er:#ff8787}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 Inter,system-ui,"Segoe UI",Roboto,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
 main{max-width:1180px;margin:0 auto;padding:14px}h1{font-size:21px;margin:0}h2{font-size:16px;margin:0 0 6px}h3{margin:14px 0 6px;font-size:14px}.mu{color:var(--mu)}
 .tabs{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0 12px}.tb{border:0;background:none;padding:7px 13px;border-radius:99px;color:var(--mu);font-weight:600;cursor:pointer}.tb[aria-selected=true]{background:var(--pr);color:#fff}
@@ -17,6 +17,15 @@ input,select,textarea{font:inherit;color:var(--tx);background:var(--cd);border:1
 .sv{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;background:var(--bd)}.sv.critical,.sv.high{background:color-mix(in srgb,var(--er) 28%,transparent)}.sv.medium{background:color-mix(in srgb,var(--wa) 32%,transparent)}
 .msg{padding:8px 11px;border-radius:9px;margin:6px 0;border-left:4px solid var(--wa);background:color-mix(in srgb,var(--wa) 12%,transparent)}.msg.e{border-color:var(--er);background:color-mix(in srgb,var(--er) 12%,transparent)}.msg.i{border-color:var(--pr);background:color-mix(in srgb,var(--pr) 10%,transparent)}
 #toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#0f1b33;color:#fff;padding:9px 15px;border-radius:10px;opacity:0;pointer-events:none;transition:.2s;z-index:20}#toast.on{opacity:1}
+
+a{color:var(--pr)}
+.kp>div{padding:12px 14px;border-radius:12px}.kp b{font-size:22px;letter-spacing:-.02em}
+.kp:first-of-type>div:first-child{background:color-mix(in srgb,var(--pr) 6%,transparent)}
+.sco{font-size:34px!important;line-height:1.1}.sco small{font-size:14px;font-weight:600;color:var(--mu)}.sco.g{color:var(--ok)}.sco.w{color:#d99a00}.sco.r{color:var(--er)}
+h3.ap{display:flex;align-items:center;gap:8px;margin:18px 0 6px;font-size:14px;color:var(--tx)}h3.ap .dt{width:10px;height:10px;border-radius:50%;background:var(--pr)}h3.ap.c .dt{background:var(--er)}h3.ap.w .dt{background:var(--wa)}h3.ap.n .dt{background:var(--mu)}
+h3.ap .ct{font-size:12px;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--bd);color:var(--mu)}
+.ai{display:grid;gap:2px;padding:9px 12px;border:1px solid var(--bd);border-radius:10px;margin:6px 0;background:var(--bg)}.ai span{color:var(--mu);font-size:13px}
+details>summary{cursor:pointer;font-weight:600;padding:4px 0}
 </style></head><body><main>
 <h1>Business Audit</h1><span class="mu">Evidence-based website and business-profile checks. Nothing is changed on your website.</span>
 <div class="tabs" id="tabs" role="tablist"></div><div id="main"></div></main><div id="toast" role="status" aria-live="polite"></div>
@@ -41,7 +50,7 @@ function vNew(){const F=A.form,srv=!!A.S.server;
  <p class="mu">Optional: Business Profile details and competitor URLs are set in their own tabs.</p>
  <button class="btn p" id="run" ${busy?'disabled':''}>${busy?'Running…':'Run Business Audit'}</button>
  ${LOG.length?`<div style="margin-top:8px">${LOG.map(l=>`<div class="mu">${l}</div>`).join('')}</div>`:''}</div>`}
-function sc(a){const s=a.score;return s.overall==null?`<b>n/a</b><span class="mu">Insufficient data for a reliable score: ${esc(s.reason)}</span>`:`<b>${s.overall}/100</b><span class="mu">Website score (not a Google score)</span>`}
+function sc(a){const s=a.score;return s.overall==null?`<b>n/a</b><span class="mu">Insufficient data for a reliable score: ${esc(s.reason)}</span>`:`<b class="sco ${s.overall>=80?'g':s.overall>=60?'w':'r'}">${s.overall}<small>/100</small></b><span class="mu">Website score (not a Google score)</span>`}
 function vRes(){const a=cur();if(!a)return'<div class="card mu">No audit yet. Run one from New Audit, or open one from History.</div>';
  const cnt=s=>a.findings.filter(f=>f.sev===s).length,fs=a.findings.filter(f=>{const q=FL.q.toLowerCase();return(!FL.sev||f.sev===FL.sev)&&(!FL.cat||f.cat===FL.cat)&&(!q||[f.title,f.evidence,f.url,f.action].join(' ').toLowerCase().includes(q))}).sort((x,y)=>AU.PTS[y.sev]-AU.PTS[x.sev]);
  const cats=[...new Set(a.findings.map(f=>f.cat))];
@@ -52,7 +61,7 @@ function vRes(){const a=cur();if(!a)return'<div class="card mu">No audit yet. Ru
  <details><summary>Limitations and data sources</summary>${a.limits.map(l=>`<div class="mu">• ${esc(l)}</div>`).join('')}</details>
  ${DIFF&&DIFF.id===a.id?`<div class="msg i">Compared with previous audit of this site (${DIFF.comparable} comparable checks): <b>${DIFF.newF.length} new</b>, <b>${DIFF.resolved.length} no longer found</b>, ${DIFF.unchanged} unchanged.</div>`:''}
  <div class="row"><button class="btn p" data-a="pdf" style="padding:7px 14px;font-size:14px">PDF report</button><button class="btn" data-a="xlsx">Excel</button><button class="btn" data-a="csvf">CSV findings</button><button class="btn" data-a="csvr">CSV recommendations</button><button class="btn" data-a="rerun">Re-run audit</button></div></div>
- <div class="card"><h2>Action plan</h2>${['Fix first','Important improvements','Further optimization','Informational suggestions'].map(g=>{const x=a.findings.filter(f=>AU.BUCKET(f.sev)===g);return x.length?`<h3>${g} (${x.length})</h3>${x.slice(0,5).map(f=>`<div>• <b>${esc(f.title)}</b>: ${esc(f.action)}</div>`).join('')}${x.length>5?`<div class="mu">+${x.length-5} more in the table below</div>`:''}`:''}).join('')||'<p class="mu">No findings.</p>'}</div>
+ <div class="card"><h2>Action plan</h2>${['Fix first','Important improvements','Further optimization','Informational suggestions'].map(g=>{const x=a.findings.filter(f=>AU.BUCKET(f.sev)===g);return x.length?`<h3 class="ap ${{'Fix first':'c','Important improvements':'w','Further optimization':'i'}[g]||'n'}"><span class="dt"></span>${g} <span class="ct">${x.length}</span></h3>${x.slice(0,5).map(f=>`<div class="ai"><b>${esc(f.title)}</b><span>${esc(f.action)}</span></div>`).join('')}${x.length>5?`<div class="mu">+${x.length-5} more in the table below</div>`:''}`:''}).join('')||'<p class="mu">No findings.</p>'}</div>
  <div class="row"><input id="fq" placeholder="Search findings" value="${esc(FL.q)}"><select id="fsv"><option value="">All severities</option>${['critical','high','medium','low','info'].map(s=>`<option ${FL.sev===s?'selected':''}>${s}</option>`).join('')}</select><select id="fct"><option value="">All categories</option>${cats.map(s=>`<option ${FL.cat===s?'selected':''}>${s}</option>`).join('')}</select><span class="mu">${fs.length} of ${a.findings.length}</span></div>
  <div class="tw"><table><thead><tr><th>Severity</th><th>Category</th><th>Affected URL</th><th>Finding</th><th>Evidence</th><th>Recommended fix</th><th>Status / notes</th></tr></thead><tbody>
  ${fs.map(f=>`<tr><td><span class="sv ${f.sev}">${f.sev}</span><br><small class="mu">${f.verified?'verified':'inferred / user-entered'}</small></td><td>${f.cat}</td><td class="w">${link(f.url)}</td><td class="w"><b>${esc(f.title)}</b><br><small class="mu">${esc(f.why)}</small></td><td class="w">${esc(f.evidence)}</td><td class="w">${esc(f.action)}<br><small class="mu">Effort: ${f.effort}</small></td><td><select data-fs="${esc(f.id)}"><option value="open" ${f.state==='open'?'selected':''}>Open</option><option value="resolved" ${f.state==='resolved'?'selected':''}>Marked resolved (by you)</option><option value="ignored" ${f.state==='ignored'?'selected':''}>Ignored</option></select><br><input data-fn="${esc(f.id)}" placeholder="Note" value="${esc(f.note)}"></td></tr>`).join('')||'<tr><td colspan="7" class="mu">No matching findings.</td></tr>'}</tbody></table></div>
