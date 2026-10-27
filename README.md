@@ -5,7 +5,7 @@ Four tools in one page, all running in the browser (no server, files are never u
 | Tool | Source | What it does |
 |---|---|---|
 | Clean Excel | `src/clean.src.html` | Fixes spaces, dates, duplicates, phones, emails; logs every change |
-| Invoices | `src/invoice.src.html` | Reads PDF/JPG/PNG invoices (scans via OCR), checks totals/GST/duplicates, exports Excel/CSV, **Send to Payments** |
+| Invoices | `src/invoice.src.html` + `src/invoice-core.js` | Reads PDF/JPG/PNG invoices (scans via OCR), checks totals/GST/duplicates, exports Excel/CSV, **Send to Payments** |
 | Payments | `src/payments.src.html` + `src/core.js` | Outstanding/overdue, payments, follow-ups, reminder drafts (copy / WhatsApp / email app), backup & restore |
 | Audit | `src/audit.src.html` + `src/audit-core.js` + `server/audit-server.js` | Website SEO checks with evidence, business-profile checklist, score, PDF/Excel/CSV report. Live crawling needs the small audit server (see `AUDIT_SETUP.md`); without it, paste one page's HTML source |
 
@@ -18,14 +18,17 @@ Four tools in one page, all running in the browser (no server, files are never u
 ## Develop
 ```
 node build.js          # re-embeds src/*.html into index.html (edit src/, never the base64 blocks)
-npm test               # pure-logic tests (no browser)
+npm test               # pure-logic tests, no browser: payments core + invoice reader (amounts, dates, fields, validation, build sync, data-safety)
 npm run test:audit     # Business Audit engine, SSRF protection, exports, UI (needs: npm i)
 npm run test:e2e       # real Chromium test: scan -> OCR (stubbed engine) -> Send to Payments -> import
 ```
 `index.html` is the only file you need to deploy or double-click.
 
+## Invoice reader accuracy
+Parsing and validation live in `src/invoice-core.js` (pure functions, unit-tested in `test/invoice.test.js`). It reads Indian (`1,18,000.00`), European (`1.234,50`), spaced (`1 234,50`) and `5000/-` amounts, numeric / `15-Oct-2026` / `October 27, 2026` dates, and common label variants (Net Total, Invoice Value, Amount Due, To:). When it cannot find a field it says so (a finding) instead of guessing; a supplier guessed from far down the page is marked low confidence. Unsupported tax lines (VAT, a single "GST") make the total check fail loudly rather than pass silently. **Add every invoice layout that fails for you as a fixture in `test/invoice.test.js`.**
+
 ## Known limits
 - Needs internet for: SheetJS and pdf.js (CDN, with a second CDN as fallback) and, only for scans, the OCR engine (Tesseract.js, English). Vendor these files into the repo if you need fully offline use.
 - OCR is less accurate than text PDFs; OCR'd invoices are always marked *Needs Review*.
-- Payment data lives in browser localStorage (~5 MB). Use *Download backup (JSON)* regularly.
+- Payment data lives in browser localStorage (~5 MB). If saved data ever becomes unreadable, BizPilot stops saving, keeps it untouched and offers *Download the unreadable data* / *Restore from a backup* / *Start fresh*. Still use *Download backup (JSON)* regularly.
 - Reminders are prepared, never sent automatically (sending needs a server or a business API).

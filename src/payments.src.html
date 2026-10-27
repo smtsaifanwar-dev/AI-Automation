@@ -50,9 +50,16 @@ tbody tr:hover td{background:color-mix(in srgb,var(--pr) 6%,transparent)}tr.rov 
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY='bpPaymentFollowUp.v1',DEF={business:'',sender:'',instr:'',cur:'INR',tz:'Asia/Kolkata',dueSoonDays:3,order:'DMY',cc:'91'};
-function load(){try{const j=JSON.parse(localStorage.getItem(KEY));if(j&&j.v===1){j.S={...DEF,...j.S};return j}}catch(e){}return{v:1,S:{...DEF},inv:[],pay:[],con:[],tsk:[],bat:[]}}
+/* RESCUE holds saved text that exists but could not be read (damaged, or written by a newer version). While it is set, save() never writes,
+   so the unreadable data stays in the browser untouched until the user downloads it, restores a backup, or chooses to start fresh. */
+let RESCUE=null;
+function load(){let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
+ const fresh=()=>({v:1,S:{...DEF},inv:[],pay:[],con:[],tsk:[],bat:[]});
+ if(!raw)return fresh();
+ try{const j=JSON.parse(raw);if(j&&j.v===1){j.S={...DEF,...j.S};return j}}catch(e){}
+ RESCUE=raw;return fresh()}
 let SUM=null,M=load(),T='ov',F={q:'',st:'',cur:'',limit:100},STG=null,OPEN=null,RM={id:'',tpl:'',dirty:false,subject:'',body:''},saveErr=false;
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(M));saveErr=false}catch(e){saveErr=true}};
+const save=()=>{if(RESCUE!==null)return;try{localStorage.setItem(KEY,JSON.stringify(M));saveErr=false}catch(e){saveErr=true}};
 const today=()=>PF.todayISO(M.S.tz),rows=()=>PF.rowsOf(M,today()),$f=(v,c)=>PF.fmt(v,c);
 const aud=(i,a)=>(i.audit=i.audit||[]).push({ts:new Date().toISOString(),a});
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),3500)}
@@ -138,7 +145,7 @@ function vDetail(rs){const r=rs.find(x=>x.inv.id===OPEN);if(!r)return'';const i=
  <details class="card"><summary>Audit history</summary>${(i.audit||[]).map(a=>`<div class="mu">${a.ts.slice(0,16).replace('T',' ')} ${esc(a.a)}</div>`).join('')||'none'}</details></div>`}
 function vAdd(){return`<div class="dg"><div class="row"><h1>Add invoice</h1><button class="btn" data-a="close">Close</button></div><div class="card"><div class="fl"><label>Invoice no.<input id="ni"></label><label>Customer *<input id="nc"></label><label>Email<input id="ne"></label><label>Phone<input id="np"></label><label>Invoice date<input type="date" id="nd"></label><label>Due date<input type="date" id="nu"></label><label>Currency<input id="nr" value="${esc(M.S.cur)}"></label><label>Amount *<input id="na" inputmode="decimal"></label></div><button class="btn p" data-a="addsave">Save invoice</button></div></div>`}
 function render(){$('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tb" role="tab" data-a="tab" data-v="${k}" aria-selected="${T===k}">${l}</button>`).join('');
- $('#warn').innerHTML=(STG&&STG.res&&STG.res.good.length&&T!=='imp'?`<div class="msg i">${STG.res.good.length} invoices from <b>${esc(STG.name)}</b> are waiting and are <b>not saved yet</b>. <button class="btn s" data-a="tab" data-v="imp">Review and import</button></div>`:'')+(saveErr?'<div class="msg e">Could not save to this browser (storage full or blocked). Export your data now.</div>':'');
+ $('#warn').innerHTML=(STG&&STG.res&&STG.res.good.length&&T!=='imp'?`<div class="msg i">${STG.res.good.length} invoices from <b>${esc(STG.name)}</b> are waiting and are <b>not saved yet</b>. <button class="btn s" data-a="tab" data-v="imp">Review and import</button></div>`:'')+(saveErr?'<div class="msg e">Could not save to this browser (storage full or blocked). Export your data now.</div>':'')+(RESCUE!==null?'<div class="msg e"><b>Your saved data could not be read, so it has NOT been overwritten.</b> Changes you make now will not be saved. <button class="btn s" data-a="rescue">Download the unreadable data</button> <button class="btn s" data-a="restore">Restore from a backup</button> <button class="btn s" data-a="fresh">Start fresh (erases it)</button></div>':'');
  const rs=rows();$('#main').innerHTML={ov:vOv,inv:vInv,rem:vRem,imp:vImp,set:vSet}[T](rs);
  $('#dlg').innerHTML=OPEN==='new'?vAdd():OPEN==='sum'?vSum(rs):OPEN?vDetail(rs):'';$('#dlg').hidden=!OPEN}
 const find=id=>M.inv.find(i=>i.id===id);
@@ -151,6 +158,8 @@ const A={
  pick:()=>$('#fi').click(),restore:()=>$('#fr').click(),
  setbiz:v=>{M.S.business=v;save();STG.res=PF.stageRows(STG.rows,STG.sel,M.S,M.inv);toast('Business set to '+v+'. '+STG.res.good.length+' invoices ready.')},
  setbiz2:()=>{const v=$('#bz').value.trim();if(!v)return toast('Type your business name');A.setbiz(v)},
+ rescue:()=>dl(new Blob([RESCUE||''],{type:'application/json'}),'bizpilot-unreadable-data_'+today()+'.json'),
+ fresh:()=>{if(!confirm('This permanently erases the unreadable saved data from this browser. Download it first if you might need it. Continue?'))return;RESCUE=null;M={v:1,S:{...DEF},inv:[],pay:[],con:[],tsk:[],bat:[]};save();toast('Started with a clean slate')},
  backup:()=>dl(new Blob([JSON.stringify(M)],{type:'application/json'}),'payment-followup-backup_'+today()+'.json'),
  cps:()=>copy(RM.subject),cpb:()=>copy(RM.body),
  sent:()=>{const r=rows().find(x=>x.inv.id===RM.id);addContact(RM.id,{ch:$('#rc').value,out:'Reminder sent externally (reported by user). '+$('#ro').value,tpl:RM.tpl,next:$('#rn').value});RM.dirty=false;toast('Logged as sent (self-reported)')},
@@ -210,7 +219,7 @@ document.addEventListener('drop',e=>{e.preventDefault();document.querySelectorAl
 document.addEventListener('change',async e=>{if(e.target.id!=='fr')return;const f=e.target.files[0];e.target.value='';if(!f)return;
  try{const j=JSON.parse(await f.text());if(!j||j.v!==1||!['inv','pay','con','tsk'].every(k=>Array.isArray(j[k])))throw Error('This is not a valid backup file.');
   if(!confirm('Replace ALL current data ('+M.inv.length+' invoices) with this backup ('+j.inv.length+' invoices)?'))return;
-  M={v:1,S:{...DEF,...j.S},inv:j.inv,pay:j.pay,con:j.con,tsk:j.tsk,bat:j.bat||[]};save();toast('Backup restored')}catch(x){toast(x.message)}render()});
+  RESCUE=null;M={v:1,S:{...DEF,...j.S},inv:j.inv,pay:j.pay,con:j.con,tsk:j.tsk,bat:j.bat||[]};save();toast('Backup restored')}catch(x){toast(x.message)}render()});
 const THEMES=[['ocean','Ocean','#2563eb'],['forest','Forest','#0f7a55'],['sunset','Sunset','#c2410c'],['grape','Grape','#6d28d9'],['midnight','Midnight','#0b1220']];
 function setTheme(t,keep){document.documentElement.dataset.theme=t;if(!keep)try{localStorage.setItem('bpTheme',t)}catch(e){}
  $('#th').innerHTML=THEMES.map(([k,l,c])=>`<button class="dot" data-t="${k}" style="background:${c}" title="${l}" aria-label="${l} theme" aria-pressed="${k===t}"></button>`).join('');
