@@ -54,3 +54,29 @@ Audit
 - Website score shown large with a green / amber / red colour; links use the theme blue.
 - Action plan grouped with colour dots, counts and one card per recommendation.
 All tools: one primary blue (#2563eb light, #5b9bff dark).
+
+# Phase 3 – Excel cleaner (CleanSheet)
+**Header dropdown = every value in the column (like Excel's filter list, but it spots mistakes)**
+- Click any column name: "All values in this column" lists every distinct value with its count, search box, order (most used / A→Z).
+- Mistakes are flagged with a reason: different capitalisation or spacing (`delhi`, `DELHI`, `"Delhi "`), typos of a much more common value (`Mumbay`, `Dehli`), a number in a text column, text in a number column. Values that appear once in a tidy category list get a soft hint only.
+- No false alarms by design: `Male/Female`, `UP/MP`, `Zone 1/Zone 2`, and columns of mostly-different names are never "typo-checked".
+- One click fixes: `→ Delhi` per value, **Fix all N**, or `✎ Change to…` (pick an existing value from the list or type a new one) to rename a whole category. Every bulk fix has an **Undo** button, and shows in the download's *Applied Changes* sheet as "Edited by you".
+- The table shows it too: orange `≠ N` badge on the header, orange dashed cells (click one: the suggested spelling is pre-filled; "Fine for all N" dismisses). "Only problems" includes them.
+- Tick values and press **Show only ticked values in table** to filter rows; a bar above the table clears it.
+**Excel realities**
+- Download now always contains the untouched original sheet(s) as `Original - <sheet>` (formulas and number formats intact); before, the sheet you cleaned was not included.
+- On load a note explains formulas (and never-calculated ones), merged cells and Excel error cells (#N/A, #REF! are read as blank).
+- Manual fixes now apply and download even when no automatic cleaning step ran (previously ignored).
+- Files over ~1.5 MB and bulk fixes on 8,000+ rows show a "working" overlay instead of looking frozen. (Measured: 50,000 rows load in ~6 s in the test harness. A Web Worker was NOT added.)
+**Code/tests:** new `src/clean-values.js` (pure logic, embedded by `build.js`), `test/clean.values.test.js` (12), `test/clean.ui.test.js` (30, real UI in jsdom). `npm test` includes the logic tests; `npm run test:clean` runs the UI test.
+**Known:** `test/ui.smoke.js` (payments) already fails on the Phase 2c zip (stale expectations) – untouched. Not checked in a real browser yet, only jsdom: please open index.html and try a messy file.
+
+# Phase 4 – one drop zone that decides for you + backup reminder
+**Home page smart drop zone (`src/detect.js`, embedded in `index.html` by `build.js`)**
+- Drop any file: PDF/JPG/PNG go to Invoices; an Excel/CSV is read (headers only, on this device) and sent to the right tool. A sheet that tracks money owed (invoice no or customer + due date / paid / balance + an amount) opens in **Payment Follow-up**; anything else opens in the **Excel cleaner**. No more "what should we do with it?" for obvious files.
+- Always reversible: a note says where the file went and why, with a one-click "Use ... instead" button (nothing is saved to Payments until you press Import, so switching costs nothing).
+- When it is not sure (e.g. an invoice register with no due date), it still asks, with the likely choice highlighted and the reason shown. If the file cannot be read, or SheetJS cannot load (offline / 6 s timeout per CDN), it asks instead of hanging.
+**Payment Follow-up: backup reminder**
+- Data lives only in the browser, so a banner appears once there are invoices and there is no backup, or the last one is 7+ days old: "Download backup" (one click, remembers the date) or "Remind me later" (3 days). Never shown while data is unreadable or a save error is already displayed.
+**Tests:** `test/detect.test.js` (13), `test/home.smart.test.js` (14, real home page in jsdom), `test/payments.backup.test.js` (10). Run `npm test`, `npm run test:home`, `npm run test:backup`, `npm run test:clean`.
+**Known:** `test/ui.smoke.js` is stale since Phase 2 (looks for elements that were renamed) and still fails; it is not part of `npm test`. Everything was verified in jsdom only, not in a real browser.

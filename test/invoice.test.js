@@ -59,7 +59,7 @@ t('D2 retail invoice: supplier, total and line item read',()=>{
 /* ---------- build integrity ---------- */
 t('Z1 index.html embeds exactly the current src/ (run "node build.js" if this fails)',()=>{
  const root=path.join(__dirname,'..'),R=f=>fs.readFileSync(path.join(root,f),'utf8'),h=R('index.html');
- const want={clean:R('src/clean.src.html'),invoice:R('src/invoice.src.html').replace('/*INVCORE*/',()=>R('src/invoice-core.js')),payments:R('src/payments.src.html').replace('/*CORE*/',()=>R('src/core.js')),audit:R('src/audit.src.html').replace('/*CORE*/',()=>R('src/audit-core.js'))};
+ const want={clean:R('src/clean.src.html').replace('/*CLEANVAL*/',()=>R('src/clean-values.js')),invoice:R('src/invoice.src.html').replace('/*INVCORE*/',()=>R('src/invoice-core.js')),payments:R('src/payments.src.html').replace('/*CORE*/',()=>R('src/core.js')),audit:R('src/audit.src.html').replace('/*CORE*/',()=>R('src/audit-core.js'))};
  for(const k in want){const m=h.match(new RegExp('<script type="text/plain" id="src-'+k+'">([^<]*)</script>'));assert.ok(m,'no block for '+k);assert.equal(Buffer.from(m[1],'base64').toString('utf8'),want[k],k+' is out of date')}});
 
 /* ---------- payments: unreadable saved data must never be overwritten ---------- */

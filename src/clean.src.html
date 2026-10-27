@@ -93,6 +93,24 @@ th.hc{cursor:pointer}th.hc:hover{background:color-mix(in srgb,var(--pr) 9%,var(-
 /* ===== Embedded polish: no double header, no decorative motion ===== */
 .emb .nav,.emb .hero p.s,.emb .foot{display:none}.emb .hero{padding:4px 0 6px}.emb h1{font-size:clamp(22px,3.4vw,30px)}.emb .steps{margin-bottom:8px}
 h1 span,#drop svg,.stp.sug,.hero,.card,.stat div,#res{animation:none!important}h1 span{background-size:100%}#drop:hover,.drop:hover{transform:none}
+/* ===== Column value explorer (header dropdown) ===== */
+#ed.col.vw{width:430px}
+.vx{border-bottom:1px solid var(--bd);margin:2px 0 10px;padding-bottom:10px}
+.vxw{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:color-mix(in srgb,#e8590c 12%,var(--card));border:1px solid color-mix(in srgb,#e8590c 40%,var(--bd));border-radius:10px;padding:7px 9px;margin:6px 0;font-size:12.5px}.vxw span{flex:1 1 150px}
+.vxl{max-height:min(300px,38vh);overflow:auto;border:1px solid var(--bd);border-radius:10px;margin:6px 0;background:var(--card)}
+.vxr{display:grid;grid-template-columns:auto 1fr auto;gap:2px 8px;align-items:center;padding:6px 9px;border-bottom:1px solid var(--bd);font-size:13px}.vxr:last-child{border:0}
+.vxr.sv{background:color-mix(in srgb,#e8590c 11%,transparent)}.vxr.so{background:color-mix(in srgb,#f5b301 10%,transparent)}
+.vxr .vv{overflow-wrap:anywhere}.vxr .vc{color:var(--mu);font-weight:600;font-size:12px}
+.vxr .vt{grid-column:2/4;font-size:11.5px;color:var(--mu)}.vxr .vxa{grid-column:2/4;display:flex;gap:6px;flex-wrap:wrap}.vxr .vxa .b2{padding:3px 10px;font-size:12px}
+.vxe{grid-column:1/4;display:flex;gap:6px;margin-top:4px}.vxe input{flex:1;min-width:0;font:inherit;padding:6px 8px;border-radius:8px}
+#vxs{flex:1;min-width:0;font:inherit;padding:7px 10px;border-radius:10px}
+td.sv{outline:1.5px dashed #e8590c;outline-offset:-2px}
+.wb.sv{background:#e8590c;color:#fff}
+@media(prefers-color-scheme:dark){.wb.sv{background:#ff922b;color:#2b1200}}
+#busy{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:blur(2px)}#busy.hid{display:none!important}
+#busy>div{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 20px;box-shadow:var(--sh);font-weight:600}
+#busy i{width:18px;height:18px;border-radius:50%;border:3px solid var(--bd);border-top-color:var(--pr);animation:spn .8s linear infinite!important}@keyframes spn{to{transform:rotate(360deg)}}
+#xn{align-items:flex-start}
 </style></head><body><main>
 <script>if(parent!==window)document.documentElement.classList.add("emb")</script><header class="nav"><div class="brand"><svg viewBox="0 0 32 32"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a5cff"/><stop offset="1" stop-color="#12b886"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lg)"/><path d="M9 16.5l5 5 9-11" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>CleanSheet</div><span class="pill">🔒 Runs in your browser · original file never changed</span></header>
 <section class="hero"><h1>Clean any Excel file in <span>one click</span></h1>
@@ -105,6 +123,7 @@ h1 span,#drop svg,.stp.sug,.hero,.card,.stat div,#res{animation:none!important}h
 <div id="work" class="hid">
 <div class="card"><div class="row"><b id="fn"></b><span id="info" class="s" style="margin:0"></span>
 <span class="row" style="margin-left:auto"><button type="button" class="g" data-a="chfile">📁 Change file</button> Sheet: <select id="sh"></select></span></div></div>
+<div id="xn" class="pb hid" role="note"></div>
 <div class="seg hid" id="modes" role="tablist"><button type="button" class="on" data-m="q">⚡ Quick clean<small>one click, review if you like</small></button><button type="button" data-m="s">🧭 Step by step<small>execute, preview, undo, repeat</small></button></div>
 <div class="card"><details><summary><b>Column check</b> <small style="color:var(--mu)">(I guessed each column's type - change only if I got one wrong)</small></summary><div id="roles" class="roles"></div></details></div>
 <div id="qm" class="hid"><div id="sum" class="card"></div><div id="rv"></div>
@@ -121,10 +140,11 @@ h1 span,#drop svg,.stp.sug,.hero,.card,.stat div,#res{animation:none!important}h
 </div><div id="st"></div><div id="res" class="hid" style="margin-top:14px"></div></div>
 <p class="s">Dates are read as day/month/year (Indian style) unless a column clearly uses month/day. Original file is never changed; removed rows are saved in a separate sheet. Flags are suggestions – please review.</p><div class="foot">© CleanSheet · Your data never leaves this device</div>
 </main>
-<div id="ed" role="dialog" aria-label="Edit cell"></div><div id="toast" role="status" aria-live="polite"></div>
+<div id="ed" role="dialog" aria-label="Edit cell"></div><div id="toast" role="status" aria-live="polite"></div><div id="busy" class="hid" role="status" aria-live="polite"><div><i></i><span>Working…</span></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>window.XLSX||document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
 <script>
+/*CLEANVAL*/
 const $=s=>document.querySelector(s);let SB=innerWidth<=820,NI=0,OP=false,LG=(()=>{try{return localStorage.getItem('cs_lg')==='0'}catch(e){return false}})();
 const O=[[1,'Detect duplicates','Exact + possible duplicates (flagged, never deleted)'],[2,'Trim spaces','" Jaipur " → "Jaipur"'],[3,'Standardize text','jaipur, JAIPUR → Jaipur'],[4,'Find blank cells','Missing email or amount (flagged)'],[5,'Fix data types','"1500" → number 1500'],[6,'Standardize dates','Mixed date formats → yyyy-mm-dd'],[7,'Validate emails','Invalid email format flagged'],[8,'Validate phone numbers','Not a valid 10-digit Indian mobile flagged'],[9,'Clean column names','"Customer Name " → customer_name'],[10,'Split columns','Full name → first / last (choose column below)'],[11,'Merge columns','City + State (choose columns below)'],[12,'Find inconsistent categories','Delhi, delhi, DELHI → one spelling'],[13,'Detect outliers','Unusually high / low numbers flagged'],[14,'Remove empty rows/columns','Unused worksheet areas'],[15,'Find invalid values','Negative quantity/amount, unknown status flagged'],[16,'Auto-fix phone & email','+91 98765 43210 → 9876543210 · emails to lowercase'],[17,'Remove exact duplicate rows','Identical rows moved to the "Removed Rows" sheet - nothing is lost']];
 let WB,FN,ROWS,HEADS,SCAN={},SCANR=null,ROFF=0,LAST=null,EX=new Set(),AC=new Set(),PL={};
@@ -263,7 +283,7 @@ function st(){const box=$('#st');if(!ROWS||!ROWS.length){box.innerHTML='';return
  pd=act.map(k=>`<label class="stp${k===sug?' sug':''}"><input type="checkbox" data-sk="${k}"${PK2.has(k)?' checked':''}><span>${k===sug?'<span class="tg">Suggested next</span><br>':''}<strong>${nm(k)[1]}</strong><br><small>${nm(k)[2]} · ${fd(k)} ${FL.includes(k)?'to flag':'to fix'}</small></span></label>`).join(''),z=pend.length-act.length;
  box.innerHTML=`<div class="stg"><div class="card"><div class="sh"><b>Cleaning steps</b><small>Tick → Execute → review → repeat</small></div>${dn?`<p class="dh">✅ Applied (${STEPS.length})</p>${dn}`:''}<p class="dh">${act.length?'▶ Available next':'🎉 No more issues found'}</p>${pd}${z?`<p class="s"><small>✓ ${z} other check${z>1?'s':''} found nothing to fix</small></p>`:''}${act.length?`<button type="button" class="p" id="sx" style="margin-top:8px"${PK2.size?'':' disabled'}>▶ Execute selected</button><button type="button" class="g" id="sall" style="margin-top:8px;width:100%">Execute all remaining</button>`:''}${STEPS.length?`<button type="button" class="g" id="srs" style="margin-top:8px;width:100%">↺ Reset all steps</button>`:''}<button type="button" class="p" id="sdl" style="margin-top:12px"${STEPS.length?'':' disabled'}>⬇ Download cleaned file</button></div>
  <div class="card"><div class="sh"><b>Live preview</b><small>${RR.length} rows · ${CUR?CUR.changes.length:0} changes applied · ${CUR?CUR.flags.length:0} flagged</small></div><p style="margin:6px 0"><span class="ch ok">green = changed by last step</span><span class="ch wn">yellow = please double-check · click to fix</span></p><div class="tw" style="max-height:460px"><table><thead><tr>${hd.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${RR.slice(0,100).map(r=>`<tr>${hd.map(h=>`<td class="${gk.has(r.r+'|'+h)?'ch2':fk.has(r.r+'|'+h)?'f':''}">${esc(r.d[h])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${RR.length>100?`<small>Showing first 100 rows – the download has all ${RR.length}.</small>`:''}</div></div>`}
-function dls(){if(!STEPS.length)return err('Execute at least one step first.');const c=[...document.querySelectorAll('[data-o]')],pv=c.map(x=>x.checked);c.forEach(x=>x.checked=STEPS.includes(+x.dataset.o));try{go()}finally{c.forEach((x,i)=>x.checked=pv[i])}}
+function dls(){if(!STEPS.length&&!MAN.size)return err('Execute at least one step first.');const c=[...document.querySelectorAll('[data-o]')],pv=c.map(x=>x.checked);c.forEach(x=>x.checked=STEPS.includes(+x.dataset.o));try{go()}finally{c.forEach((x,i)=>x.checked=pv[i])}}
 function err(m){const e=$('#err');e.textContent=m;e.classList.toggle('hid',!m)}
 function load(f){err('');if(!f)return;if(f.size>25e6)return err('File is larger than 25 MB. Please split it and try again.');
  if(!/\.(xlsx|xls|csv)$/i.test(f.name))return err('Unsupported file. Please upload .xlsx, .xls or .csv.');
@@ -297,7 +317,7 @@ function sheet(){const a0=XLSX.utils.sheet_to_json(WB.Sheets[$('#sh').value],{he
  const ch=n=>HEADS.map(h=>`<label><input type="checkbox" name="${n}" value="${esc(h)}"> ${esc(h)}</label>`).join('');
  $('#dupc').innerHTML=ch('dup');$('#mgc').innerHTML=ch('mg');$('#spc').innerHTML='<option value="">— none —</option>'+HEADS.map(h=>`<option>${esc(h)}</option>`).join('');EX.clear();AC.clear();STEPS=[];SK=[];PK2=new Set();sy();sm();if(MODE==='s')st()}
 function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forEach(c=>{if(c.checked)on[c.dataset.o]=1});
- if(!Object.keys(on).length)return err('Please tick at least one option.');
+ if(!Object.keys(on).length&&!MAN.size)return err('Please tick at least one option.');
  const g=n=>[...document.querySelectorAll(`[name=${n}]:checked`)].map(c=>c.value);
  const cfg={roles:getRoles(),dmode:$('#dpm').value,dup:g('dup'),split:$('#spc').value,merge:g('mg'),sep:$('#mgs').value,mname:$('#mgn').value.trim(),statuses:$('#sts').value.split(',').map(x=>x.trim()).filter(Boolean)};
  if(on[10]&&!cfg.split)return err('Option 10 needs a column: choose "Split column" in settings.');
@@ -307,11 +327,11 @@ function go(){err('');try{const on={};document.querySelectorAll('[data-o]').forE
  const w=XLSX.utils.book_new(),add=(n,d,h)=>XLSX.utils.book_append_sheet(w,XLSX.utils.json_to_sheet(d,h?{header:h}:{}),n);
  add('Cleaned',clean,o.H);{const ws=w.Sheets['Cleaned'];if(ws&&ws['!ref']){const rg=XLSX.utils.decode_range(ws['!ref']);ws['!cols']=o.H.map(h=>({wch:Math.min(40,Math.max(String(h).length,...clean.slice(0,300).map(r=>String(r[h]??'').length))+2)}));
  o.dc.forEach(h=>{const c=o.H.indexOf(h);if(c<0)return;for(let r=1;r<=rg.e.r;r++){const x=ws[XLSX.utils.encode_cell({r,c})],m=x&&x.t==='s'&&x.v.match(/^(\d{4})-(\d\d)-(\d\d)(?: (\d\d):(\d\d))?$/);if(m&&iso(+m[1],+m[2],+m[3])){x.t='n';x.v=(Date.UTC(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0))-Date.UTC(1899,11,30))/864e5;x.z=m[4]?'yyyy-mm-dd hh:mm':'yyyy-mm-dd';delete x.w}}})}}add('Removed Rows',o.removed.length?o.removed:[{Info:'No rows removed'}]);add('Flags',o.flags.length?o.flags:[{Info:'No issues flagged'}]);
- add('Applied Changes',o.changes.length?o.changes:[{Info:'No cell changes applied'}]);XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(mkSummary(o,on,ROWS.length,clean.length)),'Summary');WB.SheetNames.filter(n=>n!==$('#sh').value).forEach(n=>{try{XLSX.utils.book_append_sheet(w,WB.Sheets[n],('Original - '+n).slice(0,31))}catch(e){}});
+ add('Applied Changes',o.changes.length?o.changes:[{Info:'No cell changes applied'}]);XLSX.utils.book_append_sheet(w,XLSX.utils.aoa_to_sheet(mkSummary(o,on,ROWS.length,clean.length)),'Summary');{const used=new Set(w.SheetNames),cur=$('#sh').value;[cur,...WB.SheetNames.filter(n=>n!==cur)].forEach(n=>{let b=('Original - '+n).slice(0,31),u=b,i=2;while(used.has(u))u=b.slice(0,27)+' ('+i+++')';used.add(u);try{XLSX.utils.book_append_sheet(w,WB.Sheets[n],u)}catch(e){}})}
  LAST=[w,FN.replace(/\.\w+$/,'')+'_cleaned.xlsx'];sv(LAST[0],LAST[1])
  const fm=new Set(o.flags.map(f=>f.Row+'|'+f.Column)),rr=o.R.slice(0,100),rd=O.filter(x=>on[x[0]]).map(x=>[x,dtl(x[0],o)]).filter(a=>a[1].n),rp=rd.length?`<p class="dh">📋 Detailed report – click any item to see exactly which rows and cells</p>`+rd.map(a=>`<details class="rd"><summary><b>${a[0][0]}. ${a[0][1]}</b><span class="bg">${a[1].n}</span></summary>${a[1].h}</details>`).join(''):'';
  $('#res').innerHTML=`<div class="stat"><div><b class="cu">${ROWS.length}</b>rows before</div><div><b class="cu">${clean.length}</b>rows after</div><div><b class="cu">${o.removed.length}</b>rows removed</div><div><b class="cu">${o.flags.length}</b>cells flagged</div></div>
- <p><b>✅ Done!</b> Your cleaned file is saving as ${esc(FN.replace(/\.\w+$/,''))}_cleaned.xlsx . Open the “Cleaned” sheet for your clean data and “Flags” for items to check by hand. <button type="button" class="g" id="dl">⬇ Download again</button></p>
+ <p><b>✅ Done!</b> Your cleaned file is saving as ${esc(FN.replace(/\.\w+$/,''))}_cleaned.xlsx . Open the “Cleaned” sheet for your clean data and “Flags” for items to check by hand. Your untouched original (formulas included) is kept in the “Original - …” sheet. <button type="button" class="g" id="dl">⬇ Download again</button></p>
  ${rp}<p style="margin-top:14px"><small>Preview of first ${rr.length} rows – yellow cells are flagged for your review.</small></p><div class="tw"><table><thead><tr>${o.H.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rr.map(r=>`<tr>${o.H.map(h=>`<td class="${fm.has(r.r+'|'+h)?'f':''}">${esc(r.d[h])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
  toast('⬇ Cleaned file downloaded')}
  catch(x){err('Processing failed, so no file was created. Your original file is untouched. ('+x.message+')')}}
@@ -333,13 +353,13 @@ const nmk=k=>O.find(o=>o[0]==k)[1],cfg2=rl=>({roles:rl,dmode:$('#dpm').value,dup
 const sv2=x=>{const s=x==null||x===''?'∅':String(x);return s.length>40?s.slice(0,40)+'…':s};
 function toast(m,u){const t=$('#toast');t.innerHTML=esc(m)+(u?'<button type="button" data-a="undo">Undo</button>':'');t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),6000)}
 sm=function(){};
-const _sheet=sheet;sheet=function(){HIST=[];VIEW=-1;PREVK=0;PC={};MAN.clear();IGN.clear();document.querySelector('.hero').classList.add('hid');$('#drop').classList.add('hid');_sheet();if(ROWS&&ROWS.length)autoRun()};
+const _sheet=sheet;sheet=function(){HIST=[];VIEW=-1;PREVK=0;PC={};MAN.clear();IGN.clear();FILT=null;VXS=null;MUNDO=[];document.querySelector('.hero').classList.add('hid');$('#drop').classList.add('hid');try{_sheet();if(ROWS&&ROWS.length)autoRun()}finally{busyOff()}showNotes()};
 function exec(keys,label){const a=SEQ.filter(k=>keys.includes(k)&&!STEPS.includes(k));if(!a.length)return;HIST.push([...STEPS]);STEPS.push(...a);SK=a;VIEW=-1;PREVK=0;st();toast('✓ '+(label||a.map(nmk).join(', '))+' done',1)}
 function undo(){if(!HIST.length)return;STEPS=HIST.pop();SK=[];VIEW=-1;PREVK=0;st();toast('↶ Undone')}
 function selMark(){document.querySelectorAll('.pd').forEach(x=>x.classList.toggle('sel',+x.dataset.p===PREVK))}
 function setPrev(k){if(VIEW!==-1||k===PREVK)return;PREVK=k;selMark();drawTable()}
 st=function(){const box=$('#st');if(!ROWS||!ROWS.length){box.innerHTML='';return}PC={};
- const up=VIEW===-2?[]:VIEW<0?STEPS:STEPS.slice(0,VIEW+1),r0=getRoles(),CUR=up.length?run(ROWS,HEADS,onOf(up),cfg2(r0)):null;if(CUR&&VIEW===-1)pk(CUR);
+ const up=VIEW===-2?[]:VIEW<0?STEPS:STEPS.slice(0,VIEW+1),r0=getRoles(),CUR=(up.length||(VIEW===-1&&(MAN.size||IGN.size)))?run(ROWS,HEADS,onOf(up),cfg2(r0)):null;if(CUR&&VIEW===-1)pk(CUR);
  const RR=CUR?CUR.R.map(r=>({r:r.r,d:r.d})):ROWS.map((d,i)=>({r:i+2+ROFF,d})),hd=CUR?CUR.H:HEADS,rl={};Object.entries(r0).forEach(([k,v])=>rl[(CUR&&CUR.map&&CUR.map[k])||k]=v);
  const SC=run(RR.map(r=>({...r.d,__r:r.r})),hd,onOf(O.map(o=>o[0])),cfg2(rl)),fd=k=>SC.st[k]||0,act=SEQ.filter(k=>!STEPS.includes(k)&&fd(k)>0),
  safe=act.filter(k=>FIXK.includes(k)),flg=act.filter(k=>FLGK.includes(k)),opt=act.filter(k=>!FIXK.includes(k)&&!FLGK.includes(k)),sum=a=>a.reduce((s,k)=>s+fd(k),0),fl=CUR?CUR.flags:[],open=fl.filter(f=>!/^Applied/.test(f.Status)).length;
@@ -352,7 +372,7 @@ st=function(){const box=$('#st');if(!ROWS||!ROWS.length){box.innerHTML='';return
  idv=r=>{const x=ROWS[r-2-ROFF];return x&&x[HEADS[0]]!=null?String(x[HEADS[0]]):''},
  iss=[...fl].sort((a,b)=>a.Row-b.Row).slice(0,80).map(f=>{const s=f['Suggested correction'],acc=s!==''&&AC.has(ak(f)),i=idv(f.Row);return`<div class="is"><span><b>Row ${f.Row}</b>${i?' ('+esc(i)+')':''} · ${esc(f.Column)}<br><small>${esc(f.Issue)} · ${esc(vis(f.Value))}${s!==''?' → <b>'+esc(s)+'</b>':''}</small></span><button type="button" class="b2" data-a="go" data-r="${f.Row}" title="Show in table">📍 Show</button>${s!==''&&VIEW===-1?(acc?`<button type="button" class="b2" data-a="rej" data-x="${esc(ak(f))}">↶ Undo</button>`:`<button type="button" class="b2 pr" data-a="acc" data-x="${esc(ak(f))}">Accept</button>`):''}</div>`}).join('');
  box.innerHTML=`<div class="bar2" role="toolbar"><button type="button" class="b2${SB?' on':''}" data-a="sb" aria-pressed="${SB}" title="Show or hide the steps panel">${SB?'☰ Show steps':'◧ Hide steps'}</button><div class="t">${STEPS.length?`<b>✓ ${CUR?CUR.changes.length:0} fixes applied automatically</b><br>${open?`<b class="rd2">${open}</b> cells need a quick look (yellow)`:'Nothing left to review'}`:(act.length?`<b>${sum(act)}</b> issues found`:'<b>Your file looks clean</b>')}</div>
- ${!STEPS.length&&act.length?'<button type="button" class="b2 pr" data-a="auto">✨ Auto-clean</button>':''}${ns?`<button type="button" class="b2 wn" data-a="accall">✔ Accept ${ns} suggestion${ns>1?'s':''}</button>`:''}${bkn(fl)?`<button type="button" class="b2 wn" data-a="blanks">✏️ Fill blank cells (${bkn(fl)})</button>`:''}${open?'<button type="button" class="b2" data-a="nxt" title="Jump to the next yellow cell">Next issue ▸</button>':''}<button type="button" class="b2" data-a="undo"${HIST.length?'':' disabled'} title="Undo (Ctrl+Z)">↶</button><button type="button" class="b2" data-a="reset"${STEPS.length?'':' disabled'} title="Reset everything">↺</button><button type="button" class="b2 pr" data-a="dl"${STEPS.length?'':' disabled'} style="padding:12px 24px;font-size:15px">⬇ Download cleaned file</button></div>
+ ${!STEPS.length&&act.length?'<button type="button" class="b2 pr" data-a="auto">✨ Auto-clean</button>':''}${ns?`<button type="button" class="b2 wn" data-a="accall">✔ Accept ${ns} suggestion${ns>1?'s':''}</button>`:''}${bkn(fl)?`<button type="button" class="b2 wn" data-a="blanks">✏️ Fill blank cells (${bkn(fl)})</button>`:''}${open?'<button type="button" class="b2" data-a="nxt" title="Jump to the next yellow cell">Next issue ▸</button>':''}<button type="button" class="b2" data-a="undo"${HIST.length?'':' disabled'} title="Undo (Ctrl+Z)">↶</button><button type="button" class="b2" data-a="reset"${STEPS.length?'':' disabled'} title="Reset everything">↺</button><button type="button" class="b2 pr" data-a="dl"${STEPS.length||MAN.size?'':' disabled'} style="padding:12px 24px;font-size:15px">⬇ Download cleaned file</button></div>
  <div class="lay${SB?' nosb':''}"><div><div class="card"><div class="sh"><b>Applied steps</b><small>click = view · ✕ = remove</small><button type="button" class="hs" data-a="sb" title="Hide this panel" aria-label="Hide steps panel">‹</button></div>${ap}</div>
  <details class="card${VIEW!==-1?' dim':''}"><summary style="cursor:pointer"><b>More checks (${act.length})</b> <small style="color:var(--mu)">optional · tap an item to preview</small></summary>${act.length?grp('✨ Safe fixes',safe)+grp('🚩 Flag for review',flg)+grp('Optional',opt)+(act.length>1?'<button type="button" class="b2" data-a="all" style="width:100%;margin-top:10px">Run everything</button>':''):'<p class="s">🎉 No more issues found</p>'}</details></div>
  <div><div class="card" id="pvw"></div>${fl.length?`<div class="card"><div class="sh"><b>Issues</b><small>${fl.length} found${ns?' · '+ns+' have a suggested fix':''}</small>${ns?'<button type="button" class="b2 pr" data-a="accall" style="margin-left:auto">Accept all suggestions</button>':''}</div>${iss}${fl.length>80?'<small>Showing first 80 – all are in the download’s Flags sheet.</small>':''}</div>`:''}</div></div>`;
@@ -363,10 +383,10 @@ function drawTable(){const D=DATA,el=$('#pvw');if(!el||!D.hd)return;let hd=D.hd,
   pv=`<div class="pb"><span>👁 <b>Preview – not applied yet:</b> ${esc(nmk(PREVK))} → ${chg.length} cell changes${flg.length?', '+flg.length+' flagged':''}${rem>0?', '+rem+' rows moved aside':''}</span><button type="button" class="b2 pr" data-a="run" data-k="${PREVK}">Apply</button><button type="button" class="b2" data-a="unprev">✕ Close</button></div>`}
  else if(VIEW!==-1)pv=`<div class="pb"><span>🕘 Viewing ${VIEW===-2?'the original data':'data after “'+esc(nmk(STEPS[VIEW]))+'”'} (read-only)</span><button type="button" class="b2 pr" data-a="latest">Back to latest</button></div>`;
  const cm=new Map(),fm=new Map(),rf=new Set(),rx=new Set(),cc={};chg.forEach(c=>cm.set(c.Row+'|'+c.Column,c));flg.forEach(f=>{if(/^Applied/.test(f.Status))return;if(f.Column==='(whole row)'){rf.add(f.Row);if(/^Exact/.test(f.Issue))rx.add(f.Row)}else{fm.set(f.Row+'|'+f.Column,f.Issue);cc[f.Column]=(cc[f.Column]||0)+1}});
- const TOT=RR.length;if(OP){const pr=new Set([...rf]),dupcols=rf.size>0;fm.forEach((v,k)=>pr.add(+k.slice(0,k.indexOf('|'))));hd=hd.filter((h,i)=>i===0||cc[h]||(dupcols&&/name|email|phone|mobile/i.test(h)));RR=RR.filter(r=>pr.has(r.r))}
+ if(FILT&&!hd.includes(FILT.col))FILT=null;if(FILT)RR=RR.filter(r=>FILT.vals.has(vk(r.d[FILT.col])));const FCN=RR.length,TOT=RR.length;if(OP){const pr=new Set([...rf]),dupcols=rf.size>0,SV=svScan();fm.forEach((v,k)=>pr.add(+k.slice(0,k.indexOf('|'))));SV.rows.forEach(x=>pr.add(x));hd=hd.filter((h,i)=>i===0||cc[h]||SV.cols.has(h)||(dupcols&&/name|email|phone|mobile/i.test(h)));RR=RR.filter(r=>pr.has(r.r))}
  const td=(r,h)=>{const k=r.r+'|'+h,c=cm.get(k),v=r.d[h];if(c)return`<td class="${pre?'pc':'ch2'}" title="${esc(c.Reason||'')}"><span class="o">${esc(sv2(c['Old value']))}</span>${esc(sv2(v))}</td>`;
-  return fm.has(k)?`<td class="${pre?'pf':'f'}" title="${esc(fm.get(k))}">${esc(v)}</td>`:rf.has(r.r)&&h===hd[0]?`<td class="dupc" title="${rx.has(r.r)?'Exact duplicate of another row':'Possible duplicate of another row – please check'}"><span class="dp2">${rx.has(r.r)?'duplicate':'possible duplicate'}</span>${esc(v)}</td>`:`<td>${esc(v)}</td>`};
- el.innerHTML=`<div class="sh"><b>Live preview</b><small>${OP?RR.length+' of '+TOT+' rows (problems only)':RR.length+' rows'} · ${D.CUR?D.CUR.changes.length:0} fixes applied · ${D.fl.filter(f=>!/^Applied/.test(f.Status)).length} to check</small><span class="tl">${LG?'<button type="button" class="b2" data-a="lg" title="Show the colour guide">ℹ Colour guide</button>':''}<button type="button" class="b2${OP?' on':''}" data-a="op" aria-pressed="${OP}" title="Show only rows and columns that need attention">🔍 Only problems</button></span></div>${BN&&VIEW===-1&&!pre?'<div class="pb"><span>💡 <b>Nothing was deleted.</b> Yellow cells are just things worth a second look – click one to correct it, or choose “Looks fine”.</span><button type="button" class="b2" data-a="tip">Got it</button></div>':''}${pv}${LG?'':'<p class="lgd"><span class="ch ok">green = fixed for you (old value struck through)</span><span class="ch wn">yellow = please double-check · click to fix</span><button type="button" class="hs" data-a="lg" title="Hide this guide" aria-label="Hide colour guide">✕ Got it</button></p>'}${OP&&!RR.length?'<p class="s" style="padding:22px;text-align:center">🎉 No problem cells left – everything looks fine.</p>':''}<div class="tw${OP&&!RR.length?' hid':''}" style="max-height:460px"><table><thead><tr>${hd.map(h=>`<th class="hc" data-col="${esc(h)}" title="Click to check or fix this column">${esc(h)}<span class="cv">▾</span>${cc[h]?`<span class="wb" title="${cc[h]} cell(s) to check">${cc[h]}</span>`:''}</th>`).join('')}</tr></thead><tbody>${RR.slice(0,200).map(r=>`<tr id="r${r.r}">${hd.map(h=>td(r,h).replace('<td ',`<td data-r="${r.r}" data-c="${esc(h)}" `)).join('')}</tr>`).join('')}</tbody></table></div>${RR.length>200?`<small>Showing first 200 rows – the download has all ${RR.length}.</small>`:''}`}
+  return fm.has(k)?`<td class="${pre?'pf':'f'}" title="${esc(fm.get(k))}">${esc(v)}</td>`:rf.has(r.r)&&h===hd[0]?`<td class="dupc" title="${rx.has(r.r)?'Exact duplicate of another row':'Possible duplicate of another row – please check'}"><span class="dp2">${rx.has(r.r)?'duplicate':'possible duplicate'}</span>${esc(v)}</td>`:((f)=>f?`<td class="${pre?'pf':'f'} sv" title="${esc(f.msg)}">${esc(v)}</td>`:`<td>${esc(v)}</td>`)(svf(r.r,h,v))};
+ el.innerHTML=`<div class="sh"><b>Live preview</b><small>${OP?RR.length+' of '+TOT+' rows (problems only)':RR.length+' rows'} · ${D.CUR?D.CUR.changes.length:0} fixes applied · ${D.fl.filter(f=>!/^Applied/.test(f.Status)).length} to check</small><span class="tl">${LG?'<button type="button" class="b2" data-a="lg" title="Show the colour guide">ℹ Colour guide</button>':''}<button type="button" class="b2${OP?' on':''}" data-a="op" aria-pressed="${OP}" title="Show only rows and columns that need attention">🔍 Only problems</button></span></div>${FILT?FBAR(FCN):''}${BN&&VIEW===-1&&!pre?'<div class="pb"><span>💡 <b>Nothing was deleted.</b> Yellow cells are just things worth a second look – click one to correct it, or choose “Looks fine”.</span><button type="button" class="b2" data-a="tip">Got it</button></div>':''}${pv}${LG?'':'<p class="lgd"><span class="ch ok">green = fixed for you (old value struck through)</span><span class="ch wn">yellow = please double-check · click to fix</span><button type="button" class="hs" data-a="lg" title="Hide this guide" aria-label="Hide colour guide">✕ Got it</button></p>'}${OP&&!RR.length?'<p class="s" style="padding:22px;text-align:center">🎉 No problem cells left – everything looks fine.</p>':''}<div class="tw${OP&&!RR.length?' hid':''}" style="max-height:460px"><table><thead><tr>${hd.map(h=>`<th class="hc" data-col="${esc(h)}" title="Click: see all values, fix spelling mistakes, filter rows">${esc(h)}<span class="cv">▾</span>${svb(h)}${cc[h]?`<span class="wb" title="${cc[h]} cell(s) to check">${cc[h]}</span>`:''}</th>`).join('')}</tr></thead><tbody>${RR.slice(0,200).map(r=>`<tr id="r${r.r}">${hd.map(h=>td(r,h).replace('<td ',`<td data-r="${r.r}" data-c="${esc(h)}" `)).join('')}</tr>`).join('')}</tbody></table></div>${RR.length>200?`<small>Showing first 200 rows – the download has all ${RR.length}.</small>`:''}`}
 $('#st').addEventListener('mouseover',e=>{const p=e.target.closest('.pd');if(p&&!e.target.closest('button'))setPrev(+p.dataset.p)});
 $('#st').addEventListener('click',e=>{const p=e.target.closest('.pd');if(p&&!e.target.closest('button'))setPrev(+p.dataset.p)});
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,k=+b.dataset.k,w=f=>{b.disabled=true;b.textContent='Working…';setTimeout(f,25)};
@@ -457,4 +477,79 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a="sb"],[d
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a="lg"],[data-a="op"]');if(!b)return;
  if(b.dataset.a==='lg'){LG=!LG;try{localStorage.setItem('cs_lg',LG?'0':'1')}catch(x){}}else OP=!OP;
  drawTable()});
+/* ===== Column value explorer: click a header to see EVERY value, spot spelling mistakes, fix or filter in one click ===== */
+let FILT=null,VXS=null,MUNDO=[];const VC=new WeakMap();
+const vk=v=>CleanVal.key(v,blank);
+function colInfo(h){const D=DATA;if(!D||!D.RR||!D.hd||!D.hd.includes(h))return null;let m=VC.get(D.RR);if(!m){m={};VC.set(D.RR,m)}return m[h]||(m[h]=CleanVal.analyze(D.RR,h,blank))}
+function svf(r,h,v){const I=colInfo(h);if(!I||!I.strong||IGN.has(r+'|'+h))return null;const f=I.flags.get(vk(v));return f&&f.strong?f:null}
+function svc(h){const I=colInfo(h);if(!I||!I.strong)return 0;let n=0;I.unique.forEach(e=>{if(e.flag&&e.flag.strong)e.rows.forEach(r=>{if(!IGN.has(r+'|'+h))n++})});return n}
+const svb=h=>{const n=svc(h);return n?`<span class="wb sv" title="${n} cell(s) with a spelling that looks like a mistake - click the column name to review">≠ ${n}</span>`:''};
+function svScan(){const rows=new Set(),cols=new Set();((DATA&&DATA.hd)||[]).forEach(h=>{const I=colInfo(h);if(!I||!I.strong)return;I.unique.forEach(e=>{if(e.flag&&e.flag.strong)e.rows.forEach(r=>{if(!IGN.has(r+'|'+h)){rows.add(r);cols.add(h)}})})});return{rows,cols}}
+const FBAR=n=>`<div class="pb"><span>🔎 Showing only rows where <b>${esc(FILT.col)}</b> = ${[...FILT.vals].slice(0,4).map(x=>'“'+esc(sv2(x))+'”').join(', ')}${FILT.vals.size>4?' +'+(FILT.vals.size-4)+' more':''} · <b>${n}</b> row${n===1?'':'s'}</span><button type="button" class="b2" data-a="vclr">✕ Clear filter</button></div>`;
+
+function vxList(){const h=VXS.h,I=colInfo(h);if(!I)return'';const q=VXS.q.trim().toLowerCase();
+ let idx=I.unique.map((e,i)=>i).filter(i=>{const e=I.unique[i];if(VXS.only&&!(e.flag&&e.flag.strong))return false;return!q||e.v.toLowerCase().includes(q)});
+ if(VXS.sort==='a')idx.sort((a,b)=>I.unique[a].v.localeCompare(I.unique[b].v));
+ const more=idx.length-150;idx=idx.slice(0,150);
+ const rows=idx.map(i=>{const e=I.unique[i],f=e.flag,sp=/^\s|\s$/.test(e.v)&&!e.blank,disp=sp?'“'+e.v+'”':e.v;
+  return`<div class="vxr${f?(f.strong?' sv':' so'):''}"><input type="checkbox" data-vx="tog" data-vi="${i}"${VXS.sel.has(e.v)?' checked':''} aria-label="Tick ${esc(e.v)}"><span class="vv">${esc(disp)}</span><span class="vc">×${e.n}</span>${f?`<span class="vt">${f.strong?'⚠':'ℹ'} ${esc(f.msg)}</span>`:''}<div class="vxa">${f&&f.strong&&f.to!==undefined?`<button type="button" class="b2 pr" data-vx="merge" data-vi="${i}" title="Change these ${e.n} cell(s) to “${esc(f.to)}”">→ ${esc(sv2(f.to))}</button>`:''}<button type="button" class="b2" data-vx="edit" data-vi="${i}">${e.blank?'✎ Fill with…':'✎ Change to…'}</button></div>${VXS.edit===i?`<div class="vxe"><input id="vxi" list="vdl" type="text" placeholder="Pick an existing value or type a new one" aria-label="New value"><button type="button" class="b2 pr" data-vx="apply" data-vi="${i}">Apply to ${e.n}</button></div>`:''}</div>`}).join('');
+ return(rows||'<p class="ei" style="padding:10px">No values match.</p>')+(more>0?`<p class="ei" style="padding:0 10px 10px">+${more} more – use the search box.</p>`:'')}
+function vxSection(h){const I=colInfo(h);if(!I||!I.unique.length)return'';
+ const warn=I.strong?`<div class="vxw"><span>⚠ <b>${I.strong}</b> value${I.strong>1?'s':''} (${I.strongCells} cell${I.strongCells>1?'s':''}) look like mistakes</span><button type="button" class="b2 pr" data-vx="fixall">Fix all ${I.strong}</button><button type="button" class="b2${VXS.only?' on':''}" data-vx="only" aria-pressed="${VXS.only}">${VXS.only?'Show all values':'Show only these'}</button></div>`:'<p class="ei" style="margin:6px 0">✓ No spelling mistakes spotted in this column.</p>';
+ const ops=I.unique.filter(e=>!e.blank).slice(0,60).map(e=>`<option value="${esc(e.v)}"></option>`).join('');
+ return`<div class="vx"><div class="ei"><b>All values in this column</b> · ${I.unique.filter(e=>!e.blank).length} different${I.blank?' · '+I.blank+' blank':''}</div>${warn}<div class="er"><input id="vxs" type="search" placeholder="Search values…" value="${esc(VXS.q)}" aria-label="Search values"><button type="button" class="b2" data-vx="sort" title="Change the order">${VXS.sort==='a'?'Order: A→Z':'Order: most used'}</button></div><datalist id="vdl">${ops}</datalist><div class="vxl" id="vxl">${vxList()}</div><div class="er"><button type="button" class="b2 pr" data-vx="filter">🔎 Show only ticked values in table</button>${FILT&&FILT.col===h?'<button type="button" class="b2" data-vx="clr">Clear filter</button>':''}</div></div>`}
+function vxRedraw(whole){if(!VXS)return;const ed=$('#ed');if(whole){const v=ed.querySelector('.vx');if(v)v.outerHTML=vxSection(VXS.h)}else{const l=$('#vxl');if(l)l.innerHTML=vxList()}}
+const _oc=openCol;
+openCol=function(h,th){_oc(h,th);const ed=$('#ed');if(!ed.classList.contains('on')||EDK!=='col'||COLH!==h)return;
+ if(!VXS||VXS.h!==h)VXS={h,q:'',only:false,sort:'n',edit:-1,sel:new Set(FILT&&FILT.col===h?FILT.vals:[])};
+ const html=vxSection(h);if(!html)return;
+ ed.querySelector('.eh').insertAdjacentHTML('afterend',html);ed.classList.add('vw');
+ const b=th.getBoundingClientRect();ed.style.left=Math.max(8,Math.min(b.left,innerWidth-ed.offsetWidth-8))+'px';ed.style.top=Math.max(8,Math.min(b.bottom+6,innerHeight-ed.offsetHeight-8))+'px'};
+const _ce=closeEd;closeEd=function(){_ce();$('#ed').classList.remove('vw')};
+function vtoast(m){toast(m);$('#toast').innerHTML=esc(m)+'<button type="button" data-a="mundo">Undo</button>'}
+function busy(m,fn){const b=$('#busy');b.querySelector('span').textContent=m;b.classList.remove('hid');requestAnimationFrame(()=>setTimeout(()=>{try{fn()}finally{b.classList.add('hid')}},20))}
+function busyOff(){const b=$('#busy');if(b)b.classList.add('hid')}
+function vxApply(pairs,msg){const h=VXS&&VXS.h;if(!h||!pairs.length)return;
+ MUNDO.push({man:new Map(MAN),ign:new Set(IGN)});if(MUNDO.length>30)MUNDO.shift();
+ const t=DATA.CUR&&DATA.CUR.ty&&DATA.CUR.ty[h];let n=0;
+ pairs.forEach(p=>{let v=p.to;if(t==='num'&&typeof v==='string'&&v.trim()!==''&&!isNaN(+v))v=+v;p.rows.forEach(r=>{MAN.set(r+'|'+h,v);IGN.delete(r+'|'+h);n++})});
+ FILT=null;VXS.sel=new Set();VXS.edit=-1;closeEd();
+ const fin=()=>{st();setTimeout(()=>{const t2=[...document.querySelectorAll('th.hc')].find(z=>z.dataset.col===h);if(t2)openCol(h,t2)},60);vtoast('✓ '+(msg||'Changed')+' · '+n+' cell'+(n>1?'s':''))};
+ ROWS.length>8000?busy('Applying to '+n+' cells…',fin):fin()}
+$('#ed').addEventListener('click',e=>{const b=e.target.closest('[data-vx]');if(!b||!VXS||b.dataset.vx==='tog')return;const a=b.dataset.vx,h=VXS.h,I=colInfo(h);if(!I)return;const E=I.unique[+b.dataset.vi];
+ if(a==='fixall'){const p=CleanVal.fixPlan(I);return vxApply(p.map(x=>({rows:x.rows,to:x.to})),'Fixed '+p.length+' spelling'+(p.length>1?'s':''))}
+ if(a==='merge'&&E&&E.flag)return vxApply([{rows:E.rows,to:E.flag.to}],'Changed to “'+sv2(E.flag.to)+'”');
+ if(a==='edit'&&E){VXS.edit=VXS.edit===+b.dataset.vi?-1:+b.dataset.vi;vxRedraw();const x=$('#vxi');if(x)x.focus();return}
+ if(a==='apply'&&E){const x=$('#vxi'),v=x?x.value.trim():'';if(!v){if(x)x.focus();return toast('Type or pick a value first')}return vxApply([{rows:E.rows,to:v}],'Changed to “'+sv2(v)+'”')}
+ if(a==='only'){VXS.only=!VXS.only;return vxRedraw(true)}
+ if(a==='sort'){VXS.sort=VXS.sort==='a'?'n':'a';return vxRedraw(true)}
+ if(a==='filter'){if(!VXS.sel.size)return toast('Tick one or more values first');FILT={col:h,vals:new Set(VXS.sel)};closeEd();drawTable();const w=$('#pvw .tw');if(w)w.scrollTop=0;return toast('🔎 Filter on – clear it from the bar above the table')}
+ if(a==='clr'){FILT=null;closeEd();drawTable()}});
+$('#ed').addEventListener('change',e=>{const b=e.target;if(!VXS||!b.dataset||b.dataset.vx!=='tog')return;const I=colInfo(VXS.h),E=I&&I.unique[+b.dataset.vi];if(!E)return;b.checked?VXS.sel.add(E.v):VXS.sel.delete(E.v)});
+$('#ed').addEventListener('input',e=>{if(e.target.id==='vxs'&&VXS){VXS.q=e.target.value;vxRedraw()}});
+$('#ed').addEventListener('keydown',e=>{if(e.target.id==='vxi'&&e.key==='Enter'){e.preventDefault();const b=document.querySelector('#ed [data-vx="apply"]');if(b)b.click()}});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a="mundo"],[data-a="vclr"],[data-a="xnx"]');if(!b)return;
+ if(b.dataset.a==='vclr'){FILT=null;return drawTable()}
+ if(b.dataset.a==='xnx'){$('#xn').classList.add('hid');return}
+ const s=MUNDO.pop();if(!s)return;MAN.clear();s.man.forEach((v,k)=>MAN.set(k,v));IGN.clear();s.ign.forEach(k=>IGN.add(k));st();toast('↶ Undone')});
+/* click a highlighted (orange-dashed) cell: the suggested spelling is pre-filled */
+const _oe=openEd;
+openEd=function(td){_oe(td);const ed=$('#ed'),c=td.dataset.c,r=+td.dataset.r;if(!ed.classList.contains('on')||EDK!==r+'|'+c||!td.classList.contains('sv'))return;
+ const row=DATA.RR.find(x=>x.r===r),f=row&&svf(r,c,row.d[c]);if(!f)return;const n=DATA.RR.filter(x=>String(x.d[c])===EDV).length;
+ ed.querySelector('.eh').insertAdjacentHTML('afterend',`<p class="ei">⚠ ${esc(f.msg)}${f.to!==undefined?' – suggestion filled in':''}</p>`);
+ const i=$('#edi');if(f.to!==undefined){i.value=f.to;i.select()}
+ const er=ed.querySelector('.er');if(er)er.insertAdjacentHTML('beforeend','<button type="button" class="b2" data-e="ig">Looks fine</button>'+(n>1?`<button type="button" class="b2" data-e="igall">Fine for all ${n}</button>`:''))};
+
+/* ===== Excel realities: formulas / merged cells / error cells are explained up front; big files show progress ===== */
+function showNotes(){const el=$('#xn');if(!el)return;el.classList.add('hid');if(!WB)return;const ws=WB.Sheets[$('#sh').value];if(!ws)return;let fo=0,nc=0,er=0;
+ for(const k in ws){if(k[0]==='!')continue;const c=ws[k];if(!c)continue;if(c.f){fo++;if(c.v===undefined)nc++}if(c.t==='e')er++}
+ const mg=(ws['!merges']||[]).length,p=[];
+ if(fo)p.push(`<b>${fo}</b> formula${fo>1?'s':''}`+(nc?` (${nc} never calculated – those cells are empty here)`:''));
+ if(mg)p.push(`<b>${mg}</b> merged area${mg>1?'s':''}`);
+ if(er)p.push(`<b>${er}</b> Excel error cell${er>1?'s':''} (#N/A, #REF!…) – read as blank`);
+ if(!p.length)return;
+ el.innerHTML=`<span>ℹ This sheet has ${p.join(', ')}. The “Cleaned” sheet holds <b>values only</b>. Your original sheet, with formulas and number formats, is saved in the download as “Original - ${esc($('#sh').value)}”.</span><button type="button" class="b2" data-a="xnx">Got it</button>`;el.classList.remove('hid')}
+const _ld=load;load=function(f){if(f&&f.size>1.5e6){const b=$('#busy');b.querySelector('span').textContent='Reading your file… big files take a few seconds';b.classList.remove('hid')}_ld(f)};
+const _er=err;err=function(m){if(m)busyOff();_er(m)};
+
 </script></body></html>

@@ -1,18 +1,21 @@
 {
   "name": "bizpilot",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "description": "BizPilot: clean Excel, process invoices (with OCR) and follow up payments. Runs entirely in the browser.",
   "scripts": {
     "build": "node build.js",
-    "test": "node test/core.test.js && node test/invoice.test.js",
+    "test": "node test/core.test.js && node test/invoice.test.js && node test/clean.values.test.js && node test/detect.test.js",
     "test:e2e": "node test/e2e.playwright.js",
     "test:ui": "node test/ui.smoke.js",
+    "test:clean": "node test/clean.ui.test.js",
     "test:audit": "node test/audit.test.js && node test/audit.ui.smoke.js",
-    "audit-server": "node server/audit-server.js"
+    "audit-server": "node server/audit-server.js",
+    "test:home": "node test/home.smart.test.js",
+    "test:backup": "node test/payments.backup.test.js"
   },
   "devDependencies": {
-    "jsdom": "^24.0.0",
+    "jsdom": "^24.1.3",
     "jspdf": "^2.5.1",
     "playwright": "^1.45.0",
     "xlsx": "^0.18.5"

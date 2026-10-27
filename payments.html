@@ -230,6 +230,12 @@ function load(){let raw=null;try{raw=localStorage.getItem(KEY)}catch(e){}
 let SUM=null,M=load(),T='ov',F={q:'',st:'',cur:'',limit:100},STG=null,OPEN=null,RM={id:'',tpl:'',dirty:false,subject:'',body:''},saveErr=false;
 const save=()=>{if(RESCUE!==null)return;try{localStorage.setItem(KEY,JSON.stringify(M));saveErr=false}catch(e){saveErr=true}};
 const today=()=>PF.todayISO(M.S.tz),rows=()=>PF.rowsOf(M,today()),$f=(v,c)=>PF.fmt(v,c);
+/* Backup reminder: data lives only in this browser, so nudge for a JSON backup (never nags while a backup is under 7 days old; "Remind me later" = 3 days) */
+const LB='bpPF.lastBackup',SZ='bpPF.snooze',lg=k=>{try{return localStorage.getItem(k)}catch(e){return null}},ls=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const dsince=d=>{const a=Date.parse(today()),b=Date.parse(d);return isNaN(a)||isNaN(b)?null:Math.floor((a-b)/864e5)};
+function nag(){if(!M.inv.length||RESCUE!==null||saveErr)return'';const lb=lg(LB),sz=lg(SZ),d=lb?dsince(lb):null,z=sz?dsince(sz):null;
+ if(z!==null&&z>=0&&z<3)return'';if(lb&&d!==null&&d<7)return'';
+ return`<div class="msg i">💾 Your payment data is stored only in this browser. ${lb&&d!==null?'Last backup: '+(d<=0?'today':d+' day'+(d>1?'s':'')+' ago')+'.':'You have no backup yet.'} <button class="btn s" data-a="backup">Download backup</button> <button class="btn s" data-a="bsnz">Remind me later</button></div>`}
 const aud=(i,a)=>(i.audit=i.audit||[]).push({ts:new Date().toISOString(),a});
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),3500)}
 const TABS=[['ov','Overview'],['inv','Invoices'],['rem','Reminders'],['imp','Import / Export'],['set','Settings']];
@@ -315,7 +321,7 @@ function vDetail(rs){const r=rs.find(x=>x.inv.id===OPEN);if(!r)return'';const i=
  <details class="card"><summary>Audit history</summary>${(i.audit||[]).map(a=>`<div class="mu">${a.ts.slice(0,16).replace('T',' ')} ${esc(a.a)}</div>`).join('')||'none'}</details></div>`}
 function vAdd(){return`<div class="dg"><div class="row"><h1>Add invoice</h1><button class="btn" data-a="close">Close</button></div><div class="card"><div class="fl"><label>Invoice no.<input id="ni"></label><label>Customer *<input id="nc"></label><label>Email<input id="ne"></label><label>Phone<input id="np"></label><label>Invoice date<input type="date" id="nd"></label><label>Due date<input type="date" id="nu"></label><label>Currency<input id="nr" value="${esc(M.S.cur)}"></label><label>Amount *<input id="na" inputmode="decimal"></label></div><button class="btn p" data-a="addsave">Save invoice</button></div></div>`}
 function render(){$('#tabs').innerHTML=TABS.map(([k,l])=>`<button class="tb" role="tab" data-a="tab" data-v="${k}" aria-selected="${T===k}">${l}</button>`).join('');
- $('#warn').innerHTML=(STG&&STG.res&&STG.res.good.length&&T!=='imp'?`<div class="msg i">${STG.res.good.length} new invoice${STG.res.good.length>1?'s':''} from <b>${esc(STG.name)}</b> ready to import${STG.res.dup&&STG.res.dup.length?', '+STG.res.dup.length+' duplicate'+(STG.res.dup.length>1?'s':'')+' skipped':''}${STG.res.bad&&STG.res.bad.length?', '+STG.res.bad.length+' need fixing':''}. <b>Nothing is saved yet.</b> <button class="btn s" data-a="tab" data-v="imp">Review and import</button></div>`:'')+(saveErr?'<div class="msg e">Could not save to this browser (storage full or blocked). Export your data now.</div>':'')+(RESCUE!==null?'<div class="msg e"><b>Your saved data could not be read, so it has NOT been overwritten.</b> Changes you make now will not be saved. <button class="btn s" data-a="rescue">Download the unreadable data</button> <button class="btn s" data-a="restore">Restore from a backup</button> <button class="btn s" data-a="fresh">Start fresh (erases it)</button></div>':'');
+ $('#warn').innerHTML=(STG&&STG.res&&STG.res.good.length&&T!=='imp'?`<div class="msg i">${STG.res.good.length} new invoice${STG.res.good.length>1?'s':''} from <b>${esc(STG.name)}</b> ready to import${STG.res.dup&&STG.res.dup.length?', '+STG.res.dup.length+' duplicate'+(STG.res.dup.length>1?'s':'')+' skipped':''}${STG.res.bad&&STG.res.bad.length?', '+STG.res.bad.length+' need fixing':''}. <b>Nothing is saved yet.</b> <button class="btn s" data-a="tab" data-v="imp">Review and import</button></div>`:'')+(saveErr?'<div class="msg e">Could not save to this browser (storage full or blocked). Export your data now.</div>':'')+(RESCUE!==null?'<div class="msg e"><b>Your saved data could not be read, so it has NOT been overwritten.</b> Changes you make now will not be saved. <button class="btn s" data-a="rescue">Download the unreadable data</button> <button class="btn s" data-a="restore">Restore from a backup</button> <button class="btn s" data-a="fresh">Start fresh (erases it)</button></div>':'')+nag();
  const rs=rows();$('#main').innerHTML={ov:vOv,inv:vInv,rem:vRem,imp:vImp,set:vSet}[T](rs);
  $('#dlg').innerHTML=OPEN==='new'?vAdd():OPEN==='sum'?vSum(rs):OPEN?vDetail(rs):'';$('#dlg').hidden=!OPEN}
 const find=id=>M.inv.find(i=>i.id===id);
@@ -330,7 +336,8 @@ const A={
  setbiz2:()=>{const v=$('#bz').value.trim();if(!v)return toast('Type your business name');A.setbiz(v)},
  rescue:()=>dl(new Blob([RESCUE||''],{type:'application/json'}),'bizpilot-unreadable-data_'+today()+'.json'),
  fresh:()=>{if(!confirm('This permanently erases the unreadable saved data from this browser. Download it first if you might need it. Continue?'))return;RESCUE=null;M={v:1,S:{...DEF},inv:[],pay:[],con:[],tsk:[],bat:[]};save();toast('Started with a clean slate')},
- backup:()=>dl(new Blob([JSON.stringify(M)],{type:'application/json'}),'payment-followup-backup_'+today()+'.json'),
+ backup:()=>{dl(new Blob([JSON.stringify(M)],{type:'application/json'}),'payment-followup-backup_'+today()+'.json');ls(LB,today());toast('Backup downloaded');render()},
+ bsnz:()=>{ls(SZ,today());render()},
  cps:()=>copy(RM.subject),cpb:()=>copy(RM.body),
  sent:()=>{const r=rows().find(x=>x.inv.id===RM.id);addContact(RM.id,{ch:$('#rc').value,out:'Reminder sent externally (reported by user). '+$('#ro').value,tpl:RM.tpl,next:$('#rn').value});RM.dirty=false;toast('Logged as sent (self-reported)')},
  snz:v=>{const t=M.tsk.find(x=>x.id===v);t.date=PF.addDays(today(),3);t.status='snoozed';save()},done:v=>{M.tsk.find(x=>x.id===v).status='done';save()},
