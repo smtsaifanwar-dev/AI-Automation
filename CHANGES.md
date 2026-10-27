@@ -27,3 +27,8 @@
 - Home: 3-step strip, file-type chips, compact task cards with icons and an "Open" button, trust row.
 - All tools: shared base style injected into each iframe (fixes the background seam, consistent font, reduced-motion support).
 - Phase 2 (not done yet): Invoices/Payments/Audit result screens, status chips, toasts, demo data, tool-level token unification.
+
+# Phase 2a (Payments)
+- Column mapping shows readable names (Invoice number, Due date, ...) instead of camelCase keys.
+- "Theme" label next to the colour dots; shorter Settings labels; consistent label sizes.
+- "Missing, please review" warning now has an "Open Settings" button.
