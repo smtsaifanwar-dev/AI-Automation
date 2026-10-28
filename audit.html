@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Business Audit – BizPilot AI</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https: http://localhost:* http://127.0.0.1:*; script-src 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src data:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https: http://localhost:* http://127.0.0.1:*; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src data:">
 <style>
 :root{color-scheme:light dark;--bg:#f4f6fb;--cd:#fff;--tx:#0f1b33;--mu:#5b6a85;--bd:#e3e8f1;--pr:#2563eb;--ok:#12b886;--wa:#f5b301;--er:#e03131}
 @media(prefers-color-scheme:dark){:root{--bg:#0a1020;--cd:#121a2e;--tx:#e9eefb;--mu:#93a1bf;--bd:#223052;--pr:#5b9bff;--ok:#38d9a9;--wa:#ffd43b;--er:#ff8787}}
@@ -29,8 +29,10 @@ details>summary{cursor:pointer;font-weight:600;padding:4px 0}
 </style></head><body><main>
 <h1>Business Audit</h1><span class="mu">Evidence-based website and business-profile checks. Nothing is changed on your website.</span>
 <div class="tabs" id="tabs" role="tablist"></div><div id="main"></div></main><div id="toast" role="status" aria-live="polite"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script>window.XLSX||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>')</script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script>window.jspdf||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>')</script>
 <script>/* Business Audit core: HTML facts extraction, deterministic checks, transparent scoring, profile checks, exports. No DOM, no network. */
 (function(g){
 const nk=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');

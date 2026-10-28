@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Payment Follow-up – BizPilot AI</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'none'; script-src 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src data:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src 'none'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'unsafe-inline'; img-src data:">
 <style>
 :root,html[data-theme=ocean]{color-scheme:light;--bg:#f2f6fd;--cd:#fff;--tx:#0f1b33;--mu:#55637d;--bd:#e0e7f3;--pr:#2563eb;--prt:#fff;--ok:#12a77a;--wa:#e0a100;--er:#dc2f2f;--inf:#7c5cff}
 html[data-theme=forest]{color-scheme:light;--bg:#f1f8f4;--cd:#fff;--tx:#10241b;--mu:#4f6b5e;--bd:#dcebe2;--pr:#0f7a55;--prt:#fff;--ok:#0f9d6e;--wa:#d99a00;--er:#d6342c;--inf:#2f6fdc}
@@ -44,7 +44,8 @@ tbody tr:hover td{background:color-mix(in srgb,var(--pr) 6%,transparent)}tr.rov 
 <div id="warn"></div><div class="tabs" id="tabs" role="tablist"></div><div id="main"></div>
 <input type="file" id="fi" accept=".xlsx,.xls,.csv" hidden><input type="file" id="fr" accept=".json,application/json" hidden>
 </main><div id="dlg" hidden></div><div id="toast" role="status" aria-live="polite"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script>window.XLSX||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>')</script>
 <script>window.XLSX||document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
 <script>/* Payment Follow-up core: pure, deterministic, no DOM. Money = integer minor units (paise/cents). */
 (function(g){
@@ -217,6 +218,7 @@ if(typeof module!=='undefined')module.exports=API;else g.PF=API;
 })(typeof globalThis!=='undefined'?globalThis:window);
 </script>
 <script>
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const KEY='bpPaymentFollowUp.v1',DEF={business:'',sender:'',instr:'',cur:'INR',tz:'Asia/Kolkata',dueSoonDays:3,order:'DMY',cc:'91'};
 /* RESCUE holds saved text that exists but could not be read (damaged, or written by a newer version). While it is set, save() never writes,

@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>CleanSheet – One-Click Excel Data Cleaning</title>
-<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; script-src 'unsafe-inline' https://cdn.sheetjs.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net">
+<meta http-equiv="Content-Security-Policy" content="connect-src 'none'; script-src 'self' 'unsafe-inline' https://cdn.sheetjs.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230a5cff'/%3E%3Cpath d='M9 16.5l5 5 9-11' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
 :root{--bg:#f4f6fb;--card:#fff;--tx:#0f1b33;--mu:#5b6a85;--bd:#e3e8f1;--pr:#2563eb;--prt:#fff;--wa:#fff4d6;--er:#fde4e2;--sh:0 1px 2px rgba(15,27,51,.05),0 10px 28px rgba(15,27,51,.07)}
@@ -141,7 +141,8 @@ td.sv{outline:1.5px dashed #e8590c;outline-offset:-2px}
 <p class="s">Dates are read as day/month/year (Indian style) unless a column clearly uses month/day. Original file is never changed; removed rows are saved in a separate sheet. Flags are suggestions – please review.</p><div class="foot">© CleanSheet · Your data never leaves this device</div>
 </main>
 <div id="ed" role="dialog" aria-label="Edit cell"></div><div id="toast" role="status" aria-live="polite"></div><div id="busy" class="hid" role="status" aria-live="polite"><div><i></i><span>Working…</span></div></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script>window.XLSX||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>')</script>
 <script>window.XLSX||document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
 <script>
 /*CLEANVAL*/

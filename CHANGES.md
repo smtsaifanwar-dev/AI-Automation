@@ -80,3 +80,10 @@ All tools: one primary blue (#2563eb light, #5b9bff dark).
 - Data lives only in the browser, so a banner appears once there are invoices and there is no backup, or the last one is 7+ days old: "Download backup" (one click, remembers the date) or "Remind me later" (3 days). Never shown while data is unreadable or a save error is already displayed.
 **Tests:** `test/detect.test.js` (13), `test/home.smart.test.js` (14, real home page in jsdom), `test/payments.backup.test.js` (10). Run `npm test`, `npm run test:home`, `npm run test:backup`, `npm run test:clean`.
 **Known:** `test/ui.smoke.js` is stale since Phase 2 (looks for elements that were renamed) and still fails; it is not part of `npm test`. Everything was verified in jsdom only, not in a real browser.
+
+# Launch-readiness pass (1.4.0)
+- **Local-first libraries:** all four tools and the home page now try `vendor/<lib>` first, then the CDNs. `node vendor.js` downloads SheetJS, pdf.js (+worker) and jsPDF and writes `vendor/MANIFEST.json` with SRI hashes. If `vendor/` is absent nothing changes. CSP in Clean / Payments / Audit now allows `'self'` for this.
+- **Home page:** footer with version, *Privacy & Terms* and *Help & feedback* dialogs (Esc / click outside closes). Contact details come from `BP_CONTACT` in `index.html` (empty = no contact line shown).
+- **Payments:** asks the browser for persistent storage (`navigator.storage.persist()`) so saved data is less likely to be evicted. Backups are still needed.
+- **Removed** `test/ui.smoke.js` (stale since Phase 2, replaced by backup / e2e tests) and its `test:ui` script.
+- **Not done (needs network / a real browser):** SRI on CDN tags and vendoring the OCR engine; CSP for the Invoices tool (OCR uses workers + wasm, a wrong CSP would silently break it; add it only after testing OCR); IndexedDB storage; real-browser testing; Web Worker for 50k-row sheets.

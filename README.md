@@ -24,13 +24,19 @@ npm test               # pure-logic tests, no browser: payments core + invoice r
 npm run test:audit     # Business Audit engine, SSRF protection, exports, UI (needs: npm i)
 npm run test:e2e       # real Chromium test: scan -> OCR (stubbed engine) -> Send to Payments -> import
 ```
-`index.html` is the only file you need to deploy or double-click.
+`index.html` runs on its own (double-click works). For a reliable launch also run `node vendor.js` once (needs internet) and deploy the `vendor/` folder next to `index.html`: the app then loads SheetJS, pdf.js and jsPDF from your own host first and only falls back to the CDNs if a file is missing.
+
+## Before you publish (checklist)
+1. `node vendor.js` and upload `vendor/` with `index.html`.
+2. In `index.html` fill `BP_CONTACT` (email and/or WhatsApp number) so *Help & feedback* shows a way to reach you. Review the *Privacy & Terms* text (search `privacy:` in `index.html`) and add your business name / country.
+3. Serve over HTTPS and add security headers at your host (Content-Security-Policy, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`).
+4. Test in real Chrome, Edge, Safari and Android Chrome with 20 messy sheets and 30 real invoices (text PDFs and scans).
 
 ## Invoice reader accuracy
 Parsing and validation live in `src/invoice-core.js` (pure functions, unit-tested in `test/invoice.test.js`). It reads Indian (`1,18,000.00`), European (`1.234,50`), spaced (`1 234,50`) and `5000/-` amounts, numeric / `15-Oct-2026` / `October 27, 2026` dates, and common label variants (Net Total, Invoice Value, Amount Due, To:). When it cannot find a field it says so (a finding) instead of guessing; a supplier guessed from far down the page is marked low confidence. Unsupported tax lines (VAT, a single "GST") make the total check fail loudly rather than pass silently. **Add every invoice layout that fails for you as a fixture in `test/invoice.test.js`.**
 
 ## Known limits
-- Needs internet for: SheetJS and pdf.js (CDN, with a second CDN as fallback) and, only for scans, the OCR engine (Tesseract.js, English). Vendor these files into the repo if you need fully offline use.
+- Libraries load from `vendor/` first (after `node vendor.js`), then from CDNs. The OCR engine (Tesseract.js + English data) is **not** vendored yet: scans need internet the first time (the browser caches it after that).
 - OCR is less accurate than text PDFs; OCR'd invoices are always marked *Needs Review*.
 - Payment data lives in browser localStorage (~5 MB). If saved data ever becomes unreadable, BizPilot stops saving, keeps it untouched and offers *Download the unreadable data* / *Restore from a backup* / *Start fresh*. Still use *Download backup (JSON)* regularly.
 - Reminders are prepared, never sent automatically (sending needs a server or a business API).

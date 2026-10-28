@@ -46,16 +46,18 @@ details.note summary{cursor:pointer;color:var(--pr);font-weight:600;list-style:n
 <div class="tw"><table><thead><tr><th><input type="checkbox" id="sa" aria-label="Select all"></th><th>File</th><th>Invoice no.</th><th>Date</th><th>Supplier</th><th>Cur.</th><th class="n">Subtotal</th><th class="n">Tax</th><th class="n">Total</th><th>Checks</th><th>Duplicate</th><th>Status</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
 <p class="note" id="xn"></p></div></section></main>
 <div id="dlg" class="ov" hidden role="dialog" aria-modal="true" aria-label="Invoice details"><div class="dg"><div class="dh"><b id="dt"></b><a class="btn" id="dd" download>Download original</a><button class="btn" id="dx" aria-label="Close">✕</button></div><div class="db"><div id="mv" class="pv"></div><div id="mf"></div></div></div></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="vendor/pdf.min.js"></script>
+<script>window.pdfjsLib?window.__pl=1:document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"><\/script>')</script>
 <script>window.pdfjsLib||(window.__pf=1,document.write('<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"><\/script>'))</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
+<script>window.XLSX||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>')</script>
 <script>window.XLSX||document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"><\/script>')</script>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /*INVCORE*/
 let files=[],recs=[],sel=new Set(),cancel=false,busy=false,FP=[],BATCH=0,UID=0,cur=null,curUrl='';
 try{FP=JSON.parse(localStorage.getItem('bp_fp')||'[]')}catch(e){}
-if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc=window.__pf?'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js':'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc=window.__pl?'vendor/pdf.worker.min.js':window.__pf?'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js':'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 /* ---------- helpers ---------- */
 /* ---------- upload ---------- */
