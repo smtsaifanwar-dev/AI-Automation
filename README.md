@@ -4,7 +4,7 @@ Four tools in one page, all running in the browser (no server, files are never u
 
 | Tool | Source | What it does |
 |---|---|---|
-| Clean Excel | `src/clean.src.html` + `src/clean-values.js` | Fixes spaces, dates, duplicates, phones, emails; logs every change. **Click a column name** to see every value, spot spelling mistakes, fix or filter them in one click |
+| Clean Excel | `src/clean.src.html` + `src/clean-values.js` | Fixes spaces, dates, duplicates, phones, emails; logs every change. **Click a column name** to see every value, spot spelling mistakes (typos, values from another column, rarely used values), fix or filter them in one click; fixes are remembered per column for your next file. Day/month order is never guessed silently |
 | Invoices | `src/invoice.src.html` + `src/invoice-core.js` | Reads PDF/JPG/PNG invoices (scans via OCR), checks totals/GST/duplicates, exports Excel/CSV, **Send to Payments** |
 | Payments | `src/payments.src.html` + `src/core.js` | Outstanding/overdue, payments, follow-ups, reminder drafts (copy / WhatsApp / email app), backup & restore |
 | Audit | `src/audit.src.html` + `src/audit-core.js` + `server/audit-server.js` | Website SEO checks with evidence, business-profile checklist, score, PDF/Excel/CSV report. Live crawling needs the small audit server (see `AUDIT_SETUP.md`); without it, paste one page's HTML source |

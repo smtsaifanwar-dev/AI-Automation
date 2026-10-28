@@ -1,4 +1,18 @@
-NEW files (add):      src/audit-core.js  src/audit.src.html  server/audit-server.js  test/audit.test.js  test/audit.ui.smoke.js  AUDIT_SETUP.md
-REPLACE files:        index.html  build.js  package.json  README.md
-Nothing else is touched (src/clean, src/invoice, src/payments, src/core.js and your tests are unchanged).
-After copying:  npm i   then   node build.js   (optional, index.html is already built)
+BizPilot 1.5.0 - Excel cleaner update. Apply ON TOP OF BizPilot-launch-ready.zip (v1.4.0).
+
+ADD (new file):
+  test/clean.engine.test.js
+
+REPLACE (overwrite the existing file, same path):
+  index.html
+  src/clean.src.html
+  src/clean-values.js
+  test/clean.values.test.js
+  package.json
+  README.md
+  CHANGES.md
+
+Nothing else is touched. After copying (optional, index.html is already built):
+  node build.js
+  npm test                  (5 suites, no browser needed - all pass)
+  npm i  then  npm run test:clean  and  npm run test:home     (browser-like UI tests; NOT run when this update was made)

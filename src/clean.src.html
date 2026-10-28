@@ -105,7 +105,8 @@ h1 span,#drop svg,.stp.sug,.hero,.card,.stat div,#res{animation:none!important}h
 .vxe{grid-column:1/4;display:flex;gap:6px;margin-top:4px}.vxe input{flex:1;min-width:0;font:inherit;padding:6px 8px;border-radius:8px}
 #vxs{flex:1;min-width:0;font:inherit;padding:7px 10px;border-radius:10px}
 td.sv{outline:1.5px dashed #e8590c;outline-offset:-2px}
-.wb.sv{background:#e8590c;color:#fff}
+
+.wb.sv{background:#e8590c;color:#fff}.wb.wk{background:color-mix(in srgb,#f5b301 38%,var(--card));color:var(--tx)}.vxw.wk{background:color-mix(in srgb,#f5b301 12%,var(--card));border-color:color-mix(in srgb,#f5b301 45%,var(--bd))}
 @media(prefers-color-scheme:dark){.wb.sv{background:#ff922b;color:#2b1200}}
 #busy{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--bg) 72%,transparent);backdrop-filter:blur(2px)}#busy.hid{display:none!important}
 #busy>div{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px 20px;box-shadow:var(--sh);font-weight:600}
@@ -165,9 +166,9 @@ function pd(v,us){if(v instanceof Date){if(isNaN(v))return null;const t=new Date
  else if((m=s.match(/^(\d{1,2})(?:st|nd|rd|th)?[\s\-\/.,]+([a-z]{3,9})\.?[\s\-\/.,]+(\d{2}|\d{4})$/i))&&mn(m[2]))d=iso(fy(+m[3]),mn(m[2]),+m[1]);
  else if((m=s.match(/^([a-z]{3,9})\.?\s*(\d{1,2})(?:st|nd|rd|th)?[\s,\-\/.]+(\d{2}|\d{4})$/i))&&mn(m[1]))d=iso(fy(+m[3]),mn(m[1]),+m[2]);
  return d?d+tm:null}
-const ACR=new Set(['USB','LED','LCD','HDMI','SSD','HDD','RAM','CPU','GPU','UPS','PVC','GST','PAN','CCTV','WIFI','LAN','ATM','UPI','OTP','PDF','SMS','AC','TV','PC','UK','USA','UAE','HP','LG','IT','SBI','HDFC','ICICI','PNB','BOB','LLP','OPC','NCR']);
+const ACR=new Set(['USB','LED','LCD','HDMI','SSD','HDD','CPU','GPU','UPS','PVC','GST','PAN','CCTV','WIFI','LAN','ATM','UPI','OTP','PDF','SMS','AC','TV','PC','UK','USA','UAE','HP','LG','IT','SBI','HDFC','ICICI','PNB','BOB','LLP','OPC','NCR']);
 const STC=new Set(['UP','MP','AP','HP','TN','WB','DL','JK','MH','GJ','RJ','KA','HR','PB','NCR']);
-const tcase=v=>STC.has(v.toUpperCase())?v.toUpperCase():v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b(\d+)([a-z])\b/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b([odl])'([a-z])/gi,(m,a,b)=>a.toUpperCase()+"'"+b.toUpperCase()).replace(/\bMc([a-z])/g,(m,a)=>'Mc'+a.toUpperCase()).replace(/[A-Za-z]+/g,w=>ACR.has(w.toUpperCase())?w.toUpperCase():w);
+const tcase=v=>STC.has(v.toUpperCase())?v.toUpperCase():v.toLowerCase().replace(/(^|[\s\-\/(])([a-z\u0900-\u097f])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b(\d+)([a-z])\b/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b([odl])'([a-z])/gi,(m,a,b)=>a.toUpperCase()+"'"+b.toUpperCase()).replace(/\bMc([a-z])/g,(m,a)=>'Mc'+a.toUpperCase()).replace(/[A-Za-z]+/g,w=>ACR.has(w.toUpperCase())?w.toUpperCase():w).replace(/\b(?:[A-Za-z]\.){2,}[A-Za-z]?(?![A-Za-z])/g,m=>m.toUpperCase());
 const nk=x=>x.toLowerCase().replace(/(\w)-(\w)/g,'$1 $2').replace(/[.,]/g,'').replace(/\s+/g,' ').trim();
 
 const RS={2:'Extra spaces removed',3:'Text case standardized',5:'Text converted to number',6:'Date converted to yyyy-mm-dd',9:'Column name cleaned',12:'Spelling/case unified to most common variant',16:'Phone/email normalized',17:'Exact duplicate row removed'};
@@ -190,18 +191,18 @@ function run(rows,heads,on,cfg){
  const vals=c=>R.map(r=>r.d[c]).filter(v=>!blank(v));
  const ratio=(c,f)=>{const v=vals(c);return v.length?v.filter(f).length/v.length:0};
  const tk=c=>String(c).toLowerCase().split(/[^a-z0-9\u0900-\u097f]+/).filter(Boolean),hw=(c,re)=>tk(c).some(t=>re.test(t));
- const RM={text:'text',email:'email',phone:'phone',date:'date',amount:'num',id:'id',ignore:'ignore'},RL={},TY={},DC=new Set();
+ const RM={text:'text',email:'email',phone:'phone',date:'date',dateus:'date',amount:'num',id:'id',ignore:'ignore'},RL={},TY={},DC=new Set();
  const detect=c=>{if(RL[c])return RM[RL[c]]||'text';const t=tk(c),last=t[t.length-1]||'',dgt=v=>String(v).replace(/\D/g,'').length,at=v=>String(v).includes('@');
   if(hw(c,/^(email|emails|mail|emailid)$/)&&!hw(c,/^(verified|status|sent|count|date|subject)$/)&&ratio(c,at)>=.3||ratio(c,at)>=.6)return'email';
   if(hw(c,/^(phone|mobile|mob|contact|whatsapp|cell|tel|telephone|ph)$/)&&!hw(c,/^(person|name|date|by|mode|address|time)$/)&&ratio(c,v=>dgt(v)>=7)>=.5||ratio(c,v=>/^(\+?91|0)?[\s-]?[6-9]\d{4}[\s-]?\d{5}$/.test(String(v).trim()))>=.6)return'phone';
   if(hw(c,/^(url|link|website|web)$/))return'other';
   if(/^(id|ids|no|nos|number|num|code|sku|ref|reference|uid)$/.test(last)||hw(c,/^(gst|gstin|pan|ifsc|pin|pincode|zip|aadhaar|aadhar|barcode|hsn|sno|sr)$/))return'id';
-  if(ratio(c,v=>pd(v)!==null)>=.8&&ratio(c,v=>!isNaN(pn(v)))<.8)return'date';
+  if((ratio(c,v=>pd(v)!==null)>=.8||(hw(c,/^(date|dt|dob|dated|due|duedate)$/)&&ratio(c,v=>pd(v)!==null)>=.5))&&ratio(c,v=>!isNaN(pn(v)))<.8)return'date';
   if(ratio(c,v=>/^\d{12,}$/.test(String(v).trim()))>=.5||vals(c).some(v=>/^0\d+$/.test(String(v).trim())))return'id';
   if(ratio(c,v=>!isNaN(pn(v)))>=.8)return'num';
   return ratio(c,v=>typeof v==='string'&&/[a-z\u0900-\u097f]/i.test(v))>=.6?'text':'other'};
  const ty=c=>TY[c]||(TY[c]=detect(c)),numC=c=>ty(c)==='num',dateC=c=>ty(c)==='date',emC=c=>ty(c)==='email',phC=c=>ty(c)==='phone',txtC=c=>ty(c)==='text';
- const colUS=c=>{let a=0,b=0;vals(c).forEach(v=>{const m=typeof v==='string'&&v.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.]\d{2,4}/);if(m){if(+m[1]>12)a=1;if(+m[2]>12)b=1}});return b&&!a};
+ const colUS=c=>{if(RL[c]==='dateus')return true;let a=0,b=0;vals(c).forEach(v=>{const m=typeof v==='string'&&v.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.]\d{2,4}/);if(m){if(+m[1]>12)a=1;if(+m[2]>12)b=1}});return b&&!a};
  const uq=h=>{const v=vals(h);return v.length>0&&new Set(v.map(String)).size>=v.length*.95};
  const cell=f=>R.forEach(r=>H.forEach(h=>f(r,h,r.d[h])));
  if(on[9]){const seen={},nh=H.map(h=>{let b=String(h).trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097f]+/g,'_').replace(/^_+|_+$/g,'')||'column',n=b,i=2;while(seen[n])n=b+'_'+i++;seen[n]=1;if(n!==h)chg(9,null,h,h,n);map[h]=n;return n});
@@ -210,11 +211,13 @@ function run(rows,heads,on,cfg){
  if(on[14]){R=R.filter(r=>{if(H.some(h=>!blank(r.d[h])))return true;removed.push({'Removed because':'Empty row','Original row':r.r});inc(14);return false});const k=H.filter(h=>R.some(r=>!blank(r.d[h])));inc(14,H.length-k.length);H=k}
  if(on[2])cell((r,h,v)=>{if(typeof v==='string'){const t=v.replace(/[\u00a0\u200b]/g,' ').replace(/\s+/g,' ').trim();if(t!==v){const w=[];if(/^\s/.test(v))w.push('leading space');if(/\s$/.test(v))w.push('trailing space');if(/\s{2,}/.test(v.trim()))w.push('double space');if(/[\u00a0\u200b]/.test(v))w.push('hidden character');chg(2,r,h,v,t,t===''?'Cell had only spaces - becomes blank':'Removed: '+w.join(' + '));r.d[h]=t}}});
  if(on[16]){H.filter(emC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const t=v.trim().toLowerCase();if(t!==v){chg(16,r,h,v,t,'Email lowercased');r.d[h]=t}}}));
-  H.filter(phC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;let d=String(v).replace(/[\s\-().]/g,'').replace(/^\+/,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');if(/^[6-9]\d{9}$/.test(d)&&d!==String(v)){chg(16,r,h,v,d,'Phone normalized to 10 digits');r.d[h]=d}}))}
- if(on[3])H.filter(h=>txtC(h)&&!hw(h,/^(notes?|remarks?|comments?|description|desc)$/)).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&(v===v.toLowerCase()||v===v.toUpperCase())){const p=tcase(v);if(p!==v){chg(3,r,h,v,p);r.d[h]=p}}}));
+  H.filter(phC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;let d=String(v).replace(/\.0+$/,'').replace(/[\s\-().]/g,'').replace(/^\+/,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');if(/^[6-9]\d{9}$/.test(d)&&d!==String(v)){chg(16,r,h,v,d,'Phone normalized to 10 digits');r.d[h]=d}}))}
+ if(on[3])H.filter(h=>txtC(h)&&!hw(h,/^(notes?|remarks?|comments?|description|desc)$/)&&!/company|firm|business|trader|shop|store|vendor|supplier|party|organi[sz]ation|address|addr|street|location|landmark|brand|model|sku|code/i.test(h)).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&(v===v.toLowerCase()||v===v.toUpperCase())){const p=tcase(v);if(p!==v){chg(3,r,h,v,p);r.d[h]=p}}}));
  if(on[5])H.filter(numC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='string'&&!blank(v)){const n=pn(v);if(!isNaN(n)){chg(5,r,h,v,n);r.d[h]=n}else{nf5.add(r.r+'|'+h);const W={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,fifteen:15,twenty:20}[String(v).trim().toLowerCase()];if(W!==undefined){chg(5,r,h,v,W,'Number written in words converted');r.d[h]=W}else fl(r,h,'Cannot convert to number (not changed)',5)}}}));
  if(on[5])H.filter(h=>ty(h)==='id').forEach(h=>R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&String(Math.abs(v)).length>=12){chg(5,r,h,v,String(v),'Long ID kept as text (Excel would show 1.23E+11)');r.d[h]=String(v)}}));
- if(on[6])H.filter(dateC).forEach(h=>{const us=colUS(h);DC.add(h);R.forEach(r=>{const v=r.d[h];if(blank(v))return;const d=pd(v,us);if(d){if(v instanceof Date)r.d[h]=d;else if(d!==v){chg(6,r,h,v,d);r.d[h]=d}}else fl(r,h,'Invalid, impossible or incomplete date (not changed)',6)})});
+ if(on[6])H.filter(dateC).forEach(h=>{const us=colUS(h);DC.add(h);let dm=0,md=0,am=0,fa=null,ex='';R.forEach(r=>{const v=r.d[h];if(typeof v!=='string')return;const m=v.trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.]\d{2,4}/);if(!m)return;const a=+m[1],b=+m[2];if(a>12&&b<=12)dm++;else if(b>12&&a<=12)md++;else if(a<=12&&b<=12&&a!==b){am++;if(!fa){fa=r;ex=v.trim()}}});R.forEach(r=>{const v=r.d[h];if(blank(v))return;const d=pd(v,us);if(d){if(v instanceof Date)r.d[h]=d;else if(d!==v){chg(6,r,h,v,d);r.d[h]=d}}else fl(r,h,'Invalid, impossible or incomplete date (not changed)',6)});
+  if(fa&&!us&&dm&&md)fl(fa,h,`Mixed date styles in this column (some day/month, some month/day). ${am} date${am>1?'s':''} like “${ex}” can be read either way and were read as day/month - please check`,6);
+  else if(fa&&!us&&!dm&&!md)fl(fa,h,`Day/month order is a guess: ${am} date${am>1?'s':''} here (e.g. “${ex}”) can be read either way. Read as day/month. If your file uses month/day, set this column's type to “Date (month/day/year)” and run again`,6)});
  if(on[10]&&cfg.split&&H.includes(nm(cfg.split))){const c=nm(cfg.split),a=c+'_first',b=c+'_last';H.splice(H.indexOf(c)+1,0,a,b);
   R.forEach(r=>{const p=String(r.d[c]??'').trim().split(/\s+/);r.d[a]=p[0]||'';r.d[b]=p.slice(1).join(' ');inc(10)})}
  if(on[11]&&cfg.merge&&cfg.merge.length>1){const cs=cfg.merge.map(nm).filter(c=>H.includes(c)),n=cfg.mname||'merged';
@@ -226,8 +229,8 @@ function run(rows,heads,on,cfg){
   R.forEach(r=>{const x=r.d[h];if(typeof x==='string'){const k=nk(x);if(best[k]&&best[k]!==x){chg(12,r,h,x,best[k]);r.d[h]=best[k]}}})});
  if(on[4])R.forEach(r=>H.forEach(h=>{const v=r.d[h];if(blank(v)&&ty(h)!=='ignore'&&!hw(h,/^(notes?|remarks?|comments?|description|desc|alt|alternate|optional)$/))fl(r,h,typeof v==='string'&&v.trim()?'Placeholder instead of a real value':'Blank cell',4)}));
  if(on[7])H.filter(emC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(!blank(v)&&!EM.test(String(v).trim())){const m=String(v).trim().match(/^([^\s@]+)\.(gmail\.com|yahoo\.com|yahoo\.in|outlook\.com|hotmail\.com|rediffmail\.com)$/i);fl(r,h,'Invalid email',7,m?m[1]+'@'+m[2].toLowerCase():undefined)}}));
- if(on[8])H.filter(phC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const raw=String(v),nz=raw.replace(/[\s\-().]/g,'');let d=nz.replace(/^\+/,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');
-  if(!/^[6-9]\d{9}$/.test(d))fl(r,h,'Invalid phone (need 10-digit Indian mobile)',8);else if(nz!==raw)fl(r,h,'Phone contains spaces/hyphens',8,nz)}));
+ if(on[8])H.filter(phC).forEach(h=>R.forEach(r=>{const v=r.d[h];if(blank(v))return;const raw=String(v),nz=raw.replace(/\.0+$/,'').replace(/[\s\-().]/g,'');let d=nz.replace(/^\+/,'');if(d.length>10)d=d.replace(/^(91|0)+/,'');
+  if(!/^[6-9]\d{9}$/.test(d))fl(r,h,'Invalid phone (need 10-digit Indian mobile)',8);else if(nz!==raw)fl(r,h,/\.0+$/.test(raw)?'Phone has a trailing “.0”':'Phone contains spaces/hyphens',8,nz)}));
  if(on[13])H.filter(h=>ty(h)==='num').forEach(h=>{const n=R.map(r=>r.d[h]).filter(v=>typeof v==='number');if(n.length<8||n.length<vals(h).length*.8)return;
   const s=[...n].sort((a,b)=>a-b),q=p=>s[Math.floor((s.length-1)*p)],i=q(.75)-q(.25),lo=q(.25)-3*i,hi=q(.75)+3*i;if(!i)return;
   R.forEach(r=>{const v=r.d[h];if(typeof v==='number'&&(v>hi||v<lo))fl(r,h,v>hi?'Unusually high value':'Unusually low value',13)})});
@@ -306,7 +309,7 @@ function dtl(k,X){X=X||SCANR;if(!X)return{n:0,h:''};const L=O.find(o=>o[0]==k)||
 function getRoles(){const r={};document.querySelectorAll('[data-rh]').forEach(x=>{if(x.value)r[x.dataset.rh]=x.value});return r}
 function scanUI(){const prev={};document.querySelectorAll('[data-o]').forEach(c=>prev[c.dataset.o]=c.checked);const all={};O.forEach(o=>all[o[0]]=1);SCANR=run(ROWS,HEADS,all,{roles:getRoles()});SCAN=SCANR.st;
  $('#opts').innerHTML=O.map(o=>{const n=SCAN[o[0]]||0,ck=prev[o[0]]!==undefined?prev[o[0]]:n>0&&![9,10,11,17].includes(o[0]),d=dtl(o[0]);return`<div class="ow"><div class="or"><label class="opt"><input type="checkbox" data-o="${o[0]}" ${ck?'checked':''}><span><b>${o[0]}. ${o[1]}</b><small>${o[2]}</small></span>${[10,11].includes(o[0])?'':`<span class="bg">${n} found</span>`}</label>${d.n?`<button type="button" class="g dtb" data-k="${o[0]}" aria-expanded="false" aria-controls="dp${o[0]}">Details (${d.n}) ▾</button>`:''}</div>${d.n?`<div class="dp hid" id="dp${o[0]}">${d.h}</div>`:''}</div>`}).join('');}
-const TL={email:'Email',phone:'Phone',date:'Date',num:'Number',id:'ID / code',text:'Text',other:'Other'},RV=[['text','Text / name'],['email','Email'],['phone','Phone'],['date','Date'],['amount','Number / amount'],['id','ID / code (keep as is)'],['ignore','Ignore (skip)']];
+const TL={email:'Email',phone:'Phone',date:'Date',num:'Number',id:'ID / code',text:'Text',other:'Other'},RV=[['text','Text / name'],['email','Email'],['phone','Phone'],['date','Date'],['dateus','Date (month/day/year)'],['amount','Number / amount'],['id','ID / code (keep as is)'],['ignore','Ignore (skip)']];
 function mkRoles(){const mp=SCANR.map||{};$('#roles').innerHTML=HEADS.map(h=>`<label><span>${esc(h)}</span><select data-rh="${esc(h)}"><option value="">Auto: ${TL[SCANR.ty[mp[h]||h]]||'Empty'}</option>${RV.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('')}</select></label>`).join('')}
 function sheet(){const a0=XLSX.utils.sheet_to_json(WB.Sheets[$('#sh').value],{header:1,defval:'',raw:true}),nb=r=>r.filter(v=>!blank(v)).length,w0=Math.max(0,...a0.slice(0,25).map(nb));
  ROFF=Math.max(0,a0.slice(0,25).findIndex(r=>w0>1&&nb(r)>=Math.ceil(w0*.7)&&r.filter(v=>typeof v==='string'&&!blank(v)).length>=Math.ceil(w0*.6)));const a=a0.slice(ROFF);
@@ -481,24 +484,32 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-a="lg"],[d
 /* ===== Column value explorer: click a header to see EVERY value, spot spelling mistakes, fix or filter in one click ===== */
 let FILT=null,VXS=null,MUNDO=[];const VC=new WeakMap();
 const vk=v=>CleanVal.key(v,blank);
-function colInfo(h){const D=DATA;if(!D||!D.RR||!D.hd||!D.hd.includes(h))return null;let m=VC.get(D.RR);if(!m){m={};VC.set(D.RR,m)}return m[h]||(m[h]=CleanVal.analyze(D.RR,h,blank))}
+/* fixes the person applied before (per column name), kept in this browser only, offered again as suggestions in the next file */
+const FXK='bp_clean_fixes.v1',FXBAD=/^(__proto__|constructor|prototype)$/,fxk=h=>String(h).toLowerCase().replace(/[^a-z0-9\u0900-\u097f]+/g,'');
+function fxLoad(){try{const o=JSON.parse(localStorage.getItem(FXK)||'{}');return o&&typeof o==='object'&&!Array.isArray(o)?o:{}}catch(e){return{}}}
+function fxSave(o){try{const ks=Object.keys(o);if(ks.length>100)ks.slice(0,ks.length-100).forEach(k=>delete o[k]);localStorage.setItem(FXK,JSON.stringify(o));return true}catch(e){return false}}
+function fxGet(h){const o=fxLoad()[fxk(h)];return o&&typeof o==='object'?o:{}}
+function cvCtx(){const D=DATA;let m=VC.get(D.RR);if(!m){m={};VC.set(D.RR,m)}return m['\u0001ctx']||(m['\u0001ctx']=CleanVal.context(D.RR,D.hd,blank))}
+function colInfo(h){const D=DATA;if(!D||!D.RR||!D.hd||!D.hd.includes(h))return null;let m=VC.get(D.RR);if(!m){m={};VC.set(D.RR,m)}return m[h]||(m[h]=CleanVal.analyze(D.RR,h,blank,{others:cvCtx().others,saved:fxGet(h)}))}
 function svf(r,h,v){const I=colInfo(h);if(!I||!I.strong||IGN.has(r+'|'+h))return null;const f=I.flags.get(vk(v));return f&&f.strong?f:null}
 function svc(h){const I=colInfo(h);if(!I||!I.strong)return 0;let n=0;I.unique.forEach(e=>{if(e.flag&&e.flag.strong)e.rows.forEach(r=>{if(!IGN.has(r+'|'+h))n++})});return n}
-const svb=h=>{const n=svc(h);return n?`<span class="wb sv" title="${n} cell(s) with a spelling that looks like a mistake - click the column name to review">≠ ${n}</span>`:''};
+const svw=h=>{const I=colInfo(h);return I&&I.weak?I.weak:0};
+const svb=h=>{const n=svc(h),w=svw(h);return(n?`<span class="wb sv" title="${n} cell(s) with a spelling that looks like a mistake - click the column name to review">≠ ${n}</span>`:'')+(w?`<span class="wb wk" title="${w} value(s) used only a few times - they may be wrong, click the column name to look">? ${w}</span>`:'')};
 function svScan(){const rows=new Set(),cols=new Set();((DATA&&DATA.hd)||[]).forEach(h=>{const I=colInfo(h);if(!I||!I.strong)return;I.unique.forEach(e=>{if(e.flag&&e.flag.strong)e.rows.forEach(r=>{if(!IGN.has(r+'|'+h)){rows.add(r);cols.add(h)}})})});return{rows,cols}}
 const FBAR=n=>`<div class="pb"><span>🔎 Showing only rows where <b>${esc(FILT.col)}</b> = ${[...FILT.vals].slice(0,4).map(x=>'“'+esc(sv2(x))+'”').join(', ')}${FILT.vals.size>4?' +'+(FILT.vals.size-4)+' more':''} · <b>${n}</b> row${n===1?'':'s'}</span><button type="button" class="b2" data-a="vclr">✕ Clear filter</button></div>`;
 
 function vxList(){const h=VXS.h,I=colInfo(h);if(!I)return'';const q=VXS.q.trim().toLowerCase();
- let idx=I.unique.map((e,i)=>i).filter(i=>{const e=I.unique[i];if(VXS.only&&!(e.flag&&e.flag.strong))return false;return!q||e.v.toLowerCase().includes(q)});
+ let idx=I.unique.map((e,i)=>i).filter(i=>{const e=I.unique[i];if(VXS.only&&!(e.flag&&e.flag.strong))return false;if(VXS.onlyw&&!(e.flag&&e.flag.kind==='rare'))return false;return!q||e.v.toLowerCase().includes(q)});
  if(VXS.sort==='a')idx.sort((a,b)=>I.unique[a].v.localeCompare(I.unique[b].v));
  const more=idx.length-150;idx=idx.slice(0,150);
  const rows=idx.map(i=>{const e=I.unique[i],f=e.flag,sp=/^\s|\s$/.test(e.v)&&!e.blank,disp=sp?'“'+e.v+'”':e.v;
   return`<div class="vxr${f?(f.strong?' sv':' so'):''}"><input type="checkbox" data-vx="tog" data-vi="${i}"${VXS.sel.has(e.v)?' checked':''} aria-label="Tick ${esc(e.v)}"><span class="vv">${esc(disp)}</span><span class="vc">×${e.n}</span>${f?`<span class="vt">${f.strong?'⚠':'ℹ'} ${esc(f.msg)}</span>`:''}<div class="vxa">${f&&f.strong&&f.to!==undefined?`<button type="button" class="b2 pr" data-vx="merge" data-vi="${i}" title="Change these ${e.n} cell(s) to “${esc(f.to)}”">→ ${esc(sv2(f.to))}</button>`:''}<button type="button" class="b2" data-vx="edit" data-vi="${i}">${e.blank?'✎ Fill with…':'✎ Change to…'}</button></div>${VXS.edit===i?`<div class="vxe"><input id="vxi" list="vdl" type="text" placeholder="Pick an existing value or type a new one" aria-label="New value"><button type="button" class="b2 pr" data-vx="apply" data-vi="${i}">Apply to ${e.n}</button></div>`:''}</div>`}).join('');
  return(rows||'<p class="ei" style="padding:10px">No values match.</p>')+(more>0?`<p class="ei" style="padding:0 10px 10px">+${more} more – use the search box.</p>`:'')}
 function vxSection(h){const I=colInfo(h);if(!I||!I.unique.length)return'';
- const warn=I.strong?`<div class="vxw"><span>⚠ <b>${I.strong}</b> value${I.strong>1?'s':''} (${I.strongCells} cell${I.strongCells>1?'s':''}) look like mistakes</span><button type="button" class="b2 pr" data-vx="fixall">Fix all ${I.strong}</button><button type="button" class="b2${VXS.only?' on':''}" data-vx="only" aria-pressed="${VXS.only}">${VXS.only?'Show all values':'Show only these'}</button></div>`:'<p class="ei" style="margin:6px 0">✓ No spelling mistakes spotted in this column.</p>';
+ const fp=CleanVal.fixPlan(I).length,warn=I.strong?`<div class="vxw"><span>⚠ <b>${I.strong}</b> value${I.strong>1?'s':''} (${I.strongCells} cell${I.strongCells>1?'s':''}) look like mistakes</span>${fp?`<button type="button" class="b2 pr" data-vx="fixall">Fix all ${fp}</button>`:''}<button type="button" class="b2${VXS.only?' on':''}" data-vx="only" aria-pressed="${VXS.only}">${VXS.only?'Show all values':'Show only these'}</button></div>`:'<p class="ei" style="margin:6px 0">'+(I.weak?'No sure mistakes in this column.':'✓ No spelling mistakes spotted in this column.')+'</p>';
+ const wk=I.weak?`<div class="vxw wk"><span>ℹ <b>${I.weak}</b> value${I.weak>1?'s':''} (${I.weakCells} cell${I.weakCells>1?'s':''}) used only a few times – they may be wrong, please look</span><button type="button" class="b2${VXS.onlyw?' on':''}" data-vx="onlyw" aria-pressed="${!!VXS.onlyw}">${VXS.onlyw?'Show all values':'Show only these'}</button></div>`:'',fxn=Object.keys(fxGet(h)).length,rem=fxn?`<p class="ei" style="margin:6px 0">💾 ${fxn} fix${fxn>1?'es':''} remembered for this column (suggested again in new files) <button type="button" class="b2" data-vx="forget">Forget</button></p>`:'';
  const ops=I.unique.filter(e=>!e.blank).slice(0,60).map(e=>`<option value="${esc(e.v)}"></option>`).join('');
- return`<div class="vx"><div class="ei"><b>All values in this column</b> · ${I.unique.filter(e=>!e.blank).length} different${I.blank?' · '+I.blank+' blank':''}</div>${warn}<div class="er"><input id="vxs" type="search" placeholder="Search values…" value="${esc(VXS.q)}" aria-label="Search values"><button type="button" class="b2" data-vx="sort" title="Change the order">${VXS.sort==='a'?'Order: A→Z':'Order: most used'}</button></div><datalist id="vdl">${ops}</datalist><div class="vxl" id="vxl">${vxList()}</div><div class="er"><button type="button" class="b2 pr" data-vx="filter">🔎 Show only ticked values in table</button>${FILT&&FILT.col===h?'<button type="button" class="b2" data-vx="clr">Clear filter</button>':''}</div></div>`}
+ return`<div class="vx"><div class="ei"><b>All values in this column</b> · ${I.unique.filter(e=>!e.blank).length} different${I.blank?' · '+I.blank+' blank':''}</div>${warn}${wk}${rem}<div class="er"><input id="vxs" type="search" placeholder="Search values…" value="${esc(VXS.q)}" aria-label="Search values"><button type="button" class="b2" data-vx="sort" title="Change the order">${VXS.sort==='a'?'Order: A→Z':'Order: most used'}</button></div><datalist id="vdl">${ops}</datalist><div class="vxl" id="vxl">${vxList()}</div><div class="er"><button type="button" class="b2 pr" data-vx="filter">🔎 Show only ticked values in table</button>${FILT&&FILT.col===h?'<button type="button" class="b2" data-vx="clr">Clear filter</button>':''}</div></div>`}
 function vxRedraw(whole){if(!VXS)return;const ed=$('#ed');if(whole){const v=ed.querySelector('.vx');if(v)v.outerHTML=vxSection(VXS.h)}else{const l=$('#vxl');if(l)l.innerHTML=vxList()}}
 const _oc=openCol;
 openCol=function(h,th){_oc(h,th);const ed=$('#ed');if(!ed.classList.contains('on')||EDK!=='col'||COLH!==h)return;
@@ -511,18 +522,21 @@ function vtoast(m){toast(m);$('#toast').innerHTML=esc(m)+'<button type="button" 
 function busy(m,fn){const b=$('#busy');b.querySelector('span').textContent=m;b.classList.remove('hid');requestAnimationFrame(()=>setTimeout(()=>{try{fn()}finally{b.classList.add('hid')}},20))}
 function busyOff(){const b=$('#busy');if(b)b.classList.add('hid')}
 function vxApply(pairs,msg){const h=VXS&&VXS.h;if(!h||!pairs.length)return;
- MUNDO.push({man:new Map(MAN),ign:new Set(IGN)});if(MUNDO.length>30)MUNDO.shift();
+ const mu={man:new Map(MAN),ign:new Set(IGN)};MUNDO.push(mu);if(MUNDO.length>30)MUNDO.shift();
  const t=DATA.CUR&&DATA.CUR.ty&&DATA.CUR.ty[h];let n=0;
  pairs.forEach(p=>{let v=p.to;if(t==='num'&&typeof v==='string'&&v.trim()!==''&&!isNaN(+v))v=+v;p.rows.forEach(r=>{MAN.set(r+'|'+h,v);IGN.delete(r+'|'+h);n++})});
+ let rec=false;if(t!=='num'){const fxs=fxLoad(),key=fxk(h),prev={};pairs.forEach(p=>{if(typeof p.from!=='string'||typeof p.to!=='string'||p.from===p.to||!p.to.trim()||FXBAD.test(p.from))return;const mm=fxs[key]||(fxs[key]={});if(!(p.from in prev))prev[p.from]=Object.prototype.hasOwnProperty.call(mm,p.from)?mm[p.from]:undefined;mm[p.from]=p.to;rec=true});if(rec&&fxSave(fxs))mu.fx={key,prev};else rec=false}
  FILT=null;VXS.sel=new Set();VXS.edit=-1;closeEd();
- const fin=()=>{st();setTimeout(()=>{const t2=[...document.querySelectorAll('th.hc')].find(z=>z.dataset.col===h);if(t2)openCol(h,t2)},60);vtoast('✓ '+(msg||'Changed')+' · '+n+' cell'+(n>1?'s':''))};
+ const fin=()=>{st();setTimeout(()=>{const t2=[...document.querySelectorAll('th.hc')].find(z=>z.dataset.col===h);if(t2)openCol(h,t2)},60);vtoast('✓ '+(msg||'Changed')+' · '+n+' cell'+(n>1?'s':'')+(rec?' · remembered for next time':''))};
  ROWS.length>8000?busy('Applying to '+n+' cells…',fin):fin()}
 $('#ed').addEventListener('click',e=>{const b=e.target.closest('[data-vx]');if(!b||!VXS||b.dataset.vx==='tog')return;const a=b.dataset.vx,h=VXS.h,I=colInfo(h);if(!I)return;const E=I.unique[+b.dataset.vi];
- if(a==='fixall'){const p=CleanVal.fixPlan(I);return vxApply(p.map(x=>({rows:x.rows,to:x.to})),'Fixed '+p.length+' spelling'+(p.length>1?'s':''))}
- if(a==='merge'&&E&&E.flag)return vxApply([{rows:E.rows,to:E.flag.to}],'Changed to “'+sv2(E.flag.to)+'”');
+ if(a==='fixall'){const p=CleanVal.fixPlan(I);return vxApply(p.map(x=>({rows:x.rows,to:x.to,from:x.from})),'Fixed '+p.length+' spelling'+(p.length>1?'s':''))}
+ if(a==='merge'&&E&&E.flag)return vxApply([{rows:E.rows,to:E.flag.to,from:E.blank?undefined:E.v}],'Changed to “'+sv2(E.flag.to)+'”');
  if(a==='edit'&&E){VXS.edit=VXS.edit===+b.dataset.vi?-1:+b.dataset.vi;vxRedraw();const x=$('#vxi');if(x)x.focus();return}
- if(a==='apply'&&E){const x=$('#vxi'),v=x?x.value.trim():'';if(!v){if(x)x.focus();return toast('Type or pick a value first')}return vxApply([{rows:E.rows,to:v}],'Changed to “'+sv2(v)+'”')}
- if(a==='only'){VXS.only=!VXS.only;return vxRedraw(true)}
+ if(a==='apply'&&E){const x=$('#vxi'),v=x?x.value.trim():'';if(!v){if(x)x.focus();return toast('Type or pick a value first')}return vxApply([{rows:E.rows,to:v,from:E.blank?undefined:E.v}],'Changed to “'+sv2(v)+'”')}
+ if(a==='only'){VXS.only=!VXS.only;if(VXS.only)VXS.onlyw=false;return vxRedraw(true)}
+ if(a==='onlyw'){VXS.onlyw=!VXS.onlyw;if(VXS.onlyw)VXS.only=false;return vxRedraw(true)}
+ if(a==='forget'){const o=fxLoad();delete o[fxk(h)];fxSave(o);VC.delete(DATA.RR);vxRedraw(true);drawTable();return toast('Forgot the remembered fixes for “'+h+'”')}
  if(a==='sort'){VXS.sort=VXS.sort==='a'?'n':'a';return vxRedraw(true)}
  if(a==='filter'){if(!VXS.sel.size)return toast('Tick one or more values first');FILT={col:h,vals:new Set(VXS.sel)};closeEd();drawTable();const w=$('#pvw .tw');if(w)w.scrollTop=0;return toast('🔎 Filter on – clear it from the bar above the table')}
  if(a==='clr'){FILT=null;closeEd();drawTable()}});
@@ -532,7 +546,9 @@ $('#ed').addEventListener('keydown',e=>{if(e.target.id==='vxi'&&e.key==='Enter')
 document.addEventListener('click',e=>{const b=e.target.closest('[data-a="mundo"],[data-a="vclr"],[data-a="xnx"]');if(!b)return;
  if(b.dataset.a==='vclr'){FILT=null;return drawTable()}
  if(b.dataset.a==='xnx'){$('#xn').classList.add('hid');return}
- const s=MUNDO.pop();if(!s)return;MAN.clear();s.man.forEach((v,k)=>MAN.set(k,v));IGN.clear();s.ign.forEach(k=>IGN.add(k));st();toast('↶ Undone')});
+ const s=MUNDO.pop();if(!s)return;MAN.clear();s.man.forEach((v,k)=>MAN.set(k,v));IGN.clear();s.ign.forEach(k=>IGN.add(k));
+ if(s.fx){const o=fxLoad(),mm=o[s.fx.key]||{};Object.keys(s.fx.prev).forEach(k=>{if(s.fx.prev[k]===undefined)delete mm[k];else mm[k]=s.fx.prev[k]});if(Object.keys(mm).length)o[s.fx.key]=mm;else delete o[s.fx.key];fxSave(o)}
+ st();toast('↶ Undone')});
 /* click a highlighted (orange-dashed) cell: the suggested spelling is pre-filled */
 const _oe=openEd;
 openEd=function(td){_oe(td);const ed=$('#ed'),c=td.dataset.c,r=+td.dataset.r;if(!ed.classList.contains('on')||EDK!==r+'|'+c||!td.classList.contains('sv'))return;

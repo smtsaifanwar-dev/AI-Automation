@@ -39,4 +39,32 @@ t('C10 dates show as yyyy-mm-dd; Hindi text works',()=>{
  const a=an([...rep('दिल्ली',12),'दिल्ली ',...rep('जयपुर',6)]);assert.equal(F(a,'दिल्ली ').to,'दिल्ली')});
 t('C11 distance helper: swap counts as one edit',()=>{assert.equal(V.osa('dehli','delhi'),1);assert.equal(V.osa('abc','abc'),0);assert.equal(V.osa('kitten','sitting'),3)});
 t('C12 empty / tiny columns do not crash',()=>{assert.equal(an([]).unique.length,0);assert.equal(an(['x']).strong,0);assert.equal(an([null,null]).blank,2)});
+
+// ---- values that belong to another column, rare values, remembered fixes
+const exp=spec=>spec.flatMap(([v,n])=>rep(v,n));
+const tbl=cols=>{const n=Math.max(...Object.values(cols).map(c=>c.length)),rows=[];for(let i=0;i<n;i++){const d={};for(const k in cols)d[k]=cols[k][i]??'x';rows.push({r:i+2,d})}return rows};
+t('C13 a value from ANOTHER column (State written in City) is a sure mistake, with the column named',()=>{
+ const city=exp([['Delhi',300],['Mumbai',250],['Jaipur',200],['Pune',100],['Rajasthan',3],['Maharashtra',2]]),state=exp([['Rajasthan',300],['Maharashtra',250],['Delhi',200],['Gujarat',100]]);
+ const rows=tbl({City:city,State:state}),ctx=V.context(rows,['City','State'],blank),a=V.analyze(rows,'City',blank,ctx);
+ assert.equal(F(a,'Rajasthan').kind,'wrongcol');assert.equal(F(a,'Rajasthan').strong,true);assert.ok(/State/.test(F(a,'Rajasthan').msg));assert.equal(F(a,'Maharashtra').kind,'wrongcol');
+ assert.equal(F(a,'Delhi'),undefined);assert.equal(F(a,'Mumbai'),undefined)});
+t('C14 no false alarm when two columns share the same list (Billing city / Shipping city)',()=>{
+ const b=exp([['Delhi',200],['Mumbai',150],['Pune',100],['Jaipur',3]]),s2=exp([['Delhi',180],['Mumbai',120],['Pune',90],['Jaipur',60]]);
+ const rows=tbl({Billing:b,Shipping:s2}),a=V.analyze(rows,'Billing',blank,V.context(rows,['Billing','Shipping'],blank));
+ assert.notEqual(F(a,'Jaipur')&&F(a,'Jaipur').kind,'wrongcol');assert.equal(a.strong,0)});
+t('C15 rarely used values are counted as soft hints (weak), never as sure mistakes',()=>{
+ const a=an(exp([['Sales',200],['HR',100],['Finance',120],['IT',90],['Admin',2],['H R',2],['Accounts',1],['Mktg',1]]));
+ assert.equal(a.strong,0);assert.equal(a.weak,4);assert.equal(a.weakCells,6);assert.equal(F(a,'Admin').kind,'rare');assert.equal(F(a,'Admin').strong,false)});
+t('C16 a legitimate long tail is not flooded with hints (more than 25 rare values: none)',()=>{
+ const tail=Array.from({length:30},(_,i)=>['Misc'+i,1]);const a=an(exp([['A',400],['B',300],...tail]));assert.equal(a.weak,0)});
+t('C17 fixes remembered from an earlier file come back as sure suggestions and are in the fix plan',()=>{
+ const vals=exp([['Mumbai',50],['Delhi',40],['Bombay',3]]);
+ const a=V.analyze(col(vals),'C',blank,{saved:{Bombay:'Mumbai','__proto__':'x'}});
+ assert.equal(F(a,'Bombay').kind,'saved');assert.equal(F(a,'Bombay').to,'Mumbai');assert.equal(a.strong,1);
+ assert.ok(V.fixPlan(a).some(x=>x.from==='Bombay'&&x.to==='Mumbai'&&x.n===3));
+ const b=an(vals);assert.equal(F(b,'Bombay')&&F(b,'Bombay').kind,'rare')});
+t('C18 context skips columns with many different values (names, ids) and numeric columns',()=>{
+ const rows=tbl({Name:Array.from({length:400},(_,i)=>'Person '+i),Amt:Array.from({length:400},(_,i)=>i*5),City:exp([['Delhi',200],['Pune',200]])});
+ assert.deepEqual(V.context(rows,['Name','Amt','City'],blank).others.map(o=>o.name),['City'])});
+
 console.log('\n'+pass+' passed, '+fail+' failed');process.exit(fail?1:0);

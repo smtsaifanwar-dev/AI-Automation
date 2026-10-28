@@ -87,3 +87,17 @@ All tools: one primary blue (#2563eb light, #5b9bff dark).
 - **Payments:** asks the browser for persistent storage (`navigator.storage.persist()`) so saved data is less likely to be evicted. Backups are still needed.
 - **Removed** `test/ui.smoke.js` (stale since Phase 2, replaced by backup / e2e tests) and its `test:ui` script.
 - **Not done (needs network / a real browser):** SRI on CDN tags and vendoring the OCR engine; CSP for the Invoices tool (OCR uses workers + wasm, a wrong CSP would silently break it; add it only after testing OCR); IndexedDB storage; real-browser testing; Web Worker for 50k-row sheets.
+
+# Excel cleaner pass (1.5.0)
+**Column check (`src/clean-values.js`)**
+- **Value from another column:** a value used only a few times that is common in a different column (State written in the City column) is now a sure mistake: orange badge, dashed cell, message names the other column. Guarded so two columns sharing one list (Billing / Shipping city) never trigger it.
+- **Rarely used values:** values used at most ~1% of rows (min 3) in a clean category column get a soft hint. The header shows a second, yellow `? N` badge, and the dialog has a *Show only these* button. Not shown for long-tail columns (more than 25 rare values) or number columns.
+- **Remembered fixes:** every fix applied from the column dialog (Fix all, arrow button, Change to...) is stored in this browser per column name and offered again as a sure suggestion in the next file (`you fixed this before`). *Undo* removes it again; a *Forget* button clears a column. Stored only in localStorage, nothing is sent.
+- "Fix all N" now counts only values that actually have a fix, and hides when there is none.
+**Cleaning engine (`src/clean.src.html`)**
+- **No silent date skip:** a column whose name says date / due / dob is treated as a date column when at least half the cells parse (was 80%); unparseable cells are flagged.
+- **Day/month guesses are visible:** if every date in a column can be read either way, one note says so (with the count and an example); a column that mixes day/month and month/day gets a check note. New column type *Date (month/day/year)* in Column types.
+- **Text case:** *Standardize text* skips company, party, shop, vendor, address, location, brand, model and code columns; `u.p.` becomes `U.P.`; `RAM` is no longer forced to upper case in names.
+- **Phones:** `9876543210.0` (typical of exports) is fixed / flagged with a clear reason instead of "invalid".
+**Tests:** `test/clean.values.test.js` 18 (was 12), new `test/clean.engine.test.js` 14 (runs the real engine cut out of `src/clean.src.html`, no browser). `npm test` includes both. The jsdom UI test `test/clean.ui.test.js` was **not run** in this pass (jsdom not available) - run `npm i` then `npm run test:clean` and `npm run test:home`.
+**Still not done:** saving a whole cleaning *recipe* to re-run next month (only spelling fixes are remembered), file merge/append, synonyms the app cannot know (Bombay vs Mumbai, UP vs Uttar Pradesh) unless you fixed them once before.
